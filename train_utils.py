@@ -12,7 +12,8 @@ class TrainUtil:
 
     if log:
       self.f_log = open(f'reports/{generator.__name__}_{len(self.y_train)}_{len(self.y_test)}_{cv}.txt', 'a+')
-      self.f_log.write(',Train Acc,Test Acc,,Train Pr,Test Pr,,Train Rec,Test Rec')
+      self.f_log.write(f'{generator.__name__}\n')
+      self.f_log.write(',Train Acc,Test Acc,,Train 1 Pr,Test 1 Pr,,Train 0 Pr,Test 0 Pr\n')
 
   def train(self, name, clf, standardize=False):
     y_train, y_test = self.y_train, self.y_test
@@ -31,11 +32,11 @@ class TrainUtil:
     if self.log:
       train_acc = m.accuracy_score(y_train, train_pred)
       test_acc = m.accuracy_score(y_test, test_pred)
-      train_pr = m.precision_score(y_train, train_pred)
-      test_pr = m.precision_score(y_test, test_pred)
-      train_rec = m.recall_score(y_train, train_pred)
-      test_rec = m.recall_score(y_test, test_pred)
-      self.f_log.write(f'{name},{train_acc},{test_acc},,{train_pr},{test_pr},,{train_rec},{test_rec}')
+      train_1_pr = m.precision_score(y_train, train_pred)
+      test_1_pr = m.precision_score(y_test, test_pred)
+      train_0_pr = m.precision_score(y_train, train_pred, pos_label=0)
+      test_0_pr = m.precision_score(y_test, test_pred, pos_label=0)
+      self.f_log.write(f'{name},{train_acc},{test_acc},,{train_1_pr},{test_1_pr},,{train_0_pr},{test_0_pr}\n')
     else:
       print('Train analysis')
       print(m.classification_report(y_train, train_pred))

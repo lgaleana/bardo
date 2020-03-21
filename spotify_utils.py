@@ -7,12 +7,14 @@ CLIENT_SECRET = '11ac7098025545af90be092fe2dd029c'
 AUTHORIZATION_URL = 'https://accounts.spotify.com/api/token'
 FEATURES_URL = 'https://api.spotify.com/v1/audio-features'
 
-def request_token():
+def request_token(code=None):
   authorization_data = f'{CLIENT_ID}:{CLIENT_SECRET}'.encode('utf-8')
   parameters = {'grant_type': 'client_credentials'}
   headers = {'Authorization': 'Basic {}'.format(
     base64.b64encode(authorization_data).decode()
   )}
+  if code:
+    parameters['code'] = code
 
   print('Requesting token')
   r = requests.post(AUTHORIZATION_URL, data=parameters, headers=headers)

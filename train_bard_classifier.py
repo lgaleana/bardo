@@ -9,15 +9,14 @@ from math import ceil
 
 # Generators generate different training samples
 # We want to test nmany
-generators = {
-  s.gen_pos_and_neg: 4,
-  s.gen_very_pos_and_neg: 5,
-  s.gen_pos_and_neg_balanced: 6,
-}
+generators = [
+  s.gen_pos_and_neg,
+  s.gen_very_pos_and_neg,
+  s.gen_pos_and_neg_balanced,
+]
 
-for generator, split in generators.items():
-  print(ceil((50 * (split - 1) / 30)) + 1)
-  t = TrainUtil(generator, 1.0 / split, ceil((50 * (split - 1) / 30)) + 1, True)
+for generator in generators.items():
+  t = TrainUtil(generator, 0.25, 6, True)
   # Linear SVC
   name = 'Linear SVC'
   svc = LinearSVC(dual=False)
