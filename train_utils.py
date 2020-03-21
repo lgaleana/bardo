@@ -11,7 +11,7 @@ class TrainUtil:
     self.log = log
 
     if log:
-      self.f_log = open(f'{generator.__name__}_{len(self.y_train)}_{len(self.y_test)}_{cv}.txt', 'a+')
+      self.f_log = open(f'reports/{generator.__name__}_{len(self.y_train)}_{len(self.y_test)}_{cv}.txt', 'a+')
       self.f_log.write(',Train Acc,Test Acc,,Train Pr,Test Pr,,Train Rec,Test Rec')
 
   def train(self, name, clf, standardize=False):
