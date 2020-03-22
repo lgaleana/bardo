@@ -23,12 +23,15 @@ def gen_binary_(test_size):
 def exclude_label_(X, y, label):
   return X[y!=label], y[y!=label]
 
-def transform_binary_(train, test, pivot):
+def transform_binary_(train, test, pivot, pivot_class=None):
   train[train<pivot] = 0
   train[train>pivot] = 1
-
   test[test<pivot] = 0
   test[test>pivot] = 1
+
+  if pivot_class is not None:
+    train[train==pivot] = pivot_class
+    test[test==pivot] = pivot_class
 
   return train, test
 
@@ -110,9 +113,21 @@ def gen_pos_and_neg_balanced(test_size):
   print_binary_size(y_train, y_test)
 
   return X_train, X_test, y_train, y_test
+
+def gen_pos_and_neutral_neg(test_size):
+  print('---Generating positive and negative samples, with neutral samples as negative---')
+  X_train, X_test, y_train, y_test = gen_binary_(test_size)
+
+  # Use labels 3 as negative
+  y_train, y_test = transform_binary_(y_train, y_test,  3, 0)
+
+  print_binary_size(y_train, y_test)
+
+  return X_train, X_test, y_train, y_test
 #
 #
 #test_size = 0.25
 #gen_pos_and_neg(test_size)
 #gen_very_pos_and_neg(test_size)
 #gen_pos_and_neg_balanced(test_size)
+#gen_pos_and_neutral_neg(test_size)

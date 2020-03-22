@@ -13,9 +13,10 @@ generators = [
   s.gen_pos_and_neg,
   s.gen_very_pos_and_neg,
   s.gen_pos_and_neg_balanced,
+  s.gen_pos_and_neutral_neg,
 ]
 
-for generator in generators.items():
+for generator in generators:
   t = TrainUtil(generator, 0.25, 6, True)
   # Linear SVC
   name = 'Linear SVC'
@@ -26,7 +27,7 @@ for generator in generators.items():
   }]
   t.train(name, svc)
   t.train(name, svc, True)
-  t.train_cv(name, svc, parameters, True)
+  t.train_cv(name, svc, parameters, False, True)
   t.train_cv(name, svc, parameters, True, True)
   print_line()
 
@@ -77,7 +78,7 @@ for generator in generators.items():
   }]
   t.train(name, gbdt)
   t.train(name, gbdt, True)
-  t.train_cv(name, gbdt, parameters, True)
+  t.train_cv(name, gbdt, parameters, False)
   t.train_cv(name, gbdt, parameters, True, True)
   print_line()
 
