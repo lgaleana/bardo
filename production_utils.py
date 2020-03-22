@@ -1,9 +1,9 @@
 from sklearn.svm import LinearSVC, SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import GradientBoostingClassifier
-from train_utils import TrainUtil, print_line
-import sample_generators as s
-import spotify_utils as su
+from bard.train_utils import TrainUtil, print_line
+import bard.sample_generators as s
+import bard.spotify_utils as su
 from sklearn import preprocessing
 
 
@@ -18,13 +18,17 @@ print_line()
 
 # Train production classifiers
 # These classifiers were picked through experimentation
+TEST_SIZE = 0.25
+t = TrainUtil(s.gen_pos_and_neg, 0.25, 6, True)
 def load_prod_classifiers():
-  TEST_SIZE = 0.25
-  t = TrainUtil(s.gen_pos_and_neg, 0.25, 6, True)
-  # SVC
-  svc_name = 'svc'
-  svc = SVC(random_state=0)
-  svc = t.train(svc_name, svc, True)
+  # Linear SVC
+  linear_svc_name = 'linear_svc'
+  linear_svc = LinearSVC(dual=False)
+  parameters = [{
+    'C': [0.1, 1, 10, 100, 1000],
+    'class_weight': [{1: w} for w in list(range(1, 11))],
+  }]
+  linear_svc = t.train_cv(linear_svc_name, linear_svc, parameters, False)
   # KNN
   knn_name = 'knn'
   knn = KNeighborsClassifier()
@@ -41,10 +45,11 @@ def load_prod_classifiers():
     'n_estimators': [16, 32, 64, 100, 150, 200],
     'learning_rate': [0.0001, 0.001, 0.01, 0.025, 0.05,  0.1, 0.25, 0.5],
   }]
-  gbdt = t.train_cv(gbdt_name, gbdt, parameters, True, True)
+  gbdt = t.train_cv(gbdt_name, gbdt, parameters, True)
+  print('---Finished training---')
 
   return {
-    svc_name: svc,
+    linear_svc_name: linear_svc,
     knn_name: knn,
     gbdt_name: gbdt,
   }
@@ -52,7 +57,7 @@ def load_prod_classifiers():
 # The general idea is to make a {limi} playlist per classifier
 # On top, two other lists will include the average of the classifiers
 # and random
-def generate_recommendations(token, genres, classifiers, limit):
+def generate_recommendations(token, genres, classifiers, limit, standardize):
   playlists = {}
   for name in classifiers:
     playlists[name] = []
@@ -69,13 +74,16 @@ def generate_recommendations(token, genres, classifiers, limit):
       if recommendation['id'] not in tracks:
         # Track is not labeled
         features = su.get_track_features(token, recommendation)
-        # Standardize features for these classifiers
-        scaler = t.get_scaler()
-        features_scaled = scaler.transform([features])
         # Get predictions from all classifiers
         predictions_sum = 0.0
         for name, clf in classifiers.items():
-          prediction = clf.predict(features_scaled)
+          # Standardize features
+          if name in standardize:
+            scaler = t.get_scaler()
+            features_scaled = scaler.transform([features])
+            prediction = clf.predict(features_scaled)
+          else:
+            prediction = clf.predict([features])
           predictions_sum += prediction
           print(f'  {name} prediction: {prediction}')
           # We limit the number of tracks in the playlist

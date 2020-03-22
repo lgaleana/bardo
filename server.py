@@ -13,11 +13,12 @@ classifiers = pu.load_prod_classifiers()
 def make_playlists(token):
   playlists = pu.generate_recommendations(
     token,
-    ['house', 'techno'],
+    ['deep-house'],
     classifiers,
     10,
+    ['knn', 'gbdt'],
   )
-  for name, tracks in playlists:
+  for name, tracks in playlists.items():
     playlist_name = f'{name}_{time.time()}'.replace('.', '')
     playlist = su.create_playlist(token, playlist_name)
     su.populate_playlist(token, playlist, tracks)

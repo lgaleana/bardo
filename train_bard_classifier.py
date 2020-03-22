@@ -54,7 +54,7 @@ for generator in generators:
     'class_weight': [{1: w} for w in list(range(1, 11))],
   }]
   t.train(name, svc, True)
-  t.train_cv(name, svc, parameters, True)
+  t.train_cv(name, svc, parameters, True, True)
   print_line()
 
   # KNN
@@ -66,7 +66,7 @@ for generator in generators:
     'weights': ['uniform', 'distance'],
   }]
   t.train(name, knn, True)
-  t.train_cv(name, knn, parameters, True)
+  t.train_cv(name, knn, parameters, True, True)
   print_line()
 
   # GBDT
@@ -78,7 +78,7 @@ for generator in generators:
   }]
   t.train(name, gbdt)
   t.train(name, gbdt, True)
-  t.train_cv(name, gbdt, parameters, False)
+  t.train_cv(name, gbdt, parameters, False, True)
   t.train_cv(name, gbdt, parameters, True, True)
   print_line()
 

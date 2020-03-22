@@ -1,4 +1,4 @@
-import sample_generators as s
+import bard.sample_generators as s
 from sklearn.model_selection import GridSearchCV
 from sklearn import preprocessing
 import sklearn.metrics as m
@@ -51,7 +51,7 @@ class TrainUtil:
   
     cv = self.train(name, cv, standardize)
   
-    if print_best and not self.log:
+    if print_best:
       print('Best estimator')
       print(cv.best_estimator_)
       print()
