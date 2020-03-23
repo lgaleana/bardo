@@ -138,11 +138,11 @@ def gen_pos_neg_and_neutral_train(test_size):
   print('--------------------------------------------------------')
 
   return X_train, X_test, y_train, y_test
-
-
-test_size = 0.25
-gen_pos_and_neg(test_size)
-gen_very_pos_and_neg(test_size)
-gen_pos_and_neg_balanced(test_size)
-gen_pos_and_neutral_neg(test_size)
-gen_pos_neg_and_neutral_train(test_size)
+#
+#
+#test_size = 0.25
+#gen_pos_and_neg(test_size)
+#gen_very_pos_and_neg(test_size)
+#gen_pos_and_neg_balanced(test_size)
+#gen_pos_and_neutral_neg(test_size)
+#gen_pos_neg_and_neutral_train(test_size)

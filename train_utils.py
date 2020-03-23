@@ -72,6 +72,9 @@ class TrainUtil:
     X = np.concatenate((self.X_train, self.X_test))
     y = np.concatenate((self.y_train, self.y_test))
     X, y = shuffle(X, y, random_state=0)
+    if standardize:
+      scaler = preprocessing.StandardScaler().fit(X)
+      X = scaler.transform(X)
 
     train_sizes, train_scores, test_scores = learning_curve(
       self.clf,
@@ -79,6 +82,7 @@ class TrainUtil:
       y,
       cv=self.cv,
       train_sizes=np.linspace(0.1, 1.0, 5),
+      scoring='precision',
       n_jobs=4,
     )
 
