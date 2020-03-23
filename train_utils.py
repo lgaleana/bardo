@@ -1,7 +1,11 @@
-import bard.sample_generators as s
+import sample_generators as s
 from sklearn.model_selection import GridSearchCV
 from sklearn import preprocessing
 import sklearn.metrics as m
+from sklearn.model_selection import learning_curve
+from sklearn.utils import shuffle
+import numpy as np
+import matplotlib.pyplot as plt
 
 class TrainUtil:
   def __init__(self, generator, test_size, cv=6, log=False):
@@ -42,6 +46,9 @@ class TrainUtil:
       print(m.classification_report(y_train, train_pred))
       print('Test analysis')
       print(m.classification_report(y_test, test_pred))
+
+    self.name = name
+    self.clf = clf
     
     return clf
   
@@ -60,6 +67,29 @@ class TrainUtil:
 
   def get_scaler(self):
     return self.scaler
+
+  def plot_learning_curve(self, standardize=False):
+    X = np.concatenate((self.X_train, self.X_test))
+    y = np.concatenate((self.y_train, self.y_test))
+    X, y = shuffle(X, y, random_state=0)
+
+    train_sizes, train_scores, test_scores = learning_curve(
+      self.clf,
+      X,
+      y,
+      cv=self.cv,
+      train_sizes=np.linspace(0.1, 1.0, 5),
+      n_jobs=4,
+    )
+
+    plt.plot(train_sizes, np.mean(train_scores, axis=1), label='Train')
+    plt.plot(train_sizes, np.mean(test_scores, axis=1), label='Test')
+
+    plt.ylabel('Precision')
+    plt.xlabel('Size')
+    plt.title(f'{self.name} learning curves')
+    plt.legend()
+    plt.show()
 
 def print_line():
   print('--------------------------------------------------------')

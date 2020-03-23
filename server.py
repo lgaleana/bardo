@@ -1,12 +1,13 @@
 from flask import Flask, request, redirect, url_for
-import os
 import time
-import bard.spotify_utils as su
-import bard.production_utils as pu
+import spotify_utils as su
+import production_utils as pu
 
 app = Flask(__name__)
 
 CLIENT_ID = '8de267b03c464274a3546bfe84496696'
+
+print(__name__)
 
 classifiers = pu.load_prod_classifiers()
 
@@ -16,7 +17,7 @@ def make_playlists(token):
     ['deep-house'],
     classifiers,
     10,
-    ['knn', 'gbdt'],
+    ['linear_svc', 'svc', 'gbdt'],
   )
   for name, tracks in playlists.items():
     playlist_name = f'{name}_{time.time()}'.replace('.', '')
@@ -27,7 +28,7 @@ def make_playlists(token):
 @app.route('/')
 def main():
   return f'''
-  <H1>Bard: the AI Music Curator</h1>
+  <H1>Bard: the AI Deep House Curator</h1>
   <a href='https://accounts.spotify.com/authorize?client_id={CLIENT_ID}&response_type=code&redirect_uri={url_for('generate_playlist', _external=True)}&scope=playlist-modify-public playlist-modify-private&show_dialog=true'>Generate Playlist</a>
   '''
 
@@ -46,7 +47,6 @@ def generate_playlist():
     html = '<p>Invalid access</p>'
 
   return f'''
-  <h1>Bard: the AI Music Curator</h1>
-  <h2>Playlist Generation</h2>
+  <h1>Bard: the Deep House Curator</h1>
   {html}
   '''

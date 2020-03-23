@@ -1,16 +1,18 @@
 from sklearn.svm import LinearSVC, SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import GradientBoostingClassifier
-from bard.train_utils import TrainUtil, print_line
-import bard.sample_generators as s
-import bard.spotify_utils as su
+from train_utils import TrainUtil, print_line
+import sample_generators as s
+import spotify_utils as su
 from sklearn import preprocessing
 
+
+print(__name__)
 
 ### Load labeled tracks
 print('---Loading tracks DB---')
 tracks = []
-with open('tracks.txt') as f:
+with open('./tracks.txt') as f:
   for line in f:
     track = line.strip()
     tracks.append(track)
@@ -19,7 +21,7 @@ print_line()
 # Train production classifiers
 # These classifiers were picked through experimentation
 TEST_SIZE = 0.25
-t = TrainUtil(s.gen_pos_and_neg, 0.25, 6, True)
+t = TrainUtil(s.gen_very_pos_and_neg, 0.25, 6, True)
 def load_prod_classifiers():
   # Linear SVC
   linear_svc_name = 'linear_svc'
@@ -28,7 +30,36 @@ def load_prod_classifiers():
     'C': [0.1, 1, 10, 100, 1000],
     'class_weight': [{1: w} for w in list(range(1, 11))],
   }]
-  linear_svc = t.train_cv(linear_svc_name, linear_svc, parameters, False)
+#  linear_svc = t.train(linear_svc_name, linear_svc)
+#  linear_svc = t.train(linear_svc_name, linear_svc, True)
+#  linear_svc = t.train_cv(linear_svc_name, linear_svc, parameters, False, True)
+  linear_svc = t.train_cv(linear_svc_name, linear_svc, parameters, True, True)
+
+  # SVC
+  svc_name = 'svc'
+  svc = SVC(random_state=0)
+  parameters = [{
+    'kernel': ['rbf'],
+    'C': [0.1, 1, 10, 100, 1000],
+    'gamma': ['scale', 'auto', 0.01, 0.1, 1, 10],
+    'class_weight': [{1: w} for w in list(range(1, 11))],
+  },
+  {
+    'kernel': ['sigmoid'],
+    'C': [0.1, 1, 10, 100, 1000],
+    'gamma': ['scale', 'auto', 0.01, 0.1, 1, 10],
+    'class_weight': [{1: w} for w in list(range(1, 11))],
+  },
+  {
+    'kernel': ['polynomial'],
+    'C': [0.1, 1, 10, 100, 1000],
+    'gamma': ['scale', 'auto', 0.01, 0.1, 1, 10],
+    'degree': list(range(2, 7)),
+    'class_weight': [{1: w} for w in list(range(1, 11))],
+  }]
+  svc = t.train(svc_name, svc, True)
+#  svc = t.train_cv(svc_name, svc, parameters, True, True)
+
   # KNN
   knn_name = 'knn'
   knn = KNeighborsClassifier()
@@ -37,7 +68,9 @@ def load_prod_classifiers():
     'p': list(range(1, 6)),
     'weights': ['uniform', 'distance'],
   }]
-  knn = t.train_cv(knn_name, knn, parameters, True)
+#  knn = t.train(knn_name, knn, True)
+#  knn = t.train_cv(knn_name, knn, parameters, True, True)
+
   # GBDT
   gbdt_name = 'gbdt'
   gbdt = GradientBoostingClassifier()
@@ -45,12 +78,16 @@ def load_prod_classifiers():
     'n_estimators': [16, 32, 64, 100, 150, 200],
     'learning_rate': [0.0001, 0.001, 0.01, 0.025, 0.05,  0.1, 0.25, 0.5],
   }]
-  gbdt = t.train_cv(gbdt_name, gbdt, parameters, True)
+#  gbdt = t.train(gbdt_name, gbdt)
+#  gbdt = t.train(gbdt_name, gbdt, True)
+#  gbdt = t.train_cv(gbdt_name, gbdt, parameters, False, True)
+  gbdt = t.train_cv(gbdt_name, gbdt, parameters, True, True)
   print('---Finished training---')
 
   return {
     linear_svc_name: linear_svc,
-    knn_name: knn,
+    svc_name: svc,
+#    knn_name: knn,
     gbdt_name: gbdt,
   }
 
@@ -88,16 +125,16 @@ def generate_recommendations(token, genres, classifiers, limit, standardize):
           print(f'  {name} prediction: {prediction}')
           # We limit the number of tracks in the playlist
           # And we only care about positives
-          if len(playlists[name]) < limit and prediction == 1:
+          if len(playlists[name]) < limit and recommendation['id'] not in playlists[name] and prediction == 1:
             playlists[name].append(recommendation['id'])
       
         # Special cases
         print(f'  random prediction: 1')
-        if len(playlists['random']) < limit:
+        if len(playlists['random']) < limit and recommendation['id'] not in playlists['random']:
           playlists['random'].append(recommendation['id'])
         prediction = predictions_sum / len(classifiers)
         print(f'  avg prediction: {prediction}')
-        if len(playlists['avg']) < limit and prediction >= 0.5:
+        if len(playlists['avg']) < limit and recommendation['id'] not in playlists['avg'] and prediction >= 0.5:
           playlists['avg'].append(recommendation['id'])
         #if prediction == 1:
         #  playlists['total'].append(recommendation['id'])

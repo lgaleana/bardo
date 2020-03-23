@@ -4,7 +4,6 @@ from sklearn.ensemble import GradientBoostingClassifier
 import sample_generators as s
 from train_utils import TrainUtil, print_line
 from math import ceil
-#from sklearn.externals import joblib
 
 
 # Generators generate different training samples
@@ -14,6 +13,7 @@ generators = [
   s.gen_very_pos_and_neg,
   s.gen_pos_and_neg_balanced,
   s.gen_pos_and_neutral_neg,
+  s.gen_pos_neg_and_neutral_train,
 ]
 
 for generator in generators:
@@ -83,5 +83,3 @@ for generator in generators:
   print_line()
 
 print('Finished training')
-
-#joblib.dump(best_clf, 'bard-classifier.pkl')
