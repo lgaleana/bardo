@@ -90,7 +90,7 @@ class TrainUtil:
       y,
       cv=self.cv,
       train_sizes=np.linspace(0.1, 1.0, 5),
-      scoring='precision',
+      scoring=m.make_scorer(m.precision_score, labels=[1], average='macro'),
       n_jobs=4,
     )
 
