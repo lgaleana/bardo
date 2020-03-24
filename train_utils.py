@@ -84,13 +84,16 @@ class TrainUtil:
       scaler = preprocessing.StandardScaler().fit(X)
       X = scaler.transform(X)
 
+    def binary_balanced_acc(y_true, y_pred):
+      return (m.recall_score(y_true, y_pred, labels=[1], average='macro') + m.recall_score(y_true, y_pred, labels=[0], average='macro')) / 2
+
     train_sizes, train_scores, test_scores = learning_curve(
       self.clf,
       X,
       y,
       cv=self.cv,
       train_sizes=np.linspace(0.1, 1.0, 5),
-      scoring=m.make_scorer(m.precision_score, labels=[1], average='macro'),
+      scoring=m.make_scorer(binary_balanced_acc),
       n_jobs=4,
     )
 
