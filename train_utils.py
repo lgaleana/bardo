@@ -36,10 +36,10 @@ class TrainUtil:
     if self.log:
       train_acc = m.accuracy_score(y_train, train_pred)
       test_acc = m.accuracy_score(y_test, test_pred)
-      train_1_pr = m.precision_score(y_train, train_pred)
-      test_1_pr = m.precision_score(y_test, test_pred)
-      train_0_pr = m.precision_score(y_train, train_pred, pos_label=0)
-      test_0_pr = m.precision_score(y_test, test_pred, pos_label=0)
+      train_1_pr = m.precision_score(y_train, train_pred, labels=[1], average='macro')
+      test_1_pr = m.precision_score(y_test, test_pred, labels=[1], average='macro')
+      train_0_pr = m.precision_score(y_train, train_pred, labels=[0], average='macro')
+      test_0_pr = m.precision_score(y_test, test_pred, labels=[0], average='macro')
       self.f_log.write(f'{name},{train_acc},{test_acc},,{train_1_pr},{test_1_pr},,{train_0_pr},{test_0_pr}\n')
     else:
       print('Train analysis')
@@ -54,7 +54,12 @@ class TrainUtil:
   
   def train_cv(self, name, clf, parameters, standardize=False, print_best=False):
     name = f'CV {name}'
-    cv = GridSearchCV(clf, parameters, scoring='precision', cv=self.cv)
+    cv = GridSearchCV(
+      clf,
+      parameters,
+      scoring=m.make_scorer(m.precision_score, labels=[1], average='macro'),
+      cv=self.cv,
+    )
   
     cv = self.train(name, cv, standardize)
   
@@ -63,12 +68,15 @@ class TrainUtil:
       print(cv.best_estimator_)
       print()
 
+    self.clf = cv.best_estimator_
+
     return cv.best_estimator_
 
   def get_scaler(self):
     return self.scaler
 
   def plot_learning_curve(self, standardize=False):
+    print('---Plotting learning curve---')
     X = np.concatenate((self.X_train, self.X_test))
     y = np.concatenate((self.y_train, self.y_test))
     X, y = shuffle(X, y, random_state=0)

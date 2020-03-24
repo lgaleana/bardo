@@ -21,7 +21,7 @@ print_line()
 # Train production classifiers
 # These classifiers were picked through experimentation
 TEST_SIZE = 0.25
-t = TrainUtil(s.gen_very_pos_and_neg, 0.25, 6, True)
+t = TrainUtil(s.gen_very_pos_and_neg, 0.25, 6)
 def load_prod_classifiers():
   # Linear SVC
   linear_svc_name = 'linear_svc'

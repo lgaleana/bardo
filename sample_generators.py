@@ -126,6 +126,7 @@ def gen_pos_and_neutral_neg(test_size):
   return X_train, X_test, y_train, y_test
 
 def gen_pos_neg_and_neutral_train(test_size):
+  print('---Generating positive, negative, and neutral (only for training) samples---')
   X_train, X_test, y_train, y_test = gen_binary_(test_size)
 
   # Only train will have labels 3
