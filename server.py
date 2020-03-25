@@ -17,7 +17,7 @@ def make_playlists(token):
     ['deep-house'],
     classifiers,
     10,
-    ['linear_svc', 'svc', 'gbdt'],
+    ['svc_2'],
   )
   for name, tracks in playlists.items():
     playlist_name = f'{name}_{time.time()}'.replace('.', '')
