@@ -33,12 +33,6 @@ class SampleGen:
       test[test==pivot] = pivot_class
   
     return train, test
-  
-  def print_binary_size_(self):
-    print(f'Positives: {len(self.y_train[self.y_train==1]) + len(self.y_test[self.y_test==1])}')
-    print(f'Negatives: {len(self.y_train[self.y_train==0]) + len(self.y_test[self.y_test==0])}')
-    print(f'Total: {len(self.y_train) + len(self.y_test)}')
-    print('--------------------------------------------------------')
 
   def make_test_binary_(self):
     # Exclude label 3 from test sets
@@ -47,6 +41,27 @@ class SampleGen:
       self.y_test,
       3,
     )
+
+  def concatenate_classes(self, labels, X, y):
+    new_X = X[y==labels[0]]
+    new_y = y[y==labels[0]]
+    for label in labels[1:]:
+      new_X = np.concatenate((
+        new_X,
+        X[y==label],
+      ))
+      new_y = np.concatenate((
+        new_y,
+        y[y==label]
+      ))
+
+    return new_X, new_y
+  
+  def print_binary_size_(self):
+    print(f'Positives: {len(self.y_train[self.y_train==1]) + len(self.y_test[self.y_test==1])}')
+    print(f'Negatives: {len(self.y_train[self.y_train==0]) + len(self.y_test[self.y_test==0])}')
+    print(f'Total: {len(self.y_train) + len(self.y_test)}')
+    print('--------------------------------------------------------')
 
   def gen(self):
     print('---Generating data as it comes---')
@@ -79,22 +94,11 @@ class VeryPosAndNegGen(SampleGen):
     self.make_test_binary_()
   
     # Duplicate classes 1 and 5
-    self.X_train = np.concatenate((
-      self.X_train[self.y_train==1],
-      self.X_train[self.y_train==1],
-      self.X_train[self.y_train==2],
-      self.X_train[self.y_train==4],
-      self.X_train[self.y_train==5],
-      self.X_train[self.y_train==5],
-    ))
-    self.y_train = np.concatenate((
-      self.y_train[self.y_train==1],
-      self.y_train[self.y_train==1],
-      self.y_train[self.y_train==2],
-      self.y_train[self.y_train==4],
-      self.y_train[self.y_train==5],
-      self.y_train[self.y_train==5],
-    ))
+    self.X_train, self.y_train = self.concatenate_classes(
+      [1, 1, 2, 4, 5, 5],
+      self.X_train,
+      self.y_train,
+    )
     # We need to shuffle again
     self.X_train, self.y_train = shuffle(
       self.X_train,
@@ -172,6 +176,29 @@ class PosAndNeutralNegGen(SampleGen):
     self.print_binary_size_()
 
     return self
+
+class VeryPosAndNeutralNegGen(SampleGen):
+  def gen(self):
+    print('---Generating very positive and negative samples, with neutral samples as negative---')
+    self.make_test_binary_()
+  
+    # Duplicate classes 1 and 5
+    self.X_train, self.y_train = self.concatenate_classes(
+      [1, 1, 2, 3, 4, 5, 5],
+      self.X_train,
+      self.y_train,
+    )
+    # Use labels 3 as negative
+    self.y_train, self.y_test = self.transform_binary_(
+      self.y_train,
+      self.y_test,
+      3, 
+      0,
+    )
+  
+    self.print_binary_size_()
+
+    return self
   
 class PosNegAndNeutralTrainGen(SampleGen):
   def gen(self):
@@ -192,12 +219,40 @@ class PosNegAndNeutralTrainGen(SampleGen):
     print('--------------------------------------------------------')
 
     return self
-#
-#
-#TEST_SIZE = 0.25
-#DATASET = 'dataset.txt'
-#PosAndNegGen(DATASET, TEST_SIZE).gen()
-#VeryPosAndNegGen(DATASET, TEST_SIZE).gen()
-#PosAndNegBalancedGen(DATASET, TEST_SIZE).gen()
-#PosAndNeutralNegGen(DATASET, TEST_SIZE).gen()
-#PosNegAndNeutralTrainGen(DATASET, TEST_SIZE).gen()
+
+class VeryPosNegAndNeutralTrainGen(SampleGen):
+  def gen(self):
+    print('---Generating very positive, very negative, and neutral (only for training) samples---')
+    self.make_test_binary_()
+  
+    # Duplicate classes 1 and 5
+    self.X_train, self.y_train = self.concatenate_classes(
+      [1, 1, 2, 3, 4, 5, 5],
+      self.X_train,
+      self.y_train,
+    )
+    # Only train will have labels 3
+    self.y_train, self.y_test = self.transform_binary_(
+      self.y_train,
+      self.y_test,
+      3,
+    )
+  
+    print(f'Positives: {len(self.y_train[self.y_train==1]) + len(self.y_test[self.y_test==1])}')
+    print(f'Neutral train: {len(self.y_train[self.y_train==3])}')
+    print(f'Negatives: {len(self.y_train[self.y_train==0]) + len(self.y_test[self.y_test==0])}')
+    print(f'Total: {len(self.y_train) + len(self.y_test)}')
+    print('--------------------------------------------------------')
+
+    return self
+
+
+TEST_SIZE = 0.25
+DATASET = 'dataset.txt'
+PosAndNegGen(DATASET, TEST_SIZE).gen()
+VeryPosAndNegGen(DATASET, TEST_SIZE).gen()
+PosAndNegBalancedGen(DATASET, TEST_SIZE).gen()
+PosAndNeutralNegGen(DATASET, TEST_SIZE).gen()
+VeryPosAndNeutralNegGen(DATASET, TEST_SIZE).gen()
+PosNegAndNeutralTrainGen(DATASET, TEST_SIZE).gen()
+VeryPosNegAndNeutralTrainGen(DATASET, TEST_SIZE).gen()

@@ -131,7 +131,7 @@ def generate_recommendations(token, genres, limit):
     t.print_line()
     for recommendation in recommendations:
       go_on = False
-      if recommendation['id'] not in tracks:
+      if recommendation['name'] not in tracks:
         # Track is not labeled
         features = su.get_track_features(token, recommendation)
         # Get predictions from all classifiers

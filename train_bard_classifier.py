@@ -7,6 +7,7 @@ import time
 
 
 LOG_TO_FILE = False
+SHOW_LC = True
 
 ### Sample generators
 # Generators generate different training samples
@@ -16,7 +17,6 @@ TEST_SIZE = 0.25
 generators = [
   s.PosAndNegGen(DATASET, TEST_SIZE),
   s.VeryPosAndNegGen(DATASET, TEST_SIZE),
-  s.PosAndNegBalancedGen(DATASET, TEST_SIZE),
   s.PosAndNeutralNegGen(DATASET, TEST_SIZE),
   s.PosNegAndNeutralTrainGen(DATASET, TEST_SIZE),
 ]
@@ -30,10 +30,10 @@ exp_configs = [
     'model': LinearSVC(dual=False), 
     'generators': generators,
     'modes': [
-      {'standardize': False, 'cv': False, 'lc': False},
-      {'standardize': True, 'cv': False, 'lc': False},
-      {'standardize': False, 'cv': CV, 'lc': False},
-      {'standardize': True, 'cv': CV, 'lc': False},
+      {'standardize': False, 'cv': False},
+      {'standardize': True, 'cv': False},
+      {'standardize': False, 'cv': CV},
+      {'standardize': True, 'cv': CV},
     ],
     'parameters': [{
       'C': [0.1, 1, 10, 100, 1000],
@@ -45,8 +45,8 @@ exp_configs = [
     'model': SVC(random_state=0), 
     'generators': generators,
     'modes': [
-      {'standardize': True, 'cv': False, 'lc': False},
-      {'standardize': True, 'cv': CV, 'lc': False},
+      {'standardize': True, 'cv': False},
+      {'standardize': True, 'cv': CV},
     ],
     'parameters': [{
       'kernel': ['rbf'],
@@ -73,8 +73,8 @@ exp_configs = [
     'model': KNeighborsClassifier(),
     'generators': generators,
     'modes': [
-      {'standardize': True, 'cv': False, 'lc': False},
-      {'standardize': True, 'cv': CV, 'lc': False},
+      {'standardize': True, 'cv': False},
+      {'standardize': True, 'cv': CV},
     ],
     'parameters': [{
       'n_neighbors': list(range(1, 11)),
@@ -87,10 +87,10 @@ exp_configs = [
     'model': GradientBoostingClassifier(random_state=0), 
     'generators': generators,
     'modes': [
-      {'standardize': False, 'cv': False, 'lc': False},
-      {'standardize': True, 'cv': False, 'lc': False},
-      {'standardize': False, 'cv': CV, 'lc': False},
-      {'standardize': True, 'cv': CV, 'lc': False},
+      {'standardize': False, 'cv': False},
+      {'standardize': True, 'cv': False},
+      {'standardize': False, 'cv': CV},
+      {'standardize': True, 'cv': CV},
     ],
     'parameters': [{
       'n_estimators': [16, 32, 64, 100, 150, 200],
@@ -127,6 +127,8 @@ for generator in generators:
       )
       tu.train()
       tu.print_metrics(log_file)
+      if SHOW_LC:
+        tu.plot_learning_curve(CV)
 
   if LOG_TO_FILE:
     log_file.close()
