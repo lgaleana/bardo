@@ -6,7 +6,7 @@ import train_utils as t
 import time
 
 
-LOG_TO_FILE = True
+LOG_TO_FILE = False
 
 ### Sample generators
 # Generators generate different training samples

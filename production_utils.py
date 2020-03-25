@@ -6,6 +6,46 @@ import sample_generators as s
 import spotify_utils as su
 
 
+### Fixed params
+# Classifiers
+linear_svc = LinearSVC(dual=False)
+svc = SVC(random_state=0)
+knn = KNeighborsClassifier()
+gbdt = GradientBoostingClassifier(random_state=0)
+# Cross validation
+linear_svc_params = [{
+  'C': [0.1, 1, 10, 100, 1000],
+  'class_weight': [{1: w} for w in list(range(1, 11))],
+}]
+svc_params = [{
+  'kernel': ['rbf'],
+  'C': [0.1, 1, 10, 100, 1000],
+  'gamma': ['scale', 'auto', 0.01, 0.1, 1, 10],
+  'class_weight': [{1: w} for w in list(range(1, 11))],
+},
+{
+  'kernel': ['sigmoid'],
+  'C': [0.1, 1, 10, 100, 1000],
+  'gamma': ['scale', 'auto', 0.01, 0.1, 1, 10],
+  'class_weight': [{1: w} for w in list(range(1, 11))],
+},
+{
+  'kernel': ['polynomial'],
+  'C': [0.1, 1, 10, 100, 1000],
+  'gamma': ['scale', 'auto', 0.01, 0.1, 1, 10],
+  'degree': list(range(2, 7)),
+  'class_weight': [{1: w} for w in list(range(1, 11))],
+}]
+knn_params = [{
+  'n_neighbors': list(range(1, 11)),
+  'p': list(range(1, 6)),
+  'weights': ['uniform', 'distance'],
+}]
+gbdt_params = [{
+  'n_estimators': [16, 32, 64, 100, 150, 200],
+  'learning_rate': [0.0001, 0.001, 0.01, 0.025, 0.05,  0.1, 0.25, 0.5],
+}]
+
 ### Training configs
 # These classifiers were picked through experimentation
 DATASET = 'dataset.txt'
@@ -13,68 +53,36 @@ TEST_SIZE = 0.25
 CV = 6
 train_configs = [
   {
-    'name': 'linear_svc',
-    'model': LinearSVC(dual=False),
+    'name': 'svc_pos_neg',
+    'model': svc,
     'generator': s.PosAndNegGen(DATASET, TEST_SIZE),
     'standardize': True,
     'cv': False,
-    'parameters': [{
-      'C': [0.1, 1, 10, 100, 1000],
-      'class_weight': [{1: w} for w in list(range(1, 11))],
-    }],
-    'active': False,
+    'parameters': None,
   },
   {
-    'name': 'svc',
-    'model': SVC(random_state=0),
-    'generator': s.PosAndNegGen(DATASET, TEST_SIZE),
+    'name': 'svc_very_pos_neg',
+    'model': svc,
+    'generator': s.VeryPosAndNegGen(DATASET, TEST_SIZE),
     'standardize': True,
     'cv': False,
-    'parameters': [{
-      'kernel': ['rbf'],
-      'C': [0.1, 1, 10, 100, 1000],
-      'gamma': ['scale', 'auto', 0.01, 0.1, 1, 10],
-      'class_weight': [{1: w} for w in list(range(1, 11))],
-    },
-    {
-      'kernel': ['sigmoid'],
-      'C': [0.1, 1, 10, 100, 1000],
-      'gamma': ['scale', 'auto', 0.01, 0.1, 1, 10],
-      'class_weight': [{1: w} for w in list(range(1, 11))],
-    },
-    {
-      'kernel': ['polynomial'],
-      'C': [0.1, 1, 10, 100, 1000],
-      'gamma': ['scale', 'auto', 0.01, 0.1, 1, 10],
-      'degree': list(range(2, 7)),
-      'class_weight': [{1: w} for w in list(range(1, 11))],
-    }],
-    'active': True,
+    'parameters': None,
   },
   {
-    'name': 'knn',
-    'model': KNeighborsClassifier(),
-    'generator': s.PosAndNegGen(DATASET, TEST_SIZE),
+    'name': 'knn_pos_neg_neutral_train',
+    'model': knn,
+    'generator': s.PosNegAndNeutralTrainGen(DATASET, TEST_SIZE),
     'standardize': True,
     'cv': CV,
-    'parameters': [{
-      'n_neighbors': list(range(1, 11)),
-      'p': list(range(1, 6)),
-      'weights': ['uniform', 'distance'],
-    }],
-    'active': False,
+    'parameters': knn_params,
   },
   {
-    'name': 'gbdt',
-    'model': GradientBoostingClassifier(random_state=0),
-    'generator': s.PosAndNegGen(DATASET, TEST_SIZE),
+    'name': 'gbdt_pos_neutral_neg',
+    'model': gbdt,
+    'generator': s.PosAndNeutralNegGen(DATASET, TEST_SIZE),
     'standardize': True,
     'cv': CV,
-    'parameters': [{
-      'n_estimators': [16, 32, 64, 100, 150, 200],
-      'learning_rate': [0.0001, 0.001, 0.01, 0.025, 0.05,  0.1, 0.25, 0.5],
-    }],
-    'active': True,
+    'parameters': gbdt_params,
   },
 ]
 
@@ -86,23 +94,24 @@ with open('./tracks.txt') as f:
   for line in f:
     track = line.strip()
     tracks.append(track)
-print_line()
+t.print_line()
 
 ### Train production classifiers
 classifiers = {}
 def load_prod_classifiers():
   for config in train_configs:
     data = config['generator'].gen()
-    if config['active']:
-      tu = t.TrainUtil(
-        name=config['name'],
-        model=config['model'],
-        data=data,
-        standardize=config['standardize'],
-        cv=config['cv'],
-        parameters=config['parameters']
-      )
-      classifiers[config['name']] = tu.train()
+    tu = t.TrainUtil(
+      name=config['name'],
+      model=config['model'],
+      data=data,
+      standardize=config['standardize'],
+      cv=config['cv'],
+      parameters=config['parameters']
+    )
+    tu.train()
+    classifiers[config['name']] = tu
+  print('Finished training')
 
 # The general idea is to make a playlist with {limit} tracks
 # per classifier. On top, two other lists will include the
@@ -112,7 +121,7 @@ def generate_recommendations(token, genres, limit):
   for name in classifiers:
     playlists[name] = []
   playlists['random'] = []
-  playlists['avg'] = []
+#  playlists['avg'] = []
   
   go_on = True
   while go_on:
@@ -141,10 +150,10 @@ def generate_recommendations(token, genres, limit):
         print(f'  random prediction: 1')
         if len(playlists['random']) < limit and recommendation['id'] not in playlists['random']:
           playlists['random'].append(recommendation['id'])
-        prediction = predictions_sum / len(classifiers)
-        print(f'  avg prediction: {prediction}')
-        if len(playlists['avg']) < limit and recommendation['id'] not in playlists['avg'] and prediction >= 0.5:
-          playlists['avg'].append(recommendation['id'])
+        #prediction = predictions_sum / (len(classifiers) - 1)
+        #print(f'  avg prediction: {prediction}')
+        #if len(playlists['avg']) < limit and recommendation['id'] not in playlists['avg'] and prediction >= 0.5:
+        #  playlists['avg'].append(recommendation['id'])
       else:
         print(f'{recommendation["name"]} already labeled')
   

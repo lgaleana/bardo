@@ -7,17 +7,14 @@ app = Flask(__name__)
 
 CLIENT_ID = '8de267b03c464274a3546bfe84496696'
 
-print(__name__)
-
-classifiers = pu.load_prod_classifiers()
+PLAYLIST_LIMIT = 10
+pu.load_prod_classifiers()
 
 def make_playlists(token):
   playlists = pu.generate_recommendations(
     token,
     ['deep-house'],
-    classifiers,
-    10,
-    ['svc_2'],
+    PLAYLIST_LIMIT,
   )
   for name, tracks in playlists.items():
     playlist_name = f'{name}_{time.time()}'.replace('.', '')
