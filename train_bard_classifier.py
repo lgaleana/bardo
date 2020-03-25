@@ -111,7 +111,8 @@ for generator in generators:
       f'reports/{data.__class__.__name__}_{tim}.txt',
       'a+',
     )
-    log_file.write(',Train Acc,TestAcc,,Train 1 Pr,Test 1 Pr,,Train 0 Pr,Test 0 Pr')
+    log_file.write(f'{data.__class__.__name__}\n')
+    log_file.write(',Train Acc,TestAcc,,Train 1 Pr,Test 1 Pr,,Train 0 Pr,Test 0 Pr\n')
 
   # Training of all configs
   for config in exp_configs:

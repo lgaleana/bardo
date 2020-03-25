@@ -1,20 +1,21 @@
 from sklearn.svm import LinearSVC, SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import GradientBoostingClassifier
-from train_utils import TrainUtil, print_line
+import train_utils as t
 import sample_generators as s
 import spotify_utils as su
-from sklearn import preprocessing
 
 
 ### Training configs
 # These classifiers were picked through experimentation
-# They will be used in production
+DATASET = 'dataset.txt'
+TEST_SIZE = 0.25
+CV = 6
 train_configs = [
   {
     'name': 'linear_svc',
-    'clf': LinearSVC(dual=False),
-    'generator':,
+    'model': LinearSVC(dual=False),
+    'generator': s.PosAndNegGen(DATASET, TEST_SIZE),
     'standardize': True,
     'cv': False,
     'parameters': [{
@@ -25,7 +26,8 @@ train_configs = [
   },
   {
     'name': 'svc',
-    'clf': SVC(random_state=0),
+    'model': SVC(random_state=0),
+    'generator': s.PosAndNegGen(DATASET, TEST_SIZE),
     'standardize': True,
     'cv': False,
     'parameters': [{
@@ -51,10 +53,10 @@ train_configs = [
   },
   {
     'name': 'knn',
-    'clf': KNeighborsClassifier(),
-    'generator':,
+    'model': KNeighborsClassifier(),
+    'generator': s.PosAndNegGen(DATASET, TEST_SIZE),
     'standardize': True,
-    'cv': True,
+    'cv': CV,
     'parameters': [{
       'n_neighbors': list(range(1, 11)),
       'p': list(range(1, 6)),
@@ -64,10 +66,10 @@ train_configs = [
   },
   {
     'name': 'gbdt',
-    'clf': GradientBoostingClassifier(random_state=0),
-    'generator':,
+    'model': GradientBoostingClassifier(random_state=0),
+    'generator': s.PosAndNegGen(DATASET, TEST_SIZE),
     'standardize': True,
-    'cv': True,
+    'cv': CV,
     'parameters': [{
       'n_estimators': [16, 32, 64, 100, 150, 200],
       'learning_rate': [0.0001, 0.001, 0.01, 0.025, 0.05,  0.1, 0.25, 0.5],
@@ -87,21 +89,25 @@ with open('./tracks.txt') as f:
 print_line()
 
 ### Train production classifiers
-TEST_SIZE = 0.25
-CV = 6
+classifiers = {}
 def load_prod_classifiers():
+  for config in train_configs:
+    data = config['generator'].gen()
+    if config['active']:
+      tu = t.TrainUtil(
+        name=config['name'],
+        model=config['model'],
+        data=data,
+        standardize=config['standardize'],
+        cv=config['cv'],
+        parameters=config['parameters']
+      )
+      classifiers[config['name']] = tu.train()
 
-  return {
-#    linear_svc_name: linear_svc,
-    svc_name: svc,
-#    knn_name: knn,
-    gbdt_name: gbdt,
-  }
-
-# The general idea is to make a {limi} playlist per classifier
-# On top, two other lists will include the average of the classifiers
-# and random
-def generate_recommendations(token, genres, classifiers, limit, standardize):
+# The general idea is to make a playlist with {limit} tracks
+# per classifier. On top, two other lists will include the
+# average of the classifiers and one without classifiers
+def generate_recommendations(token, genres, limit):
   playlists = {}
   for name in classifiers:
     playlists[name] = []
@@ -111,8 +117,9 @@ def generate_recommendations(token, genres, classifiers, limit, standardize):
   go_on = True
   while go_on:
     # We get 100 recommendations
-    print_line()
+    t.print_line()
     recommendations = su.get_recommendations(token, genres)
+    t.print_line()
     for recommendation in recommendations:
       go_on = False
       if recommendation['id'] not in tracks:
@@ -122,12 +129,7 @@ def generate_recommendations(token, genres, classifiers, limit, standardize):
         predictions_sum = 0.0
         for name, clf in classifiers.items():
           # Standardize features
-          if name in standardize:
-            scaler = t.get_scaler()
-            features_scaled = scaler.transform([features])
-            prediction = clf.predict(features_scaled)
-          else:
-            prediction = clf.predict([features])
+          prediction = clf.predict_prod(features)
           predictions_sum += prediction
           print(f'  {name} prediction: {prediction}')
           # We limit the number of tracks in the playlist
@@ -143,8 +145,6 @@ def generate_recommendations(token, genres, classifiers, limit, standardize):
         print(f'  avg prediction: {prediction}')
         if len(playlists['avg']) < limit and recommendation['id'] not in playlists['avg'] and prediction >= 0.5:
           playlists['avg'].append(recommendation['id'])
-        #if prediction == 1:
-        #  playlists['total'].append(recommendation['id'])
       else:
         print(f'{recommendation["name"]} already labeled')
   
