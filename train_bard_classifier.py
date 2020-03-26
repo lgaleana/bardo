@@ -19,8 +19,8 @@ generators = [
   s.VeryPosAndNegGen(DATASET, TEST_SIZE),
   s.PosAndNeutralNegGen(DATASET, TEST_SIZE),
   s.VeryPosAndNeutralNegGen(DATASET, TEST_SIZE),
-  s.PosNegAndNeutralTrainGen(DATASET, TEST_SIZE),
-  s.VeryPosNegAndNeutralTrainGen(DATASET, TEST_SIZE),
+  s.PosNegAndNeutralGen(DATASET, TEST_SIZE),
+  s.VeryPosNegAndNeutralGen(DATASET, TEST_SIZE),
 ]
 
 ### Experimentation configs
