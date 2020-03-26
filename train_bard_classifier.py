@@ -100,18 +100,20 @@ exp_configs = [
 
 ### Run experiments
 tim = str(time.time()).replace('.', '')
+# Whether to log the data to a file
+log_file = None
+if LOG_TO_FILE:
+  log_file = open(
+    f'reports/{tim}_{data.__class__.__name__}.txt',
+    'a+',
+  )
+  log_file.write(',Train Acc,TestAcc,,Train 1 Pr,Test 1 Pr,Test 1 Rec,,Train 0 Pr,Test 0 Pr,Test 0 Rec\n')
+
 for generator in generators:
   data = generator.gen()
 
-  # Whether to log the data to a file
-  log_file = None
   if LOG_TO_FILE:
-    log_file = open(
-      f'reports/{tim}_{data.__class__.__name__}.txt',
-      'a+',
-    )
     log_file.write(f'{data.__class__.__name__}\n')
-    log_file.write(',Train Acc,TestAcc,,Train 1 Pr,Test 1 Pr,,Train 0 Pr,Test 0 Pr\n')
 
   # Training of all configs
   for config in exp_configs:

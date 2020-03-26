@@ -91,6 +91,12 @@ class TrainUtil:
         labels=[1],
         average='macro',
       )
+      test_1_rec = m.recall_score(
+        self.data.y_test,
+        test_pred,
+        labels=[1],
+        average='macro',
+      )
       train_0_pr = m.precision_score(
         self.data.y_train,
         train_pred,
@@ -103,7 +109,13 @@ class TrainUtil:
         labels=[0],
         average='macro',
       )
-      log.write(f'{self.name},{train_acc},{test_acc},,{train_1_pr},{test_1_pr},,{train_0_pr},{test_0_pr}\n')
+      test_0_rec = m.recall_score(
+        self.data.y_test,
+        test_pred,
+        labels=[0],
+        average='macro',
+      )
+      log.write(f'{self.name},{train_acc},{test_acc},,{train_1_pr},{test_1_pr},{test_1_rec},,{train_0_pr},{test_0_pr},{test_0_rec}\n')
     else:
       print('Train analysis')
       print(m.classification_report(self.data.y_train, train_pred))
