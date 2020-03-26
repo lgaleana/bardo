@@ -7,7 +7,7 @@ import time
 
 
 LOG_TO_FILE = False
-SHOW_LC = True
+SHOW_LC = False
 
 ### Sample generators
 # Generators generate different training samples
