@@ -6,7 +6,7 @@ import train_utils as t
 import time
 
 
-LOG_TO_FILE = False
+LOG_TO_FILE = True
 SHOW_LC = False
 
 ### Sample generators
@@ -30,7 +30,6 @@ exp_configs = [
   {
     'name': 'Linear SVC',
     'model': LinearSVC(dual=False), 
-    'generators': generators,
     'modes': [
       {'standardize': False, 'cv': False},
       {'standardize': True, 'cv': False},
@@ -45,7 +44,6 @@ exp_configs = [
   {
     'name': 'SVC',
     'model': SVC(random_state=0), 
-    'generators': generators,
     'modes': [
       {'standardize': True, 'cv': False},
       {'standardize': True, 'cv': CV},
@@ -73,7 +71,6 @@ exp_configs = [
   {
     'name': 'KNN',
     'model': KNeighborsClassifier(),
-    'generators': generators,
     'modes': [
       {'standardize': True, 'cv': False},
       {'standardize': True, 'cv': CV},
@@ -87,7 +84,6 @@ exp_configs = [
   {
     'name': 'GBDT',
     'model': GradientBoostingClassifier(random_state=0), 
-    'generators': generators,
     'modes': [
       {'standardize': False, 'cv': False},
       {'standardize': True, 'cv': False},
