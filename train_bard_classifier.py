@@ -132,7 +132,7 @@ for generator in generators:
       tu.print_metrics(log_file)
 
       if SHOW_LC:
-        tu.plot_learning_curve(1 / TEST_SIZE)
+        tu.plot_learning_curve(int(1 / TEST_SIZE))
 
   if LOG_TO_FILE:
     log_file.close()
