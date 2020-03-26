@@ -245,14 +245,14 @@ class VeryPosNegAndNeutralTrainGen(SampleGen):
     print('--------------------------------------------------------')
 
     return self
-
-
-TEST_SIZE = 0.25
-DATASET = 'dataset.txt'
-PosAndNegGen(DATASET, TEST_SIZE).gen()
-VeryPosAndNegGen(DATASET, TEST_SIZE).gen()
-PosAndNegBalancedGen(DATASET, TEST_SIZE).gen()
-PosAndNeutralNegGen(DATASET, TEST_SIZE).gen()
-VeryPosAndNeutralNegGen(DATASET, TEST_SIZE).gen()
-PosNegAndNeutralTrainGen(DATASET, TEST_SIZE).gen()
-VeryPosNegAndNeutralTrainGen(DATASET, TEST_SIZE).gen()
+#
+#
+#TEST_SIZE = 0.25
+#DATASET = 'dataset.txt'
+#PosAndNegGen(DATASET, TEST_SIZE).gen()
+#VeryPosAndNegGen(DATASET, TEST_SIZE).gen()
+#PosAndNegBalancedGen(DATASET, TEST_SIZE).gen()
+#PosAndNeutralNegGen(DATASET, TEST_SIZE).gen()
+#VeryPosAndNeutralNegGen(DATASET, TEST_SIZE).gen()
+#PosNegAndNeutralTrainGen(DATASET, TEST_SIZE).gen()
+#VeryPosNegAndNeutralTrainGen(DATASET, TEST_SIZE).gen()

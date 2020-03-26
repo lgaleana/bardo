@@ -18,7 +18,9 @@ generators = [
   s.PosAndNegGen(DATASET, TEST_SIZE),
   s.VeryPosAndNegGen(DATASET, TEST_SIZE),
   s.PosAndNeutralNegGen(DATASET, TEST_SIZE),
+  s.VeryPosAndNeutralNegGen(DATASET, TEST_SIZE),
   s.PosNegAndNeutralTrainGen(DATASET, TEST_SIZE),
+  s.VeryPosNegAndNeutralTrainGen(DATASET, TEST_SIZE),
 ]
 
 ### Experimentation configs
@@ -99,16 +101,17 @@ exp_configs = [
   },
 ]
 
+
 ### Run experiments
+tim = str(time.time()).replace('.', '')
 for generator in generators:
   data = generator.gen()
 
   # Whether to log the data to a file
   log_file = None
   if LOG_TO_FILE:
-    tim = str(time.time()).replace('.', '')
     log_file = open(
-      f'reports/{data.__class__.__name__}_{tim}.txt',
+      f'reports/{tim}_{data.__class__.__name__}.txt',
       'a+',
     )
     log_file.write(f'{data.__class__.__name__}\n')
@@ -127,8 +130,9 @@ for generator in generators:
       )
       tu.train()
       tu.print_metrics(log_file)
+
       if SHOW_LC:
-        tu.plot_learning_curve(CV)
+        tu.plot_learning_curve(1 / TEST_SIZE)
 
   if LOG_TO_FILE:
     log_file.close()

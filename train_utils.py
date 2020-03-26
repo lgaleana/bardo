@@ -121,8 +121,7 @@ class TrainUtil:
       X,
       self.data.y,
       cv=cv,
-      train_sizes=np.linspace(0.1, 1.0, 5),
-      scoring=m.make_scorer(binary_acc, model=self.model),
+      train_sizes=np.linspace(0.1, 1.0, 8),
       n_jobs=4,
     )
 
