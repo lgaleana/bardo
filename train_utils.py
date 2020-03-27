@@ -71,7 +71,7 @@ class TrainUtil:
   def predict_prod(self, features):
     return self.predict([features])
 
-  def get_params():
+  def get_params(self):
     return self.model.get_params()
 
   def print_metrics(self, log=None):
