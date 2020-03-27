@@ -6,8 +6,8 @@ import train_utils as t
 import time
 
 
-LOG_TO_FILE = True
-SHOW_LC = False
+LOG_TO_FILE = False
+PRINT_PARAMS = True
 
 ### Sample generators
 # Generators generate different training samples
@@ -129,8 +129,8 @@ for generator in generators:
       tu.train()
       tu.print_metrics(log_file)
 
-      if SHOW_LC:
-        tu.plot_learning_curve(int(1 / TEST_SIZE))
+      if PRINT_PARAMS:
+        print(tu.get_params())
 
   if LOG_TO_FILE:
     log_file.close()

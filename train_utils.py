@@ -71,6 +71,9 @@ class TrainUtil:
   def predict_prod(self, features):
     return self.predict([features])
 
+  def get_params():
+    return self.model.get_params()
+
   def print_metrics(self, log=None):
     train_pred = self.predict(self.data.X_train)
     test_pred = self.predict(self.data.X_test)
@@ -133,7 +136,7 @@ class TrainUtil:
       X,
       self.data.y,
       cv=cv,
-      train_sizes=np.linspace(0.1, 1.0, 8),
+      train_sizes=np.linspace(0.1, 1.0, 20),
       n_jobs=4,
     )
 
