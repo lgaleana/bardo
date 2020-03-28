@@ -6,20 +6,15 @@ import train_utils as t
 import time
 
 
-LOG_TO_FILE = True
+LOG_TO_FILE = False
 
 ### Sample generators
 # Generators generate different training samples
 # We want to test nmany
-DATASET = 'dataset.txt'
+DATASET = 'datasets/dataset_no_analysis.txt'
 TEST_SIZE = 0.25
 generators = [
   s.PosAndNegGen(DATASET, TEST_SIZE),
-  s.VeryPosAndNegGen(DATASET, TEST_SIZE),
-  s.PosAndNeutralNegGen(DATASET, TEST_SIZE),
-  s.VeryPosAndNeutralNegGen(DATASET, TEST_SIZE),
-  s.PosNegAndNeutralGen(DATASET, TEST_SIZE),
-  s.VeryPosNegAndNeutralGen(DATASET, TEST_SIZE),
 ]
 
 ### Experimentation configs
@@ -32,8 +27,6 @@ exp_configs = [
     'modes': [
       {'standardize': False, 'cv': False},
       {'standardize': True, 'cv': False},
-      {'standardize': False, 'cv': CV},
-      {'standardize': True, 'cv': CV},
     ],
     'parameters': [{
       'C': [0.1, 1, 10, 100, 1000],
@@ -41,11 +34,32 @@ exp_configs = [
     }],
   },
   {
+    'name': 'Linear SVC',
+    'model': LinearSVC(dual=False), 
+    'modes': [
+      {'standardize': False, 'cv': CV},
+    ],
+    'parameters': [{
+      'C': [1],
+      'class_weight': [{1: 1}],
+    }],
+  },
+  {
+    'name': 'Linear SVC',
+    'model': LinearSVC(dual=False), 
+    'modes': [
+      {'standardize': True, 'cv': CV},
+    ],
+    'parameters': [{
+      'C': [0.1],
+      'class_weight': [{1: 1}],
+    }],
+  },
+  {
     'name': 'SVC',
     'model': SVC(random_state=0), 
     'modes': [
       {'standardize': True, 'cv': False},
-      {'standardize': True, 'cv': CV},
     ],
     'parameters': [{
       'kernel': ['rbf'],
@@ -55,16 +69,40 @@ exp_configs = [
     }],
   },
   {
+    'name': 'SVC',
+    'model': SVC(random_state=0), 
+    'modes': [
+      {'standardize': True, 'cv': CV},
+    ],
+    'parameters': [{
+      'kernel': ['rbf'],
+      'C': [1],
+      'gamma': [0.1],
+      'class_weight': [{1: 2}],
+    }],
+  },
+  {
     'name': 'KNN',
     'model': KNeighborsClassifier(),
     'modes': [
       {'standardize': True, 'cv': False},
-      {'standardize': True, 'cv': CV},
     ],
     'parameters': [{
       'n_neighbors': list(range(1, 11)),
       'p': list(range(1, 6)),
       'weights': ['uniform', 'distance'],
+    }],
+  },
+  {
+    'name': 'KNN',
+    'model': KNeighborsClassifier(),
+    'modes': [
+      {'standardize': True, 'cv': CV},
+    ],
+    'parameters': [{
+      'n_neighbors': [10],
+      'p': [5],
+      'weights': ['uniform'],
     }],
   },
   {
@@ -81,19 +119,21 @@ exp_configs = [
 
 
 ### Run experiments
+# Whether to log the data to a file
 tim = str(time.time()).replace('.', '')
+log_file = None
+if LOG_TO_FILE:
+  log_file = open(
+    f'reports/{tim}.txt',
+    'a+',
+  )
+  log_file.write(',Train Acc,TestAcc,,Train 1 Pr,Test 1 Pr,Test 1 Rec,,Train 0 Pr,Test 0 Pr,Test 0 Rec\n')
+
 for generator in generators:
   data = generator.gen()
 
-  # Whether to log the data to a file
-  log_file = None
   if LOG_TO_FILE:
-    log_file = open(
-      f'reports/{tim}_{data.__class__.__name__}.txt',
-      'a+',
-    )
-    log_file.write(f'{data.__class__.__name__}\n')
-    log_file.write(',Train Acc,TestAcc,,Train 1 Pr,Test 1 Pr,Test 1 Rec,,Train 0 Pr,Test 0 Pr,Test 0 Rec\n')
+    log_file.write(f'{data.__class__.__name__}\n') 
 
   # Training of all configs
   for config in exp_configs:
@@ -109,7 +149,7 @@ for generator in generators:
       tu.train()
       tu.print_metrics(log_file)
 
-  if LOG_TO_FILE:
-    log_file.close()
   t.print_line()
+if LOG_TO_FILE:
+  log_file.close()
 print('Finished training')

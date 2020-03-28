@@ -1,6 +1,5 @@
 __pycache__
 reports
 generate_dataset.py
-dataset.txt
-tracks.txt
+datasets
 DS_Store

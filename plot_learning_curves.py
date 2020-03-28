@@ -9,7 +9,7 @@ import time
 PRINT_PARAMS = True
 
 ### Learning configs
-DATASET = 'dataset.txt'
+DATASET = 'datasets/dataset.txt'
 TEST_SIZE = 0.25
 CV = 6
 learn_configs = [
@@ -17,6 +17,16 @@ learn_configs = [
     'name': 'Linear SVC',
     'model': LinearSVC(dual=False), 
     'modes': [
+      {
+        'generator': s.PosAndNegGen(DATASET, TEST_SIZE),
+        'standardize': False, 
+        'cv': CV,
+      },
+      {
+        'generator': s.PosAndNegGen(DATASET, TEST_SIZE),
+        'standardize': True, 
+        'cv': CV,
+      },
     ],
     'parameters': [{
       'C': [0.1, 1, 10, 100, 1000],
@@ -27,6 +37,11 @@ learn_configs = [
     'name': 'SVC',
     'model': SVC(random_state=0), 
     'modes': [
+      {
+        'generator': s.PosAndNegGen(DATASET, TEST_SIZE),
+        'standardize': True, 
+        'cv': CV,
+      },
     ],
     'parameters': [{
       'kernel': ['rbf'],
@@ -40,7 +55,7 @@ learn_configs = [
     'model': KNeighborsClassifier(),
     'modes': [
       {
-        'generator': s.VeryPosAndNegGen(DATASET, TEST_SIZE),
+        'generator': s.PosAndNegGen(DATASET, TEST_SIZE),
         'standardize': True, 
         'cv': CV,
       },
