@@ -119,11 +119,11 @@ class TrainUtil:
         average='macro',
       )
       log.write(f'{self.name},{train_acc},{test_acc},,{train_1_pr},{test_1_pr},{test_1_rec},,{train_0_pr},{test_0_pr},{test_0_rec}\n')
-    else:
-      print('Train analysis')
-      print(m.classification_report(self.data.y_train, train_pred))
-      print('Test analysis')
-      print(m.classification_report(self.data.y_test, test_pred))
+#    else:
+#      print('Train analysis')
+#      print(m.classification_report(self.data.y_train, train_pred))
+#      print('Test analysis')
+#      print(m.classification_report(self.data.y_test, test_pred))
 
   def plot_learning_curve(self, cv):
     print('Plotting learning curve')

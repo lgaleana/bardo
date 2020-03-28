@@ -6,8 +6,8 @@ import train_utils as t
 import time
 
 
-LOG_TO_FILE = False
-PRINT_PARAMS = True
+LOG_TO_FILE = True
+PRINT_PARAMS = False
 
 ### Sample generators
 # Generators generate different training samples
@@ -53,19 +53,6 @@ exp_configs = [
       'C': [0.1, 1, 10, 100, 1000],
       'gamma': ['scale', 'auto', 0.01, 0.1, 1, 10],
       'class_weight': [{1: w} for w in list(range(1, 11))],
-    },
-    {
-      'kernel': ['sigmoid'],
-      'C': [0.1, 1, 10, 100, 1000],
-      'gamma': ['scale', 'auto', 0.01, 0.1, 1, 10],
-      'class_weight': [{1: w} for w in list(range(1, 11))],
-    },
-    {
-      'kernel': ['polynomial'],
-      'C': [0.1, 1, 10, 100, 1000],
-      'gamma': ['scale', 'auto', 0.01, 0.1, 1, 10],
-      'degree': list(range(2, 7)),
-      'class_weight': [{1: w} for w in list(range(1, 11))],
     }],
   },
   {
@@ -85,10 +72,6 @@ exp_configs = [
     'name': 'GBDT',
     'model': GradientBoostingClassifier(random_state=0), 
     'modes': [
-      {'standardize': False, 'cv': False},
-      {'standardize': True, 'cv': False},
-      {'standardize': False, 'cv': CV},
-      {'standardize': True, 'cv': CV},
     ],
     'parameters': [{
       'n_estimators': [16, 32, 64, 100, 150, 200],
@@ -100,20 +83,18 @@ exp_configs = [
 
 ### Run experiments
 tim = str(time.time()).replace('.', '')
-# Whether to log the data to a file
-log_file = None
-if LOG_TO_FILE:
-  log_file = open(
-    f'reports/{tim}_{data.__class__.__name__}.txt',
-    'a+',
-  )
-  log_file.write(',Train Acc,TestAcc,,Train 1 Pr,Test 1 Pr,Test 1 Rec,,Train 0 Pr,Test 0 Pr,Test 0 Rec\n')
-
 for generator in generators:
   data = generator.gen()
 
+  # Whether to log the data to a file
+  log_file = None
   if LOG_TO_FILE:
+    log_file = open(
+      f'reports/{tim}_{data.__class__.__name__}.txt',
+      'a+',
+    )
     log_file.write(f'{data.__class__.__name__}\n')
+    log_file.write(',Train Acc,TestAcc,,Train 1 Pr,Test 1 Pr,Test 1 Rec,,Train 0 Pr,Test 0 Pr,Test 0 Rec\n')
 
   # Training of all configs
   for config in exp_configs:

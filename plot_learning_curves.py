@@ -15,6 +15,11 @@ learn_configs = [
     'name': 'Linear SVC',
     'model': LinearSVC(dual=False), 
     'modes': [
+      {
+        'generator': s.PosAndNeutralNegGen(DATASET, TEST_SIZE),
+        'standardize': False, 
+        'cv': CV,
+      },
     ],
     'parameters': [{
       'C': [0.1, 1, 10, 100, 1000],
@@ -25,24 +30,16 @@ learn_configs = [
     'name': 'SVC',
     'model': SVC(random_state=0), 
     'modes': [
+      {
+        'generator': s.PosAndNeutralNegGen(DATASET, TEST_SIZE),
+        'standardize': True, 
+        'cv': CV,
+      },
     ],
     'parameters': [{
       'kernel': ['rbf'],
       'C': [0.1, 1, 10, 100, 1000],
       'gamma': ['scale', 'auto', 0.01, 0.1, 1, 10],
-      'class_weight': [{1: w} for w in list(range(1, 11))],
-    },
-    {
-      'kernel': ['sigmoid'],
-      'C': [0.1, 1, 10, 100, 1000],
-      'gamma': ['scale', 'auto', 0.01, 0.1, 1, 10],
-      'class_weight': [{1: w} for w in list(range(1, 11))],
-    },
-    {
-      'kernel': ['polynomial'],
-      'C': [0.1, 1, 10, 100, 1000],
-      'gamma': ['scale', 'auto', 0.01, 0.1, 1, 10],
-      'degree': list(range(2, 7)),
       'class_weight': [{1: w} for w in list(range(1, 11))],
     }],
   },
