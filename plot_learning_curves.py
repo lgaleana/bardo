@@ -6,6 +6,8 @@ import train_utils as t
 import time
 
 
+PRINT_PARAMS = True
+
 ### Learning configs
 DATASET = 'dataset.txt'
 TEST_SIZE = 0.25
@@ -25,16 +27,6 @@ learn_configs = [
     'name': 'SVC',
     'model': SVC(random_state=0), 
     'modes': [
-      {
-        'generator': s.PosAndNegGen(DATASET, TEST_SIZE),
-        'standardize': True, 
-        'cv': False,
-      },
-      {
-        'generator': s.VeryPosAndNegGen(DATASET, TEST_SIZE),
-        'standardize': True, 
-        'cv': False,
-      },
     ],
     'parameters': [{
       'kernel': ['rbf'],
@@ -47,6 +39,11 @@ learn_configs = [
     'name': 'KNN',
     'model': KNeighborsClassifier(),
     'modes': [
+      {
+        'generator': s.VeryPosAndNegGen(DATASET, TEST_SIZE),
+        'standardize': True, 
+        'cv': CV,
+      },
     ],
     'parameters': [{
       'n_neighbors': list(range(1, 11)),
@@ -81,6 +78,8 @@ for config in learn_configs:
       parameters=config['parameters']
     )
     tu.train()
+    if PRINT_PARAMS:
+      print(tu.get_params())
     tu.plot_learning_curve(int(1 / TEST_SIZE))
 t.print_line()
 print('Finished plotting')

@@ -7,7 +7,6 @@ import time
 
 
 LOG_TO_FILE = True
-PRINT_PARAMS = False
 
 ### Sample generators
 # Generators generate different training samples
@@ -109,9 +108,6 @@ for generator in generators:
       )
       tu.train()
       tu.print_metrics(log_file)
-
-      if PRINT_PARAMS:
-        print(tu.get_params())
 
   if LOG_TO_FILE:
     log_file.close()
