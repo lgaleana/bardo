@@ -15,11 +15,6 @@ learn_configs = [
     'name': 'Linear SVC',
     'model': LinearSVC(dual=False), 
     'modes': [
-      {
-        'generator': s.PosAndNeutralNegGen(DATASET, TEST_SIZE),
-        'standardize': False, 
-        'cv': CV,
-      },
     ],
     'parameters': [{
       'C': [0.1, 1, 10, 100, 1000],
@@ -31,9 +26,14 @@ learn_configs = [
     'model': SVC(random_state=0), 
     'modes': [
       {
-        'generator': s.PosAndNeutralNegGen(DATASET, TEST_SIZE),
+        'generator': s.PosAndNegGen(DATASET, TEST_SIZE),
         'standardize': True, 
-        'cv': CV,
+        'cv': False,
+      },
+      {
+        'generator': s.VeryPosAndNegGen(DATASET, TEST_SIZE),
+        'standardize': True, 
+        'cv': False,
       },
     ],
     'parameters': [{
@@ -47,16 +47,6 @@ learn_configs = [
     'name': 'KNN',
     'model': KNeighborsClassifier(),
     'modes': [
-      {
-        'generator': s.PosAndNeutralNegGen(DATASET, TEST_SIZE),
-        'standardize': True, 
-        'cv': CV,
-      },
-      {
-        'generator': s.VeryPosAndNeutralNegGen(DATASET, TEST_SIZE),
-        'standardize': True, 
-        'cv': CV,
-      },
     ],
     'parameters': [{
       'n_neighbors': list(range(1, 11)),

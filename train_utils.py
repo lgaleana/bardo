@@ -80,8 +80,8 @@ class TrainUtil:
 
     if log is not None:
       print('Writting metrics')
-      train_acc = binary_acc(self.data.y_train, train_pred, self.model)
-      test_acc = binary_acc(self.data.y_test, test_pred, self.model)
+      train_acc = m.accuracy_score(self.data.y_train, train_pred)
+      test_acc = m.accuracy_score(self.data.y_test, test_pred)
       train_1_pr = m.precision_score(
         self.data.y_train,
         train_pred,
@@ -127,16 +127,19 @@ class TrainUtil:
 
   def plot_learning_curve(self, cv):
     print('Plotting learning curve')
-    X = self.data.X
+    # Make X and y similar to train and test transformations
+    X = np.concatenate((self.data.X_train, self.data.X_test))
+    y = np.concatenate((self.data.y_train, self.data.y_test))
     if self.standardize:
-      X = self.scaler.transform(self.data.X)
+      X = self.scaler.transform(X)
 
     train_sizes, train_scores, test_scores = learning_curve(
       self.model,
       X,
-      self.data.y,
+      y,
       cv=cv,
       train_sizes=np.linspace(0.1, 1.0, 20),
+      scoring=m.make_scorer(m.accuracy_score),
       n_jobs=4,
     )
 
@@ -156,22 +159,6 @@ class TrainUtil:
     plt.title(f'{self.name} learning curves')
     plt.legend()
     plt.show()
-
-def binary_acc(y_true, y_pred, model):
-  if len(model.classes_) > 2:
-    return (m.recall_score(
-      y_true,
-      y_pred,
-      labels=[1],
-      average='macro',
-    ) + m.recall_score(
-      y_true,
-      y_pred,
-      labels=[0],
-      average='macro',
-    )) / 2
-  else:
-    return m.accuracy_score(y_true, y_pred)
 
 def print_line():
   print('--------------------------------------------------------')
