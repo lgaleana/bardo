@@ -48,7 +48,7 @@ gbdt_params = [{
 
 ### Training configs
 # These classifiers were picked through experimentation
-DATASET = 'dataset.txt'
+DATASET = 'datasets/dataset.txt'
 TEST_SIZE = 0.25
 CV = 6
 train_configs = [
@@ -61,28 +61,28 @@ train_configs = [
     'parameters': None,
   },
   {
+    'name': 'knn_pos_neg',
+    'model': knn,
+    'generator': s.PosAndNegGen(DATASET, TEST_SIZE),
+    'standardize': True,
+    'cv': False,
+    'parameters': None,
+  },
+  {
     'name': 'svc_very_pos_neg',
-    'model': svc,
+    'model': knn,
     'generator': s.VeryPosAndNegGen(DATASET, TEST_SIZE),
     'standardize': True,
     'cv': False,
     'parameters': None,
   },
   {
-    'name': 'knn_pos_neg_neutral_train',
-    'model': knn,
-    'generator': s.PosNegAndNeutralTrainGen(DATASET, TEST_SIZE),
-    'standardize': True,
+    'name': 'linear_svc_very_pos_neutral_neg',
+    'model': linear_svc,
+    'generator': s.VeryPosAndNeutralNegGen(DATASET, TEST_SIZE),
+    'standardize': False,
     'cv': CV,
-    'parameters': knn_params,
-  },
-  {
-    'name': 'gbdt_pos_neutral_neg',
-    'model': gbdt,
-    'generator': s.PosAndNeutralNegGen(DATASET, TEST_SIZE),
-    'standardize': True,
-    'cv': CV,
-    'parameters': gbdt_params,
+    'parameters': linear_svc_params,
   },
 ]
 
@@ -90,9 +90,9 @@ train_configs = [
 # So that we don't recommend them
 print('---Loading tracks DB---')
 tracks = []
-with open('./tracks.txt') as f:
+with open('datasets/tracks.txt') as f:
   for line in f:
-    track = line.strip()
+    track = line.strip().split(',')[1]
     tracks.append(track)
 t.print_line()
 
@@ -133,12 +133,13 @@ def generate_recommendations(token, genres, limit):
       go_on = False
       if recommendation['name'] not in tracks:
         # Track is not labeled
-        features = su.get_track_features(token, recommendation)
+        features = su.get_tracks_features(token, [recommendation])[0]
+        analysis = su.get_track_analysis(token, recommendation)
         # Get predictions from all classifiers
         predictions_sum = 0.0
         for name, clf in classifiers.items():
           # Standardize features
-          prediction = clf.predict_prod(features)
+          prediction = clf.predict_prod(features + analysis)
           predictions_sum += prediction
           print(f'  {name} prediction: {prediction}')
           # We limit the number of tracks in the playlist

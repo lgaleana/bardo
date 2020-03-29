@@ -69,7 +69,7 @@ class TrainUtil:
     return self.model.predict(X)
 
   def predict_prod(self, features):
-    return self.predict([features])
+    return self.predict([features])[0]
 
   def get_params(self):
     return self.model.get_params()

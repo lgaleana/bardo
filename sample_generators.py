@@ -34,8 +34,6 @@ class SampleGen:
   
     return train, test
 
-
-
   def concatenate_classes(self, labels, X, y):
     new_X = X[y==labels[0]]
     new_y = y[y==labels[0]]
@@ -161,6 +159,57 @@ class PosAndNegBalancedGen(SampleGen):
     self.print_binary_size_()
 
     return self
+
+class VeryPosAndNegBalancedGen(SampleGen):
+  def gen(self):
+    print('---Generating balanced very positive samples from neutral (for training)---')
+    self.make_test_binary_()
+  
+    # Duplicate classes 1 and 5
+    self.X_train, self.y_train = self.concatenate_classes(
+      [1, 1, 2, 3, 4, 5, 5],
+      self.X_train,
+      self.y_train,
+    )
+    self.y_train, self.y_test = self.transform_binary_(
+      self.y_train,
+      self.y_test,
+      3,
+    )
+    # Delta between negative and positive samples
+    delta = len(self.y_train[self.y_train==0]) - len(self.y_train[self.y_train==1])
+    if delta >= 0:
+    # Fill in labels 3 as 1
+      self.X_train = np.concatenate((
+        self.X_train[self.y_train==0],
+        self.X_train[self.y_train==1],
+        self.X_train[self.y_train==3][:delta],
+      ))
+      self.y_train = np.concatenate((
+        self.y_train[self.y_train==0],
+        self.y_train[self.y_train==1],
+        self.y_train[self.y_train==3][:delta],
+      ))
+      self.y_train[self.y_train==3] = 1
+      # We need to shuffle again
+      self.X_train, self.y_train = shuffle(
+        self.X_train,
+        self.y_train,
+        random_state=RANDOM_STATE,
+      )
+    else:
+      # Same as gen_pos_and_neg()
+      self.X_train, self.y_train = self.exclude_label_(
+        self.X_train,
+        self.y_train,
+        3,
+      )
+  
+    print(f'Train Positives: {len(self.y_train[self.y_train==1])}')
+    print(f'Train Negatives: {len(self.y_train[self.y_train==0])}')
+    self.print_binary_size_()
+
+    return self
   
 class PosAndNeutralNegGen(SampleGen):
   def gen(self):
@@ -245,14 +294,15 @@ class VeryPosNegAndNeutralGen(SampleGen):
     print('--------------------------------------------------------')
 
     return self
-#
-#
-#TEST_SIZE = 0.25
-#DATASET = 'dataset.txt'
-#PosAndNegGen(DATASET, TEST_SIZE).gen()
-#VeryPosAndNegGen(DATASET, TEST_SIZE).gen()
-#PosAndNegBalancedGen(DATASET, TEST_SIZE).gen()
-#PosAndNeutralNegGen(DATASET, TEST_SIZE).gen()
-#VeryPosAndNeutralNegGen(DATASET, TEST_SIZE).gen()
-#PosNegAndNeutralGen(DATASET, TEST_SIZE).gen()
-#VeryPosNegAndNeutralGen(DATASET, TEST_SIZE).gen()
+
+
+TEST_SIZE = 0.25
+DATASET = 'datasets/dataset.txt'
+PosAndNegGen(DATASET, TEST_SIZE).gen()
+VeryPosAndNegGen(DATASET, TEST_SIZE).gen()
+PosAndNegBalancedGen(DATASET, TEST_SIZE).gen()
+VeryPosAndNegBalancedGen(DATASET, TEST_SIZE).gen()
+PosAndNeutralNegGen(DATASET, TEST_SIZE).gen()
+VeryPosAndNeutralNegGen(DATASET, TEST_SIZE).gen()
+PosNegAndNeutralGen(DATASET, TEST_SIZE).gen()
+VeryPosNegAndNeutralGen(DATASET, TEST_SIZE).gen()
