@@ -3,10 +3,12 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 import sample_generators as s
 import train_utils as t
-import time
+import sklearn.metrics as m
 
 
 PRINT_PARAMS = True
+SCORER = m.make_scorer(m.f1_score)
+POINTS = 40
 
 ### Learning configs
 DATASET = 'datasets/dataset.txt'
@@ -18,14 +20,9 @@ learn_configs = [
     'model': LinearSVC(dual=False), 
     'modes': [
       {
-        'generator': s.PosAndNegGen(DATASET, TEST_SIZE),
-        'standardize': False, 
-        'cv': CV,
-      },
-      {
-        'generator': s.PosAndNegGen(DATASET, TEST_SIZE),
+        'generator': s.VeryPosAndNegGen(DATASET, TEST_SIZE),
         'standardize': True, 
-        'cv': CV,
+        'cv': False,
       },
     ],
     'parameters': [{
@@ -40,7 +37,22 @@ learn_configs = [
       {
         'generator': s.PosAndNegGen(DATASET, TEST_SIZE),
         'standardize': True, 
-        'cv': CV,
+        'cv': False,
+      },
+      {
+        'generator': s.VeryPosAndNegGen(DATASET, TEST_SIZE),
+        'standardize': True, 
+        'cv': False,
+      },
+      {
+        'generator': s.PosAndNeutralNegGen(DATASET, TEST_SIZE),
+        'standardize': True, 
+        'cv': False,
+      },
+      {
+        'generator': s.VeryPosAndNeutralNegGen(DATASET, TEST_SIZE),
+        'standardize': True, 
+        'cv': False,
       },
     ],
     'parameters': [{
@@ -54,11 +66,6 @@ learn_configs = [
     'name': 'KNN',
     'model': KNeighborsClassifier(),
     'modes': [
-      {
-        'generator': s.PosAndNegGen(DATASET, TEST_SIZE),
-        'standardize': True, 
-        'cv': CV,
-      },
     ],
     'parameters': [{
       'n_neighbors': list(range(1, 11)),
@@ -95,6 +102,10 @@ for config in learn_configs:
     tu.train()
     if PRINT_PARAMS:
       print(tu.get_params())
-    tu.plot_learning_curve(int(1 / TEST_SIZE))
+    tu.plot_learning_curve(
+      int(1 / TEST_SIZE),
+      SCORER,
+      POINTS,
+    )
 t.print_line()
 print('Finished plotting')

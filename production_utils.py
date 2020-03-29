@@ -53,36 +53,28 @@ TEST_SIZE = 0.25
 CV = 6
 train_configs = [
   {
-    'name': 'svc_pos_neg',
-    'model': svc,
-    'generator': s.PosAndNegGen(DATASET, TEST_SIZE),
+    'name': 'linear_svc_very_pos_net_neg',
+    'model': linear_svc,
+    'generator': s.VeryPosAndNeutralNegGen(DATASET, TEST_SIZE),
+    'standardize': False,
+    'cv': False,
+    'parameters': None,
+  },
+  {
+    'name': 'linear_svc_scaled_very_pos_net_neg',
+    'model': linear_svc,
+    'generator': s.VeryPosAndNeutralNegGen(DATASET, TEST_SIZE),
     'standardize': True,
     'cv': False,
     'parameters': None,
   },
   {
-    'name': 'knn_pos_neg',
-    'model': knn,
-    'generator': s.PosAndNegGen(DATASET, TEST_SIZE),
-    'standardize': True,
-    'cv': False,
-    'parameters': None,
-  },
-  {
-    'name': 'svc_very_pos_neg',
-    'model': knn,
+    'name': 'linear_svc_very_pos_neg',
+    'model': linear_svc,
     'generator': s.VeryPosAndNegGen(DATASET, TEST_SIZE),
     'standardize': True,
     'cv': False,
     'parameters': None,
-  },
-  {
-    'name': 'linear_svc_very_pos_neutral_neg',
-    'model': linear_svc,
-    'generator': s.VeryPosAndNeutralNegGen(DATASET, TEST_SIZE),
-    'standardize': False,
-    'cv': CV,
-    'parameters': linear_svc_params,
   },
 ]
 

@@ -125,7 +125,7 @@ class TrainUtil:
       print('Test analysis')
       print(m.classification_report(self.data.y_test, test_pred))
 
-  def plot_learning_curve(self, cv):
+  def plot_learning_curve(self, cv, scorer=None, points=20):
     print('Plotting learning curve')
     # Make X and y similar to train and test transformations
     X = np.concatenate((self.data.X_train, self.data.X_test))
@@ -138,8 +138,8 @@ class TrainUtil:
       X,
       y,
       cv=cv,
-      train_sizes=np.linspace(0.1, 1.0, 20),
-      scoring=m.make_scorer(m.accuracy_score),
+      train_sizes=np.linspace(0.1, 1.0, points),
+      scoring=scorer,
       n_jobs=4,
     )
 

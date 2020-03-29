@@ -11,13 +11,11 @@ LOG_TO_FILE = True
 ### Sample generators
 # Generators generate different training samples
 # We want to test nmany
-DATASET = 'datasets/dataset.txt'
+DATASET = 'datasets/dataset_pos_net_mix.txt'
 TEST_SIZE = 0.25
 generators = [
   s.PosAndNegGen(DATASET, TEST_SIZE),
   s.VeryPosAndNegGen(DATASET, TEST_SIZE),
-  s.PosAndNegBalancedGen(DATASET, TEST_SIZE),
-  s.VeryPosAndNegBalancedGen(DATASET, TEST_SIZE),
   s.PosAndNeutralNegGen(DATASET, TEST_SIZE),
   s.VeryPosAndNeutralNegGen(DATASET, TEST_SIZE),
 ]
@@ -82,7 +80,7 @@ exp_configs = [
 
 ### Run experiments
 # Whether to log the data to a file
-now = str(datetime.datetime.now()).replace(':', '_').replace('.', '_')
+now = str(datetime.datetime.now()).replace(':', '-').replace('.', '_').replace(' ', '_')
 log_file = None
 if LOG_TO_FILE:
   log_file = open(

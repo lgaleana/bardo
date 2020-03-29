@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 CLIENT_ID = '8de267b03c464274a3546bfe84496696'
 
-PLAYLIST_LIMIT = 5
+PLAYLIST_LIMIT = 10
 pu.load_prod_classifiers()
 
 def make_playlists(token):
