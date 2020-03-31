@@ -1,7 +1,7 @@
 import requests
 import base64
 import json
-import statistics as s
+import numpy as np
 
 CLIENT_ID = '8de267b03c464274a3546bfe84496696'
 CLIENT_SECRET = '11ac7098025545af90be092fe2dd029c'
@@ -65,7 +65,6 @@ def get_tracks_features(token, tracks):
       features['duration_ms'],
       features['time_signature'],
       features['acousticness'],
-      features['key'],
       features['danceability'],
       features['energy'],
       features['instrumentalness'],
@@ -98,64 +97,51 @@ def get_track_analysis(token, track):
   # Bars
   bars = analysis['bars']
   durations = list(map(lambda bar: bar['duration'], bars))
-  mean = s.mean(durations)
   useful_features = useful_features + [
     len(bars),
-    mean,
-    s.stdev(durations, mean),
-    s.variance(durations, mean),
+    np.mean(durations),
+    np.std(durations),
+    np.var(durations),
   ]
   # Beats
   beats = analysis['beats']
   durations = list(map(lambda beat: beat['duration'], beats))
-  mean = s.mean(durations)
   useful_features = useful_features + [
     len(beats),
-    mean,
-    s.stdev(durations, mean),
-    s.variance(durations, mean),
+    np.mean(durations),
+    np.std(durations),
+    np.var(durations),
   ]
   # Sections 
   sections = analysis['sections']
   durations = []
   loudness = []
   tempos = []
-  keys = []
   modes = []
   ts = []
   for section in sections:
     durations.append(section['duration'])
     loudness.append(section['loudness'])
     tempos.append(section['tempo'])
-    keys.append(section['key'])
     modes.append(section['mode'])
     ts.append(section['time_signature'])
-  d_mean = s.mean(durations)
-  l_mean = s.mean(loudness)
-  t_mean = s.mean(tempos)
-  k_mean = s.mean(keys)
-  m_mean = s.mean(modes)
-  ts_mean = s.mean(ts)
   useful_features = useful_features + [
     len(sections),
-    d_mean,
-    s.stdev(durations, d_mean),
-    s.variance(durations, d_mean),
-    l_mean,
-    s.stdev(loudness, l_mean),
-    s.variance(loudness, l_mean),
-    t_mean,
-    s.stdev(tempos, t_mean),
-    s.variance(tempos, t_mean),
-    k_mean,
-    s.stdev(keys, k_mean),
-    s.variance(keys, k_mean),
-    m_mean,
-    s.stdev(modes, m_mean),
-    s.variance(modes, m_mean),
-    ts_mean,
-    s.stdev(ts, ts_mean),
-    s.variance(ts,ts_mean),
+    np.mean(durations),
+    np.std(durations),
+    np.var(durations),
+    np.mean(loudness),
+    np.std(loudness),
+    np.var(loudness),
+    np.mean(tempos),
+    np.std(tempos),
+    np.var(tempos),
+    np.mean(modes),
+    np.std(modes),
+    np.var(modes),
+    np.mean(ts),
+    np.std(ts),
+    np.var(ts),
   ]
   # Segments
   segments = analysis['segments']
@@ -172,57 +158,30 @@ def get_track_analysis(token, track):
     lm.append(segment['loudness_max'])
     pitches.append(segment['pitches'])
     timbre.append(segment['timbre'])
-  d_mean = s.mean(durations)
-  ls_mean = s.mean(ls)
-  lmt_mean = s.mean(lmt)
-  lm_mean = s.mean(lm)
-
-  pitches_mean = []
-  pitches_stdev = []
-  pitches_var = []
-  for pitch in pitches:
-    pitch_mean = s.mean(pitch)
-    pitches_mean.append(pitch_mean)
-    pitches_stdev.append(s.stdev(pitch, pitch_mean))
-    pitches_var.append(s.variance(pitch, pitch_mean))
-  timbre_mean = []
-  timbre_stdev = []
-  timbre_var = []
-  for timb in timbre:
-    timb_mean = s.mean(timb)
-    timbre_mean.append(timb_mean)
-    timbre_stdev.append(s.stdev(timb, timb_mean))
-    timbre_var.append(s.variance(timb, timb_mean))
   useful_features = useful_features + [
     len(segments),
-    d_mean,
-    s.stdev(durations, d_mean),
-    s.variance(durations, d_mean),
-    ls_mean,
-    s.stdev(ls, ls_mean),
-    s.variance(ls, ls_mean),
-    lmt_mean,
-    s.stdev(lmt, lmt_mean),
-    s.variance(lmt, lmt_mean),
-    lm_mean,
-    s.stdev(lm, lm_mean),
-    s.variance(lm, lm_mean),
-    s.mean(pitches_mean),
-    s.mean(pitches_stdev),
-    s.mean(pitches_var),
-    s.mean(timbre_mean),
-    s.mean(timbre_stdev),
-    s.mean(timbre_var),
+    np.mean(durations),
+    np.std(durations),
+    np.var(durations),
+    np.mean(ls),
+    np.std(ls),
+    np.var(ls),
+    np.mean(lmt),
+    np.std(lmt),
+    np.var(lmt),
+    np.mean(lm),
+    np.std(lm),
+    np.var(lm),
   ]
+  useful_features = useful_features + np.mean(pitches, axis=0).tolist() + np.mean(timbre, axis=0).tolist()
 # Tatums
   tatums = analysis['tatums']
   durations = list(map(lambda tatum: tatum['duration'], tatums))
-  mean = s.mean(durations)
   useful_features = useful_features + [
     len(tatums),
-    mean,
-    s.stdev(durations, mean),
-    s.variance(durations, mean),
+    np.mean(durations),
+    np.std(durations),
+    np.var(durations),
   ]
 
   return useful_features

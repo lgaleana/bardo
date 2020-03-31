@@ -7,7 +7,7 @@ import sklearn.metrics as m
 
 
 PRINT_PARAMS = True
-SCORER = m.make_scorer(m.f1_score)
+SCORER = 'accuracy'
 POINTS = 40
 
 ### Learning configs
@@ -19,11 +19,6 @@ learn_configs = [
     'name': 'Linear SVC',
     'model': LinearSVC(dual=False), 
     'modes': [
-      {
-        'generator': s.VeryPosAndNegGen(DATASET, TEST_SIZE),
-        'standardize': True, 
-        'cv': False,
-      },
     ],
     'parameters': [{
       'C': [0.1, 1, 10, 100, 1000],
@@ -34,26 +29,6 @@ learn_configs = [
     'name': 'SVC',
     'model': SVC(random_state=0), 
     'modes': [
-      {
-        'generator': s.PosAndNegGen(DATASET, TEST_SIZE),
-        'standardize': True, 
-        'cv': False,
-      },
-      {
-        'generator': s.VeryPosAndNegGen(DATASET, TEST_SIZE),
-        'standardize': True, 
-        'cv': False,
-      },
-      {
-        'generator': s.PosAndNeutralNegGen(DATASET, TEST_SIZE),
-        'standardize': True, 
-        'cv': False,
-      },
-      {
-        'generator': s.VeryPosAndNeutralNegGen(DATASET, TEST_SIZE),
-        'standardize': True, 
-        'cv': False,
-      },
     ],
     'parameters': [{
       'kernel': ['rbf'],
@@ -77,6 +52,16 @@ learn_configs = [
     'name': 'GBDT',
     'model': GradientBoostingClassifier(random_state=0), 
     'modes': [
+      {
+        'generator': s.PosAndNeutralNegGen(DATASET, TEST_SIZE),
+        'standardize': True, 
+        'cv': False,
+      },
+      {
+        'generator': s.PosAndNeutralNegGen(DATASET, TEST_SIZE),
+        'standardize': True, 
+        'cv': CV,
+      },
     ],
     'parameters': [{
       'n_estimators': [16, 32, 64, 100, 150, 200],
