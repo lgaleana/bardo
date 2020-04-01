@@ -22,7 +22,7 @@ generators = [
 
 ### Experimentation configs
 # Define what to experiment with
-CV = 6
+CV = int(1.5 / TEST_SIZE)
 exp_configs = [
   {
     'name': 'Linear SVC',

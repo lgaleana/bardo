@@ -1,11 +1,12 @@
 import sample_generators as s
 from sklearn.model_selection import GridSearchCV
-from sklearn import preprocessing
+from sklearn.preprocessing import StandardScaler
 import sklearn.metrics as m
 from sklearn.model_selection import learning_curve
 from sklearn.utils import shuffle
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.pipeline import Pipeline
 
 class TrainUtil:
   def __init__(
@@ -26,31 +27,44 @@ class TrainUtil:
 
     if self.standardize:
       self.name = f'Scaled {self.name}'
-      self.scaler = preprocessing.StandardScaler().fit(self.data.X_train)
+      self.scaler = StandardScaler().fit(self.data.X_train)
 
   def train(self):
     if self.cv == False:
-      self.model = self.train_base_(self.model)
+      print(f'---Training {self.name}---')
+      return self.train_base_(self.model)
     else:
-      self.model = self.train_cv_()
-
-    return self.model
+      return self.train_cv_()
 
   def train_base_(self, model):
-    print(f'---Training {self.name}---')
-    if not self.standardize:
-      model.fit(self.data.X_train, self.data.y_train)
-    else:
-      X_train_scaled = self.scaler.transform(self.data.X_train)
-      model.fit(X_train_scaled, self.data.y_train)
-
-    return model
+    X_train = self.data.X_train
+    if self.standardize:
+      X_train = self.scaler.transform(X_train)
+    return model.fit(X_train, self.data.y_train)
   
   def train_cv_(self):
     self.name = f'CV {self.name}'
+    print(f'---Training {self.name}---')
+    model = self.model
+    parameters = self.parameters
+
+    # Adjust params for standardization
+    if self.standardize:
+      model = Pipeline([
+        ('scaler', StandardScaler()),
+        ('model', model),
+      ])
+      parameters = []
+      for combination in self.parameters:
+        new_comb = {}
+        for name, param in combination.items():
+          new_comb[f'model__{name}'] = param
+        parameters.append(new_comb)
+
+    # Do cross-validation to obtain best params
     gs = GridSearchCV(
-      self.model,
-      self.parameters,
+      model,
+      parameters,
       scoring=m.make_scorer(
         m.precision_score,
         labels=[1],
@@ -58,10 +72,16 @@ class TrainUtil:
       ),
       cv=self.cv,
     )
-  
-    gs = self.train_base_(gs)
+    gs.fit(self.data.X_train, self.data.y_train)
+    best_params = gs.best_estimator_.get_params()
+    if self.standardize:
+      best_params = gs.best_estimator_.steps[1][1].get_params()
+    print(best_params)
 
-    return gs.best_estimator_
+    # Use best params to train a new model with all train data
+    print(f'Training selected estimator')
+    self.model.set_params(**best_params)
+    return self.train_base_(self.model)
 
   def predict(self, X):
     if self.standardize:

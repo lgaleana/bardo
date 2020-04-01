@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
+from sklearn.feature_selection import VarianceThreshold
 
 RANDOM_STATE = 0
 
@@ -11,6 +12,9 @@ class SampleGen:
     m = len(self.data[1])
     self.X = self.data[:,:m-1]
     self.y = self.data[:,m-1]
+
+    # Remove 0-variance features
+    self.X = VarianceThreshold().fit_transform(self.X)
 
     self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
       self.X,
