@@ -94,56 +94,32 @@ class TrainUtil:
   def get_params(self):
     return self.model.get_params()
 
-  def print_metrics(self, log=None):
+  def get_metrics(self):
     train_pred = self.predict(self.data.X_train)
     test_pred = self.predict(self.data.X_test)
 
-    if log is not None:
-      print('Writting metrics')
-      train_acc = m.accuracy_score(self.data.y_train, train_pred)
-      test_acc = m.accuracy_score(self.data.y_test, test_pred)
-      train_1_pr = m.precision_score(
-        self.data.y_train,
-        train_pred,
-        labels=[1],
-        average='macro',
-      )
-      test_1_pr = m.precision_score(
-        self.data.y_test,
-        test_pred,
-        labels=[1],
-        average='macro',
-      )
-      test_1_rec = m.recall_score(
-        self.data.y_test,
-        test_pred,
-        labels=[1],
-        average='macro',
-      )
-      train_0_pr = m.precision_score(
-        self.data.y_train,
-        train_pred,
-        labels=[0],
-        average='macro',
-      )
-      test_0_pr = m.precision_score(
-        self.data.y_test,
-        test_pred,
-        labels=[0],
-        average='macro',
-      )
-      test_0_rec = m.recall_score(
-        self.data.y_test,
-        test_pred,
-        labels=[0],
-        average='macro',
-      )
-      log.write(f'{self.name},{train_acc},{test_acc},,{train_1_pr},{test_1_pr},{test_1_rec},,{train_0_pr},{test_0_pr},{test_0_rec}\n')
-    else:
-      print('Train analysis')
-      print(m.classification_report(self.data.y_train, train_pred))
-      print('Test analysis')
-      print(m.classification_report(self.data.y_test, test_pred))
+    train_acc = m.accuracy_score(self.data.y_train, train_pred)
+    test_acc = m.accuracy_score(self.data.y_test, test_pred)
+    train_pr = m.precision_score(
+      self.data.y_train,
+      train_pred,
+      labels=[1],
+      average='macro',
+    )
+    test_pr = m.precision_score(
+      self.data.y_test,
+      test_pred,
+      labels=[1],
+      average='macro',
+    )
+    test_rec = m.recall_score(
+      self.data.y_test,
+      test_pred,
+      labels=[1],
+      average='macro',
+    )
+
+    return train_acc, test_acc, train_pr, test_pr, test_rec
 
   def plot_learning_curve(self, cv, scorer=None, points=20):
     print('Plotting learning curve')

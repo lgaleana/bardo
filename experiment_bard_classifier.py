@@ -11,7 +11,7 @@ LOG_TO_FILE = True
 ### Sample generators
 # Generators generate different training samples
 # We want to test nmany
-DATASET = 'datasets/dataset.txt'
+DATASET = 'datasets/dataset_full.txt'
 TEST_SIZE = 0.25
 generators = [
   s.PosAndNegGen(DATASET, TEST_SIZE),
@@ -89,7 +89,7 @@ if LOG_TO_FILE:
     f'reports/{now}.txt',
     'a+',
   )
-  log_file.write(',Train Acc,TestAcc,,Train 1 Pr,Test 1 Pr,Test 1 Rec,,Train 0 Pr,Test 0 Pr,Test 0 Rec\n')
+  log_file.write(',Train Acc,TestAcc,,Train Pr,Test Pr,Test Rec\n')
 
 for generator in generators:
   data = generator.gen()
@@ -109,7 +109,14 @@ for generator in generators:
         parameters=config['parameters']
       )
       tu.train()
-      tu.print_metrics(log_file)
+
+      train_acc, test_acc, train_pr, test_pr, test_rec = tu.get_metrics()
+      if LOG_TO_FILE:
+        print('Writting metrics')
+        log_file.write(f'{self.name},{train_acc},{test_acc},,{train_pr},{test_pr},{test_rec}\n')
+      else:
+        print(f'Train Acc Test Acc | Train Pr Test Pr Test Rec')
+        print(f'   {train_acc}      {test_acc}       {train_pr}     {test_pr}    {test_rec}')
 
   t.print_line()
 if LOG_TO_FILE:
