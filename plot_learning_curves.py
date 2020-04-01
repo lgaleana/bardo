@@ -11,7 +11,7 @@ SCORER = 'accuracy'
 POINTS = 40
 
 ### Learning configs
-DATASET = 'datasets/dataset.txt'
+DATASET = 'datasets/dataset_orig.txt'
 TEST_SIZE = 0.25
 CV = 6
 learn_configs = [
@@ -29,7 +29,7 @@ learn_configs = [
     'name': 'SVC',
     'model': SVC(random_state=0), 
     'modes': [
-    ],
+          ],
     'parameters': [{
       'kernel': ['rbf'],
       'C': [0.1, 1, 10, 100, 1000],
@@ -54,12 +54,7 @@ learn_configs = [
     'modes': [
       {
         'generator': s.PosAndNeutralNegGen(DATASET, TEST_SIZE),
-        'standardize': True, 
-        'cv': False,
-      },
-      {
-        'generator': s.PosAndNeutralNegGen(DATASET, TEST_SIZE),
-        'standardize': True, 
+        'standardize': True,
         'cv': CV,
       },
     ],

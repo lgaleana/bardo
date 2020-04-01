@@ -71,7 +71,7 @@ class PosAndNegGen(SampleGen):
   def gen(self):
     print('---Generating only positive and negative samples---')
     self.make_test_binary_()
-  
+
     # Use classes 1 and 2 as positives, and 4 and 5 as negatives
     self.X_train, self.y_train = self.exclude_label_(
       self.X_train,
@@ -297,7 +297,7 @@ class VeryPosNegAndNeutralGen(SampleGen):
 
 
 #TEST_SIZE = 0.25
-#DATASET = 'datasets/dataset.txt'
+#DATASET = 'datasets/dataset_orig.txt'
 #PosAndNegGen(DATASET, TEST_SIZE).gen()
 #VeryPosAndNegGen(DATASET, TEST_SIZE).gen()
 #PosAndNegBalancedGen(DATASET, TEST_SIZE).gen()

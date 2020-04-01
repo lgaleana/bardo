@@ -48,30 +48,30 @@ gbdt_params = [{
 
 ### Training configs
 # These classifiers were picked through experimentation
-DATASET = 'datasets/dataset.txt'
+DATASET = 'datasets/dataset_orig.txt'
 TEST_SIZE = 0.25
 CV = 6
 train_configs = [
   {
-    'name': 'linear_svc_very_pos_net_neg',
-    'model': linear_svc,
-    'generator': s.VeryPosAndNeutralNegGen(DATASET, TEST_SIZE),
-    'standardize': False,
+    'name': 'svc',
+    'model': SVC(C=0.9, random_state=0),
+    'generator': s.VeryPosAndNegGen(DATASET, TEST_SIZE),
+    'standardize': True,
     'cv': False,
     'parameters': None,
   },
   {
-    'name': 'linear_svc_scaled_very_pos_net_neg',
-    'model': linear_svc,
+    'name': 'gbdt',
+    'model': GradientBoostingClassifier(learning_rate=0.08, random_state=0),
     'generator': s.VeryPosAndNeutralNegGen(DATASET, TEST_SIZE),
     'standardize': True,
     'cv': False,
     'parameters': None,
   },
   {
-    'name': 'linear_svc_very_pos_neg',
-    'model': linear_svc,
-    'generator': s.VeryPosAndNegGen(DATASET, TEST_SIZE),
+    'name': 'linear_svc',
+    'model': LinearSVC(C=0.3, dual=False),
+    'generator': s.PosAndNegGen(DATASET, TEST_SIZE),
     'standardize': True,
     'cv': False,
     'parameters': None,
@@ -82,9 +82,9 @@ train_configs = [
 # So that we don't recommend them
 print('---Loading tracks DB---')
 tracks = []
-with open('datasets/tracks.txt') as f:
+with open('datasets/tracks_orig.txt') as f:
   for line in f:
-    track = line.strip().split(',')[1]
+    track = line.strip().split('\t')[1]
     tracks.append(track)
 t.print_line()
 
@@ -138,11 +138,13 @@ def generate_recommendations(token, genres, limit):
           # And we only care about positives
           if len(playlists[name]) < limit and recommendation['id'] not in playlists[name] and prediction == 1:
             playlists[name].append(recommendation['id'])
+          print(f'  size: {len(playlists[name])}')
       
         # Special cases
         print(f'  random prediction: 1')
         if len(playlists['random']) < limit and recommendation['id'] not in playlists['random']:
           playlists['random'].append(recommendation['id'])
+        print(f'  size: {len(playlists["random"])}')
         #prediction = predictions_sum / (len(classifiers) - 1)
         #print(f'  avg prediction: {prediction}')
         #if len(playlists['avg']) < limit and recommendation['id'] not in playlists['avg'] and prediction >= 0.5:

@@ -28,6 +28,10 @@ exp_configs = [
     'name': 'Linear SVC',
     'model': LinearSVC(dual=False), 
     'modes': [
+      {'standardize': False, 'cv': False},
+      {'standardize': True, 'cv': False},
+      {'standardize': False, 'cv': CV},
+      {'standardize': True, 'cv': CV},
     ],
     'parameters': [{
       'C': [0.1, 1, 10, 100, 1000],
@@ -38,6 +42,8 @@ exp_configs = [
     'name': 'SVC',
     'model': SVC(random_state=0), 
     'modes': [
+      {'standardize': True, 'cv': False},
+      {'standardize': True, 'cv': CV},
     ],
     'parameters': [{
       'kernel': ['rbf'],
@@ -50,6 +56,8 @@ exp_configs = [
     'name': 'KNN',
     'model': KNeighborsClassifier(),
     'modes': [
+      {'standardize': True, 'cv': False},
+      {'standardize': True, 'cv': CV},
     ],
     'parameters': [{
       'n_neighbors': list(range(1, 11)),
@@ -62,6 +70,7 @@ exp_configs = [
     'model': GradientBoostingClassifier(random_state=0), 
     'modes': [
       {'standardize': True, 'cv': False},
+      {'standardize': True, 'cv': CV},
     ],
     'parameters': [{
       'n_estimators': [16, 32, 64, 100, 150, 200],
