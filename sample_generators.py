@@ -5,308 +5,228 @@ from sklearn.feature_selection import VarianceThreshold
 
 RANDOM_STATE = 0
 
-class SampleGen:
-  def __init__(self, dataset, test_size):
-    self.data = np.loadtxt(dataset, delimiter=',')
+class SampleGenerator:
+  def __init__(self, dataset, test_size, var_threshold=1e-4):
+    self.data = np.loadtxt(dataset, delimiter='\t')
   
     m = len(self.data[1])
     self.X = self.data[:,:m-1]
     self.y = self.data[:,m-1]
+    self.labels = np.sort(np.unique(self.y))
 
-    # Remove 0-variance features
-    self.X = VarianceThreshold().fit_transform(self.X)
+    # Remove low-variance features
+    self.X = VarianceThreshold(1e-4).fit_transform(self.X)
 
-    self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
-      self.X,
-      self.y,
-      test_size=test_size,
-      random_state=RANDOM_STATE,
-    )
-  
-  def exclude_label_(self, X, y, label):
-    return X[y!=label], y[y!=label]
-  
-  def transform_binary_(self, train, test, pivot, pivot_class=None):
-    train[train<pivot] = 0
-    train[train>pivot] = 1
-    test[test<pivot] = 0
-    test[test>pivot] = 1
-  
-    if pivot_class is not None:
-      train[train==pivot] = pivot_class
-      test[test==pivot] = pivot_class
-  
-    return train, test
-
-  def concatenate_classes(self, labels, X, y):
-    new_X = X[y==labels[0]]
-    new_y = y[y==labels[0]]
-    for label in labels[1:]:
-      new_X = np.concatenate((
-        new_X,
-        X[y==label],
-      ))
-      new_y = np.concatenate((
-        new_y,
-        y[y==label]
-      ))
-
-    return new_X, new_y
+    if test_size > 0:
+      # Split into train and test sets
+      self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
+        self.X,
+        self.y,
+        test_size=test_size,
+        random_state=RANDOM_STATE,
+      )
+    else:
+      self.X_train, self.X_test, self.y_train, self.y_test = \
+        self.X, np.empty([0, 0]), self.y, np.empty([0, 0])
 
   def gen(self):
     print('---Generating data as it comes---')
     return self
 
-  def make_test_binary_(self):
-    # Exclude label 3 from test sets
-    self.X_test, self.y_test = self.exclude_label_(
-      self.X_test,
-      self.y_test,
-      3,
-    )
-  
+class BinaryTestGen(SampleGenerator):
+  def __init__(
+    self,
+    dataset,
+    test_size,
+    low_pivot=3,
+    high_pivot=3,
+    var_threshold=1e-4,
+  ):
+    super().__init__(dataset, test_size, var_threshold)
+    self.low_pivot = low_pivot
+    self.high_pivot = high_pivot
+
+    # Remove pivots from test
+    self.X_test, self.y_test = self.exclude_pivots_(self.X_test, self.y_test)
+
+  def exclude_pivots_(self, X, y):
+    # Remove pivots
+    X = np.concatenate((X[y<self.low_pivot], X[y>self.high_pivot]))
+    y = np.concatenate((y[y<self.low_pivot], y[y>self.high_pivot]))
+    # We need to shuffle again
+    X, y = shuffle(X, y, random_state=RANDOM_STATE)
+
+    return X, y
+
+  def transform_binary_(self):
+    # Labels below low pivot become negative
+    self.y_train[self.y_train<self.low_pivot] = 0
+    self.y_test[self.y_test<self.low_pivot] = 0
+    # Labels above high pivot become positive
+    self.y_train[self.y_train>self.high_pivot] = 1
+    self.y_test[self.y_test>self.high_pivot] = 1
+
   def print_binary_size_(self):
+    # Print # of positive and negative samples
     print(f'Positives: {len(self.y_train[self.y_train==1]) + len(self.y_test[self.y_test==1])}')
     print(f'Negatives: {len(self.y_train[self.y_train==0]) + len(self.y_test[self.y_test==0])}')
     print(f'Total: {len(self.y_train) + len(self.y_test)}')
     print('--------------------------------------------------------')
 
-class PosAndNegGen(SampleGen):
   def gen(self):
-    print('---Generating only positive and negative samples---')
-    self.make_test_binary_()
-
-    # Use classes 1 and 2 as positives, and 4 and 5 as negatives
-    self.X_train, self.y_train = self.exclude_label_(
+    print(f'---Generating positive and negative, with pivots {self.low_pivot} and {self.high_pivot}---')
+    # Exclude pivots from train
+    self.X_train, self.y_train = self.exclude_pivots_(
       self.X_train,
       self.y_train,
-      3,
     )
-    self.y_train, self.y_test = self.transform_binary_(
-      self.y_train,
-      self.y_test,
-      3,
-    )
-  
+    self.transform_binary_()
     self.print_binary_size_()
 
     return self
-  
-class VeryPosAndNegGen(SampleGen):
+
+class VeryBinaryTestGen(BinaryTestGen):
+  def __init__(
+    self,
+    dataset,
+    test_size,
+    low_pivot=3,
+    high_pivot=3,
+    very_low=True,
+    very_high=True,
+    var_threshold=1e-4,
+  ):
+    super().__init__(dataset, test_size, low_pivot, high_pivot, var_threshold)
+    self.very_low = very_low
+    self.very_high = very_high
+
   def gen(self):
-    print('---Generating very positive and very negative samples twice (for training)---')
-    self.make_test_binary_()
-  
-    # Duplicate classes 1 and 5
-    self.X_train, self.y_train = self.concatenate_classes(
-      [1, 1, 2, 4, 5, 5],
+    print(f'---Generating very positive and negative, with pivots {self.low_pivot} and {self.high_pivot}---')
+    # Exclude pivots from train
+    self.X_train, self.y_train = self.exclude_pivots_(
       self.X_train,
       self.y_train,
     )
+    self.make_very_()
+    self.transform_binary_()
+    self.print_binary_size_()
+
+    return self
+
+  def make_very_(self):
+    labels = np.sort(np.unique(self.y_train))
+    # Duplicate bottom (very negative) labels
+    if self.very_low:
+      self.X_train = np.concatenate((
+        self.X_train,
+        self.X_train[self.y_train==labels[0]],
+      ))
+      self.y_train = np.concatenate((
+        self.y_train,
+        self.y_train[self.y_train==labels[0]],
+      ))
+    # Duplicate top (very positive) labels
+    if self.very_high:
+      self.X_train = np.concatenate((
+        self.X_train,
+        self.X_train[self.y_train==labels[labels.size - 1]],
+      ))
+      self.y_train = np.concatenate((
+        self.y_train,
+        self.y_train[self.y_train==labels[labels.size - 1]],
+      ))
     # We need to shuffle again
     self.X_train, self.y_train = shuffle(
       self.X_train,
       self.y_train,
       random_state=RANDOM_STATE,
     )
-    self.y_train, self.y_test = self.transform_binary_(
-      self.y_train,
-      self.y_test,
-      3,
-    )
-  
+
+class BinaryTestBalancedGen(BinaryTestGen):
+  def __init__(
+    self,
+    dataset,
+    test_size,
+    low_pivot=3,
+    high_pivot=3,
+    balance_neg=True,
+    balance_pos=True,
+    var_threshold=1e-4,
+  ):
+    super().__init__(dataset, test_size, low_pivot, high_pivot, var_threshold)
+    self.balance_neg = balance_neg
+    self.balance_pos = balance_pos
+
+  def gen(self):
+    print(f'---Generating balanced positive and negative, with pivots {self.low_pivot} and {self.high_pivot}---')
+    self.balance_()
+    self.transform_binary_()
     self.print_binary_size_()
 
     return self
-  
-class PosAndNegBalancedGen(SampleGen):
-  def gen(self):
-    print('---Generating balanced positive samples from neutral (for training)---')
-    self.make_test_binary_()
-  
-    self.y_train, self.y_test = self.transform_binary_(
-      self.y_train,
-      self.y_test,
-      3,
-    )
-    # Delta between negative and positive samples
-    delta = len(self.y_train[self.y_train==0]) - len(self.y_train[self.y_train==1])
-    if delta >= 0:
-    # Fill in labels 3 as 1
-      self.X_train = np.concatenate((
-        self.X_train[self.y_train==0],
-        self.X_train[self.y_train==1],
-        self.X_train[self.y_train==3][:delta],
-      ))
-      self.y_train = np.concatenate((
-        self.y_train[self.y_train==0],
-        self.y_train[self.y_train==1],
-        self.y_train[self.y_train==3][:delta],
-      ))
-      self.y_train[self.y_train==3] = 1
-      # We need to shuffle again
-      self.X_train, self.y_train = shuffle(
-        self.X_train,
-        self.y_train,
-        random_state=RANDOM_STATE,
-      )
+
+  def balance_(self):
+    # Make low pivot negative
+    if self.balance_neg:
+      self.X_train[self.y_train==self.low_pivot] = self.low_pivot - 1
+      self.y_train[self.y_train==self.low_pivot] = self.low_pivot - 1
     else:
-      # Same as gen_pos_and_neg()
-      self.X_train, self.y_train = self.exclude_label_(
-        self.X_train,
-        self.y_train,
-        3,
-      )
-  
-    print(f'Train Positives: {len(self.y_train[self.y_train==1])}')
-    print(f'Train Negatives: {len(self.y_train[self.y_train==0])}')
-    self.print_binary_size_()
-
-    return self
-
-class VeryPosAndNegBalancedGen(SampleGen):
-  def gen(self):
-    print('---Generating balanced very positive samples from neutral (for training)---')
-    self.make_test_binary_()
-  
-    # Duplicate classes 1 and 5
-    self.X_train, self.y_train = self.concatenate_classes(
-      [1, 1, 2, 3, 4, 5, 5],
-      self.X_train,
-      self.y_train,
-    )
-    self.y_train, self.y_test = self.transform_binary_(
-      self.y_train,
-      self.y_test,
-      3,
-    )
-    # Delta between negative and positive samples
-    delta = len(self.y_train[self.y_train==0]) - len(self.y_train[self.y_train==1])
-    if delta >= 0:
-    # Fill in labels 3 as 1
-      self.X_train = np.concatenate((
-        self.X_train[self.y_train==0],
-        self.X_train[self.y_train==1],
-        self.X_train[self.y_train==3][:delta],
-      ))
-      self.y_train = np.concatenate((
-        self.y_train[self.y_train==0],
-        self.y_train[self.y_train==1],
-        self.y_train[self.y_train==3][:delta],
-      ))
-      self.y_train[self.y_train==3] = 1
-      # We need to shuffle again
-      self.X_train, self.y_train = shuffle(
-        self.X_train,
-        self.y_train,
-        random_state=RANDOM_STATE,
-      )
+      self.X_train = self.X_train[self.y_train!=self.low_pivot]
+      self.y_train = self.y_train[self.y_train!=self.low_pivot]
+    # make high pivot positive
+    if self.balance_pos:
+      self.X_train[self.y_train==self.high_pivot] = self.high_pivot + 1
+      self.y_train[self.y_train==self.high_pivot] = self.high_pivot + 1
     else:
-      # Same as gen_pos_and_neg()
-      self.X_train, self.y_train = self.exclude_label_(
-        self.X_train,
-        self.y_train,
-        3,
-      )
-  
-    print(f'Train Positives: {len(self.y_train[self.y_train==1])}')
-    print(f'Train Negatives: {len(self.y_train[self.y_train==0])}')
+      self.X_train = self.X_train[self.y_train!=self.high_pivot]
+      self.y_train = self.y_train[self.y_train!=self.high_pivot]
+
+class VeryBinaryTestBalancedGen(VeryBinaryTestGen, BinaryTestBalancedGen):
+  def __init__(
+    self,
+    dataset,
+    test_size,
+    low_pivot=3,
+    high_pivot=3,
+    very_low=True,
+    very_high=True,
+    balance_neg=True,
+    balance_pos=True,
+    var_threshold=1e-4,
+  ):
+    VeryBinaryTestGen.__init__(
+      self,
+      dataset,
+      test_size,
+      low_pivot,
+      high_pivot,
+      very_low,
+      very_high,
+      var_threshold,
+    )
+    BinaryTestBalancedGen.__init__(
+      self,
+      dataset,
+      test_size,
+      low_pivot,
+      high_pivot,
+      balance_neg,
+      balance_pos,
+      var_threshold,
+    )
+
+  def gen(self):
+    print(f'---Generating very balanced positive and negative, with pivots {self.low_pivot} and {self.high_pivot}---')
+    self.make_very_()
+    self.balance_()
+    self.transform_binary_()
     self.print_binary_size_()
 
     return self
-  
-class PosAndNeutralNegGen(SampleGen):
-  def gen(self):
-    print('---Generating positive and negative samples, with neutral samples as negative---')
-    self.make_test_binary_()
-  
-    # Use labels 3 as negative
-    self.y_train, self.y_test = self.transform_binary_(
-      self.y_train,
-      self.y_test,
-      3, 
-      0,
-    )
-  
-    self.print_binary_size_()
 
-    return self
-
-class VeryPosAndNeutralNegGen(SampleGen):
-  def gen(self):
-    print('---Generating very positive and negative samples, with neutral samples as negative---')
-    self.make_test_binary_()
-  
-    # Duplicate classes 1 and 5
-    self.X_train, self.y_train = self.concatenate_classes(
-      [1, 1, 2, 3, 4, 5, 5],
-      self.X_train,
-      self.y_train,
-    )
-    # Use labels 3 as negative
-    self.y_train, self.y_test = self.transform_binary_(
-      self.y_train,
-      self.y_test,
-      3, 
-      0,
-    )
-  
-    self.print_binary_size_()
-
-    return self
-  
-class PosNegAndNeutralGen(SampleGen):
-  def gen(self):
-    print('---Generating positive, negative and neutral samples---')
-  
-    # Only train will have labels 3
-    self.y_train, self.y_test = self.transform_binary_(
-      self.y_train,
-      self.y_test,
-      3,
-    )
-  
-    print(f'Positives: {len(self.y_train[self.y_train==1]) + len(self.y_test[self.y_test==1])}')
-    print(f'Neutral: {len(self.y_train[self.y_train==3]) + len(self.y_test[self.y_test==3])}')
-    print(f'Negatives: {len(self.y_train[self.y_train==0]) + len(self.y_test[self.y_test==0])}')
-    print(f'Total: {len(self.y_train) + len(self.y_test)}')
-    print('--------------------------------------------------------')
-
-    return self
-
-class VeryPosNegAndNeutralGen(SampleGen):
-  def gen(self):
-    print('---Generating very positive, very negative and neutral samples---')
-  
-    # Duplicate classes 1 and 5
-    self.X_train, self.y_train = self.concatenate_classes(
-      [1, 1, 2, 3, 4, 5, 5],
-      self.X_train,
-      self.y_train,
-    )
-    # Only train will have labels 3
-    self.y_train, self.y_test = self.transform_binary_(
-      self.y_train,
-      self.y_test,
-      3,
-    )
-  
-    print(f'Positives: {len(self.y_train[self.y_train==1]) + len(self.y_test[self.y_test==1])}')
-    print(f'Neutral: {len(self.y_train[self.y_train==3]) + len(self.y_test[self.y_test==3])}')
-    print(f'Negatives: {len(self.y_train[self.y_train==0]) + len(self.y_test[self.y_test==0])}')
-    print(f'Total: {len(self.y_train) + len(self.y_test)}')
-    print('--------------------------------------------------------')
-
-    return self
-
-
-#TEST_SIZE = 0.25
-#DATASET = 'datasets/dataset_orig.txt'
-#PosAndNegGen(DATASET, TEST_SIZE).gen()
-#VeryPosAndNegGen(DATASET, TEST_SIZE).gen()
-#PosAndNegBalancedGen(DATASET, TEST_SIZE).gen()
-#VeryPosAndNegBalancedGen(DATASET, TEST_SIZE).gen()
-#PosAndNeutralNegGen(DATASET, TEST_SIZE).gen()
-#VeryPosAndNeutralNegGen(DATASET, TEST_SIZE).gen()
-#PosNegAndNeutralGen(DATASET, TEST_SIZE).gen()
-#VeryPosNegAndNeutralGen(DATASET, TEST_SIZE).gen()
+TEST_SIZE = 0.25
+DATASET = 'datasets/dataset_all.txt'
+BinaryTestGen(DATASET, TEST_SIZE, 3, 4).gen()
+VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4).gen()
+BinaryTestBalancedGen(DATASET, TEST_SIZE, 3, 4, False, True).gen()
+VeryBinaryTestBalancedGen(DATASET, TEST_SIZE, 3, 4, True, True, False, True).gen()
