@@ -1,9 +1,7 @@
 import sample_generators as s
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV, cross_validate, learning_curve
 from sklearn.preprocessing import StandardScaler
 import sklearn.metrics as m
-from sklearn.model_selection import learning_curve
-from sklearn.utils import shuffle
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.pipeline import Pipeline
@@ -15,22 +13,20 @@ class TrainUtil:
     model,
     data,
     standardize=False,
-    cv=False,
-    parameters=None,
+    params=False,
   ):
     self.name = name
     self.model = model
     self.data = data
     self.standardize = standardize
-    self.cv = cv
-    self.parameters = parameters
+    self.params = params
 
     if self.standardize:
       self.name = f'Scaled {self.name}'
       self.scaler = StandardScaler().fit(self.data.X_train)
 
   def train(self):
-    if self.cv == False:
+    if self.params == False:
       print(f'---Training {self.name}---')
       return self.train_base_(self.model)
     else:
@@ -41,12 +37,12 @@ class TrainUtil:
     if self.standardize:
       X_train = self.scaler.transform(X_train)
     return model.fit(X_train, self.data.y_train)
-  
-  def train_cv_(self):
+
+  def do_cv_(self):
+    print(f'---CV for {self.name}---')
     self.name = f'CV {self.name}'
-    print(f'---Training {self.name}---')
     model = self.model
-    parameters = self.parameters
+    params = self.params
 
     # Adjust params for standardization
     if self.standardize:
@@ -54,33 +50,83 @@ class TrainUtil:
         ('scaler', StandardScaler()),
         ('model', model),
       ])
-      parameters = []
-      for combination in self.parameters:
-        new_comb = {}
-        for name, param in combination.items():
-          new_comb[f'model__{name}'] = param
-        parameters.append(new_comb)
+      if self.params != False:
+        params = []
+        for combination in self.params:
+          new_comb = {}
+          for name, param in combination.items():
+            new_comb[f'model__{name}'] = param
+          params.append(new_comb)
 
-    # Do cross-validation to obtain best params
-    gs = GridSearchCV(
-      model,
-      parameters,
-      scoring=m.make_scorer(
+    # Define cv metrics
+    cv_metrics = {
+      'acc': 'accuracy',
+      'pr': m.make_scorer(
         m.precision_score,
         labels=[1],
         average='macro',
       ),
-      cv=self.cv,
-    )
-    gs.fit(self.data.X_train, self.data.y_train)
-    best_params = gs.best_estimator_.get_params()
-    if self.standardize:
-      best_params = gs.best_estimator_.steps[1][1].get_params()
-    print(best_params)
+      'rec': m.make_scorer(
+        m.recall_score,
+        labels=[1],
+        average='macro',
+      )
+      'f1': m.make_scorer(
+        m.f1_score,
+        labels=[1],
+        average='macro',
+      )
+    }
+
+    if self.params == False:
+      # Do cross-validation to estimate metrics
+      results = cross_validate(
+        model,
+        self.data.X_train,
+        self.data.y_train,
+        scoring=cv_metrics,
+        cv=5,
+        return_train_score=True,
+        n_jobs=4,
+      )
+      return {
+        'train_acc': np.mean(results['train_acc']),
+        'test_acc': np.mean(results['test_acc']),
+        'train_pr': np.mean(results['train_pr']),
+        'test_pr': np.mean(results['test_pr']),
+        'test_rec': np.mean(results['test_rec']),
+      }
+    else:
+      # Do cross-validation to obtain best params
+      gs = GridSearchCV(
+        model,
+        params,
+        scoring=cv_metrics,
+        refit= 'f1',
+        cv=5,
+        return_train_score=True,
+        n_jobs=4,
+      )
+      gs.fit(self.data.X_train, self.data.y_train)
+      best_params = gs.best_estimator_.get_params()
+      if self.standardize:
+        best_params = gs.best_estimator_.steps[1][1].get_params()
+      return {
+        'train_acc': gs.cv_results_['mean_train_acc'][gs.best_index_],
+        'test_acc': gs.cv_results_['mean_test_acc'][gs.best_index_],
+        'train_pr': gs.cv_results_['mean_train_pr'][gs.best_index_],
+        'test_pr': gs.cv_results_['mean_test_pr'][gs.best_index_],
+        'test_rec': gs.cv_results_['mean_test_rec'][gs.best_index_],
+        'params': best_params,
+      }
+
+  def train_cv_(self):
+    gs = self.do_cv_()
 
     # Use best params to train a new model with all train data
-    print(f'Training selected estimator')
-    self.model.set_params(**best_params)
+    print(gs['params'])
+    print(f'-Training estimator with params-')
+    self.model.set_params(**gs['params'])
     return self.train_base_(self.model)
 
   def predict(self, X):
@@ -91,10 +137,7 @@ class TrainUtil:
   def predict_prod(self, features):
     return self.predict([features])[0]
 
-  def get_params(self):
-    return self.model.get_params()
-
-  def get_metrics(self):
+  def get_test_metrics(self):
     train_pred = self.predict(self.data.X_train)
     test_pred = self.predict(self.data.X_test)
 
@@ -120,6 +163,16 @@ class TrainUtil:
     )
 
     return train_acc, test_acc, train_pr, test_pr, test_rec
+
+  def get_cv_metrics(self):
+    cv = self.do_cv_()
+    return cv['train_acc'], cv['test_acc'], cv['train_pr'], cv['test_pr'], cv['test_rec']
+
+  def get_name(self):
+    return self.name
+
+  def get_params(self):
+    return self.model.get_params()
 
   def plot_learning_curve(self, cv, scorer=None, points=20):
     print('Plotting learning curve')
