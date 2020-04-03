@@ -46,22 +46,37 @@ class BinaryTestGen(SampleGenerator):
     test_size,
     low_pivot=3,
     high_pivot=3,
+    balance_neg=True,
+    balance_pos=True,
     var_threshold=1e-4,
   ):
     super().__init__(dataset, test_size, var_threshold)
     self.low_pivot = low_pivot
     self.high_pivot = high_pivot
+    self.balance_neg = balance_neg
+    self.balance_pos = balance_pos
 
     # Remove pivots from test
-    self.X_test, self.y_test = self.exclude_pivots_(self.X_test, self.y_test)
+    self.X_test = self.X_test[self.y_test!=self.low_pivot]
+    self.y_test = self.y_test[self.y_test!=self.low_pivot]
+    self.X_test = self.X_test[self.y_test!=self.high_pivot]
+    self.y_test = self.y_test[self.y_test!=self.high_pivot]
 
-  def exclude_pivots_(self, X, y):
-    X = np.concatenate((X[y<self.low_pivot], X[y>self.high_pivot]))
-    y = np.concatenate((y[y<self.low_pivot], y[y>self.high_pivot]))
-    # We need to shuffle again
-    X, y = shuffle(X, y, random_state=RANDOM_STATE)
-
-    return X, y
+  def balance_(self):
+    # Make low pivot negative
+    if self.balance_neg:
+      self.X_train[self.y_train==self.low_pivot] = self.low_pivot - 1
+      self.y_train[self.y_train==self.low_pivot] = self.low_pivot - 1
+    else:
+      self.X_train = self.X_train[self.y_train!=self.low_pivot]
+      self.y_train = self.y_train[self.y_train!=self.low_pivot]
+    # Make high pivot positive
+    if self.balance_pos:
+      self.X_train[self.y_train==self.high_pivot] = self.high_pivot + 1
+      self.y_train[self.y_train==self.high_pivot] = self.high_pivot + 1
+    else:
+      self.X_train = self.X_train[self.y_train!=self.high_pivot]
+      self.y_train = self.y_train[self.y_train!=self.high_pivot]
 
   def transform_binary_(self):
     # Labels below low pivot become negative
@@ -79,12 +94,8 @@ class BinaryTestGen(SampleGenerator):
     print('--------------------------------------------------------')
 
   def gen(self):
-    print(f'---Generating positive and negative, with pivots {self.low_pivot} and {self.high_pivot}---')
-    # Exclude pivots from train
-    self.X_train, self.y_train = self.exclude_pivots_(
-      self.X_train,
-      self.y_train,
-    )
+    print(f'---Generating balanced positive and negative, with pivots {self.low_pivot} and {self.high_pivot}---')
+    self.balance_()
     self.transform_binary_()
     self.print_binary_size_()
 
@@ -97,26 +108,24 @@ class VeryBinaryTestGen(BinaryTestGen):
     test_size,
     low_pivot=3,
     high_pivot=3,
+    balance_neg=True,
+    balance_pos=True,
     very_low=True,
     very_high=True,
     var_threshold=1e-4,
   ):
-    super().__init__(dataset, test_size, low_pivot, high_pivot, var_threshold)
+    BinaryTestGen.__init__(
+      self,
+      dataset,
+      test_size,
+      low_pivot,
+      high_pivot,
+      balance_neg,
+      balance_pos,
+      var_threshold,
+    )
     self.very_low = very_low
     self.very_high = very_high
-
-  def gen(self):
-    print(f'---Generating very positive and negative, with pivots {self.low_pivot} and {self.high_pivot}---')
-    # Exclude pivots from train
-    self.X_train, self.y_train = self.exclude_pivots_(
-      self.X_train,
-      self.y_train,
-    )
-    self.make_very_()
-    self.transform_binary_()
-    self.print_binary_size_()
-
-    return self
 
   def make_very_(self):
     labels = np.sort(np.unique(self.y_train))
@@ -140,85 +149,13 @@ class VeryBinaryTestGen(BinaryTestGen):
         self.y_train,
         self.y_train[self.y_train==labels[labels.size - 1]],
       ))
-    # We need to shuffle again
-    self.X_train, self.y_train = shuffle(
-      self.X_train,
-      self.y_train,
-      random_state=RANDOM_STATE,
-    )
-
-class BinaryTestBalancedGen(BinaryTestGen):
-  def __init__(
-    self,
-    dataset,
-    test_size,
-    low_pivot=3,
-    high_pivot=3,
-    balance_neg=True,
-    balance_pos=True,
-    var_threshold=1e-4,
-  ):
-    super().__init__(dataset, test_size, low_pivot, high_pivot, var_threshold)
-    self.balance_neg = balance_neg
-    self.balance_pos = balance_pos
-
-  def gen(self):
-    print(f'---Generating balanced positive and negative, with pivots {self.low_pivot} and {self.high_pivot}---')
-    self.balance_()
-    self.transform_binary_()
-    self.print_binary_size_()
-
-    return self
-
-  def balance_(self):
-    # Make low pivot negative
-    if self.balance_neg:
-      self.X_train[self.y_train==self.low_pivot] = self.low_pivot - 1
-      self.y_train[self.y_train==self.low_pivot] = self.low_pivot - 1
-    else:
-      self.X_train = self.X_train[self.y_train!=self.low_pivot]
-      self.y_train = self.y_train[self.y_train!=self.low_pivot]
-    # Make high pivot positive
-    if self.balance_pos:
-      self.X_train[self.y_train==self.high_pivot] = self.high_pivot + 1
-      self.y_train[self.y_train==self.high_pivot] = self.high_pivot + 1
-    else:
-      self.X_train = self.X_train[self.y_train!=self.high_pivot]
-      self.y_train = self.y_train[self.y_train!=self.high_pivot]
-
-class VeryBinaryTestBalancedGen(BinaryTestBalancedGen, VeryBinaryTestGen):
-  def __init__(
-    self,
-    dataset,
-    test_size,
-    low_pivot=3,
-    high_pivot=3,
-    balance_neg=True,
-    balance_pos=True,
-    very_low=True,
-    very_high=True,
-    var_threshold=1e-4,
-  ):
-    VeryBinaryTestGen.__init__(
-      self,
-      dataset,
-      test_size,
-      low_pivot,
-      high_pivot,
-      very_low,
-      very_high,
-      var_threshold,
-    )
-    BinaryTestBalancedGen.__init__(
-      self,
-      dataset,
-      test_size,
-      low_pivot,
-      high_pivot,
-      balance_neg,
-      balance_pos,
-      var_threshold,
-    )
+    if self.very_low or self.very_high:
+      # We need to shuffle again
+      self.X_train, self.y_train = shuffle(
+        self.X_train,
+        self.y_train,
+        random_state=RANDOM_STATE,
+      )
 
   def gen(self):
     print(f'---Generating very balanced positive and negative, with pivots {self.low_pivot} and {self.high_pivot}---')
@@ -229,9 +166,9 @@ class VeryBinaryTestBalancedGen(BinaryTestBalancedGen, VeryBinaryTestGen):
 
     return self
 
-#TEST_SIZE = 0.25
-#DATASET = 'datasets/dataset_all.txt'
-#BinaryTestGen(DATASET, TEST_SIZE, 3, 4).gen()
-#VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4).gen()
-#BinaryTestBalancedGen(DATASET, TEST_SIZE, 3, 4, False, True).gen()
-#VeryBinaryTestBalancedGen(DATASET, TEST_SIZE, 3, 4, True, True, False, True).gen()
+TEST_SIZE = 0.25
+DATASET = 'datasets/dataset_all.txt'
+BinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, False).gen()
+VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, False).gen()
+BinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True).gen()
+VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, False).gen()
