@@ -20,6 +20,7 @@ class TrainUtil:
     self.data = data
     self.standardize = standardize
     self.params = params
+    self.best_params = None
 
     if self.standardize:
       self.name = f'Scaled {self.name}'
@@ -99,7 +100,6 @@ class TrainUtil:
         'train_pr': np.mean(results['train_pr']),
         'test_pr': np.mean(results['test_pr']),
         'test_rec': np.mean(results['test_rec']),
-        'estimator': results['estimator'],
       }
     else:
       # Do cross-validation to obtain best params
@@ -118,23 +118,22 @@ class TrainUtil:
       best_params = gs.best_estimator_.get_params()
       if self.standardize:
         best_params = gs.best_estimator_.steps[1][1].get_params()
+      self.best_params = best_params
       return {
         'train_acc': gs.cv_results_['mean_train_acc'][gs.best_index_],
         'test_acc': gs.cv_results_['mean_test_acc'][gs.best_index_],
         'train_pr': gs.cv_results_['mean_train_pr'][gs.best_index_],
         'test_pr': gs.cv_results_['mean_test_pr'][gs.best_index_],
         'test_rec': gs.cv_results_['mean_test_rec'][gs.best_index_],
-        'params': best_params,
-        'estimator': gs.best_estimator_,
       }
 
   def train_cv_(self):
-    gs = self.do_cv_()
+    if self.best_params None:
+      gs = self.do_cv_()
 
     # Use best params to train a new model with all train data
-    print(gs['params'])
-    print(f'-Training estimator with params-')
-    self.model.set_params(**gs['params'])
+    print(f'-Training estimator with best params-')
+    self.model.set_params(**self.best_params)
     return self.train_base_(self.model)
 
   def predict(self, X):
@@ -175,7 +174,6 @@ class TrainUtil:
 
   def get_cv_metrics(self):
     cv = self.do_cv_()
-    self.model = cv['estimator']
     return cv['train_acc'], cv['test_acc'], cv['train_pr'], cv['test_pr'], cv['test_rec']
 
   def get_name(self):
