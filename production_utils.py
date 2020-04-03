@@ -48,33 +48,29 @@ gbdt_params = [{
 
 ### Training configs
 # These classifiers were picked through experimentation
-DATASET = 'datasets/dataset_orig.txt'
-TEST_SIZE = 0.25
-CV = 6
+DATASET = 'datasets/dataset_all.txt'
+TEST_SIZE = 0
 train_configs = [
   {
     'name': 'svc',
-    'model': SVC(C=0.9, random_state=0),
-    'generator': s.VeryPosAndNegGen(DATASET, TEST_SIZE),
+    'model': SVC(random_state=0),
+    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
     'standardize': True,
-    'cv': False,
-    'parameters': None,
+    'params': svc_params,
   },
   {
     'name': 'gbdt',
-    'model': GradientBoostingClassifier(learning_rate=0.08, random_state=0),
-    'generator': s.VeryPosAndNeutralNegGen(DATASET, TEST_SIZE),
+    'model': GradientBoostingClassifier(random_state=0),
+    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
     'standardize': True,
-    'cv': False,
-    'parameters': None,
+    'params': False,
   },
   {
-    'name': 'linear_svc',
-    'model': LinearSVC(C=0.3, dual=False),
-    'generator': s.PosAndNegGen(DATASET, TEST_SIZE),
+    'name': 'gbdt_cv',
+    'model': GradientBoostingClassifier(random_state=0),
+    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
     'standardize': True,
-    'cv': False,
-    'parameters': None,
+    'params': gbdt_params,
   },
 ]
 
@@ -82,7 +78,7 @@ train_configs = [
 # So that we don't recommend them
 print('---Loading tracks DB---')
 tracks = []
-with open('datasets/tracks_orig.txt') as f:
+with open('datasets/tracks.txt') as f:
   for line in f:
     track = line.strip().split('\t')[1]
     tracks.append(track)
@@ -98,8 +94,7 @@ def load_prod_classifiers():
       model=config['model'],
       data=data,
       standardize=config['standardize'],
-      cv=config['cv'],
-      parameters=config['parameters']
+      params=config['params']
     )
     tu.train()
     classifiers[config['name']] = tu

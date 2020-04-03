@@ -15,7 +15,8 @@ class SampleGenerator:
     self.labels = np.sort(np.unique(self.y))
 
     # Remove low-variance features
-    self.X = VarianceThreshold(1e-4).fit_transform(self.X)
+    self.selector = VarianceThreshold(var_threshold).fit(self.X)
+    self.X = self.selector.transform(self.X)
 
     if test_size > 0:
       # Split into train and test sets
@@ -26,8 +27,13 @@ class SampleGenerator:
         random_state=RANDOM_STATE,
       )
     else:
-      self.X_train, self.X_test, self.y_train, self.y_test = \
-        self.X, np.empty([0, 0]), self.y, np.empty([0, 0])
+      # Use all data for training
+      self.X_test, self.y_test = np.empty([0, 0]), np.empty([0, 0])
+      self.X_train, self.y_train = shuffle(
+        self.X,
+        self.y,
+        random_state=RANDOM_STATE,
+      )
 
   def gen(self):
     print('---Generating data as it comes---')
@@ -50,7 +56,6 @@ class BinaryTestGen(SampleGenerator):
     self.X_test, self.y_test = self.exclude_pivots_(self.X_test, self.y_test)
 
   def exclude_pivots_(self, X, y):
-    # Remove pivots
     X = np.concatenate((X[y<self.low_pivot], X[y>self.high_pivot]))
     y = np.concatenate((y[y<self.low_pivot], y[y>self.high_pivot]))
     # We need to shuffle again
@@ -173,7 +178,7 @@ class BinaryTestBalancedGen(BinaryTestGen):
     else:
       self.X_train = self.X_train[self.y_train!=self.low_pivot]
       self.y_train = self.y_train[self.y_train!=self.low_pivot]
-    # make high pivot positive
+    # Make high pivot positive
     if self.balance_pos:
       self.X_train[self.y_train==self.high_pivot] = self.high_pivot + 1
       self.y_train[self.y_train==self.high_pivot] = self.high_pivot + 1
@@ -181,17 +186,17 @@ class BinaryTestBalancedGen(BinaryTestGen):
       self.X_train = self.X_train[self.y_train!=self.high_pivot]
       self.y_train = self.y_train[self.y_train!=self.high_pivot]
 
-class VeryBinaryTestBalancedGen(VeryBinaryTestGen, BinaryTestBalancedGen):
+class VeryBinaryTestBalancedGen(BinaryTestBalancedGen, VeryBinaryTestGen):
   def __init__(
     self,
     dataset,
     test_size,
     low_pivot=3,
     high_pivot=3,
-    very_low=True,
-    very_high=True,
     balance_neg=True,
     balance_pos=True,
+    very_low=True,
+    very_high=True,
     var_threshold=1e-4,
   ):
     VeryBinaryTestGen.__init__(
@@ -224,9 +229,9 @@ class VeryBinaryTestBalancedGen(VeryBinaryTestGen, BinaryTestBalancedGen):
 
     return self
 
-TEST_SIZE = 0.25
-DATASET = 'datasets/dataset_all.txt'
-BinaryTestGen(DATASET, TEST_SIZE, 3, 4).gen()
-VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4).gen()
-BinaryTestBalancedGen(DATASET, TEST_SIZE, 3, 4, False, True).gen()
-VeryBinaryTestBalancedGen(DATASET, TEST_SIZE, 3, 4, True, True, False, True).gen()
+#TEST_SIZE = 0.25
+#DATASET = 'datasets/dataset_all.txt'
+#BinaryTestGen(DATASET, TEST_SIZE, 3, 4).gen()
+#VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4).gen()
+#BinaryTestBalancedGen(DATASET, TEST_SIZE, 3, 4, False, True).gen()
+#VeryBinaryTestBalancedGen(DATASET, TEST_SIZE, 3, 4, True, True, False, True).gen()

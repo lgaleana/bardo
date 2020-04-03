@@ -39,8 +39,6 @@ class TrainUtil:
     return model.fit(X_train, self.data.y_train)
 
   def do_cv_(self):
-    print(f'---CV for {self.name}---')
-    self.name = f'CV {self.name}'
     model = self.model
     params = self.params
 
@@ -65,21 +63,26 @@ class TrainUtil:
         m.precision_score,
         labels=[1],
         average='macro',
+        zero_division=0,
       ),
       'rec': m.make_scorer(
         m.recall_score,
         labels=[1],
         average='macro',
-      )
+        zero_division=0,
+      ),
       'f1': m.make_scorer(
         m.f1_score,
         labels=[1],
         average='macro',
+        zero_division=0,
       )
     }
 
     if self.params == False:
       # Do cross-validation to estimate metrics
+      print(f'---CV for {self.name}---')
+      self.name = f'CV {self.name}'
       results = cross_validate(
         model,
         self.data.X_train,
@@ -87,6 +90,7 @@ class TrainUtil:
         scoring=cv_metrics,
         cv=5,
         return_train_score=True,
+        return_estimator=True,
         n_jobs=4,
       )
       return {
@@ -95,9 +99,12 @@ class TrainUtil:
         'train_pr': np.mean(results['train_pr']),
         'test_pr': np.mean(results['test_pr']),
         'test_rec': np.mean(results['test_rec']),
+        'estimator': results['estimator'],
       }
     else:
       # Do cross-validation to obtain best params
+      print(f'---CV search for {self.name}---')
+      self.name = f'CV search {self.name}'
       gs = GridSearchCV(
         model,
         params,
@@ -118,6 +125,7 @@ class TrainUtil:
         'test_pr': gs.cv_results_['mean_test_pr'][gs.best_index_],
         'test_rec': gs.cv_results_['mean_test_rec'][gs.best_index_],
         'params': best_params,
+        'estimator': gs.best_estimator_,
       }
 
   def train_cv_(self):
@@ -130,6 +138,7 @@ class TrainUtil:
     return self.train_base_(self.model)
 
   def predict(self, X):
+    X = self.data.selector.transform(X)
     if self.standardize:
       X = self.scaler.transform(X)
     return self.model.predict(X)
@@ -166,6 +175,7 @@ class TrainUtil:
 
   def get_cv_metrics(self):
     cv = self.do_cv_()
+    self.model = cv['estimator']
     return cv['train_acc'], cv['test_acc'], cv['train_pr'], cv['test_pr'], cv['test_rec']
 
   def get_name(self):

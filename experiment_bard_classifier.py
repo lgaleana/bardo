@@ -11,13 +11,14 @@ LOG_TO_FILE = True
 ### Experimentation configs
 # Generators generate different training samples
 # We want to test many
-DATASET = 'datasets/dataset.txt'
-TEST_SIZE = 1
+DATASET = 'datasets/dataset_all.txt'
+TEST_SIZE = 0
 generators = [
-  s.PosAndNegGen(DATASET, TEST_SIZE),
-  s.VeryPosAndNegGen(DATASET, TEST_SIZE),
-  s.PosAndNeutralNegGen(DATASET, TEST_SIZE),
-  s.VeryPosAndNeutralNegGen(DATASET, TEST_SIZE),
+  s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4),
+  s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
+  s.BinaryTestBalancedGen(DATASET, TEST_SIZE, 3, 4, True, False),
+  s.BinaryTestBalancedGen(DATASET, TEST_SIZE, 3, 4, False, True),
+  s.BinaryTestBalancedGen(DATASET, TEST_SIZE, 3, 4, True, True),
 ]
 
 # CV parameters
