@@ -46,8 +46,8 @@ class BinaryTestGen(SampleGenerator):
     test_size,
     low_pivot=3,
     high_pivot=3,
-    balance_neg=True,
-    balance_pos=True,
+    balance_neg=False,
+    balance_pos=False,
     var_threshold=1e-4,
   ):
     super().__init__(dataset, test_size, var_threshold)
@@ -108,8 +108,8 @@ class VeryBinaryTestGen(BinaryTestGen):
     test_size,
     low_pivot=3,
     high_pivot=3,
-    balance_neg=True,
-    balance_pos=True,
+    balance_neg=False,
+    balance_pos=False,
     very_low=True,
     very_high=True,
     var_threshold=1e-4,
@@ -165,10 +165,10 @@ class VeryBinaryTestGen(BinaryTestGen):
     self.print_binary_size_()
 
     return self
-
-TEST_SIZE = 0.25
-DATASET = 'datasets/dataset_all.txt'
-BinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, False).gen()
-VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, False).gen()
-BinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True).gen()
-VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, False).gen()
+#
+#TEST_SIZE = 0.25
+#DATASET = 'datasets/dataset_all.txt'
+#BinaryTestGen(DATASET, TEST_SIZE, 3, 4).gen()
+#VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4).gen()
+#BinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True).gen()
+#VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, False, True, True).gen()

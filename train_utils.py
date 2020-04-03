@@ -128,7 +128,7 @@ class TrainUtil:
       }
 
   def train_cv_(self):
-    if self.best_params None:
+    if self.best_params is None:
       gs = self.do_cv_()
 
     # Use best params to train a new model with all train data

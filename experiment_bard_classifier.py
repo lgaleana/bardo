@@ -15,10 +15,9 @@ DATASET = 'datasets/dataset_all.txt'
 TEST_SIZE = 0
 generators = [
   s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4),
-  s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
-  s.BinaryTestBalancedGen(DATASET, TEST_SIZE, 3, 4, True, False),
-  s.BinaryTestBalancedGen(DATASET, TEST_SIZE, 3, 4, False, True),
-  s.BinaryTestBalancedGen(DATASET, TEST_SIZE, 3, 4, True, True),
+  s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, False),
+  s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True),
+  s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
 ]
 
 # CV parameters
