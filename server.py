@@ -2,24 +2,25 @@ from flask import Flask, request, redirect, url_for
 import time
 import spotify_utils as su
 import production_utils as pu
+from datetime import datetime
 
 app = Flask(__name__)
 
 CLIENT_ID = '8de267b03c464274a3546bfe84496696'
 
-PLAYLIST_LIMIT = 10
+PLAYLIST_LIMIT = 20
 pu.load_prod_classifiers()
 
 def make_playlists(token):
-  playlists = pu.generate_recommendations(
+  now = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+  tracks = pu.generate_recommendations(
     token,
     ['deep-house'],
     PLAYLIST_LIMIT,
+    now,
   )
-  for name, tracks in playlists.items():
-    playlist_name = f'{name}_{time.time()}'.replace('.', '')
-    playlist = su.create_playlist(token, playlist_name)
-    su.populate_playlist(token, playlist, tracks)
+  playlist = su.create_playlist(token, f'{now}')
+  su.populate_playlist(token, playlist, tracks)
 
 
 @app.route('/')

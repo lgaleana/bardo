@@ -4,6 +4,7 @@ from sklearn.ensemble import GradientBoostingClassifier
 import train_utils as t
 import sample_generators as s
 import spotify_utils as su
+import random
 
 
 ### Fixed params
@@ -52,23 +53,30 @@ DATASET = 'datasets/dataset_all.txt'
 TEST_SIZE = 0
 train_configs = [
   {
-    'name': 'svc',
-    'model': SVC(random_state=0),
-    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
-    'standardize': True,
-    'params': svc_params,
-  },
-  {
-    'name': 'gbdt',
+    'name': 'gbdt_very',
     'model': GradientBoostingClassifier(random_state=0),
     'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
     'standardize': True,
     'params': False,
   },
   {
-    'name': 'gbdt_cv',
+    'name': 'gbdt_cv_very',
     'model': GradientBoostingClassifier(random_state=0),
     'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
+    'standardize': True,
+    'params': gbdt_params,
+  },
+  {
+    'name': 'gbdt',
+    'model': GradientBoostingClassifier(random_state=0),
+    'generator': s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
+    'standardize': True,
+    'params': False,
+  },
+  {
+    'name': 'gbdt_cv',
+    'model': GradientBoostingClassifier(random_state=0),
+    'generator': s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
     'standardize': True,
     'params': gbdt_params,
   },
@@ -100,15 +108,18 @@ def load_prod_classifiers():
     classifiers[config['name']] = tu
   print('Finished training')
 
-# The general idea is to make a playlist with {limit} tracks
-# per classifier. On top, two other lists will include the
-# average of the classifiers and one without classifiers
-def generate_recommendations(token, genres, limit):
+### Get a playlist with recommendations
+# Creates a playlist with {limit} tracks from different classifiers
+def generate_recommendations(token, genres, limit, plst_name):
+  final_playlist = []
+  # We will store tracks recommended by every classifier
   playlists = {}
   for name in classifiers:
     playlists[name] = []
-  playlists['random'] = []
-#  playlists['avg'] = []
+
+#  # Special playlists
+#  playlists['random'] = []
+#  RANDOM_LIMIT = 5
   
   go_on = True
   while go_on:
@@ -117,42 +128,50 @@ def generate_recommendations(token, genres, limit):
     recommendations = su.get_recommendations(token, genres)
     t.print_line()
     for recommendation in recommendations:
-      go_on = False
-      if recommendation['name'] not in tracks:
-        # Track is not labeled
+      # Check if track is labeled or part of final playlist
+      if recommendation['name'] not in tracks and recommendation['id'] not in final_playlist:
         features = su.get_tracks_features(token, [recommendation])[0]
         analysis = su.get_track_analysis(token, recommendation)
         # Get predictions from all classifiers
-        predictions_sum = 0.0
         for name, clf in classifiers.items():
-          # Standardize features
           prediction = clf.predict_prod(features + analysis)
-          predictions_sum += prediction
           print(f'  {name} prediction: {prediction}')
-          # We limit the number of tracks in the playlist
-          # And we only care about positives
-          if len(playlists[name]) < limit and recommendation['id'] not in playlists[name] and prediction == 1:
-            playlists[name].append(recommendation['id'])
+          if prediction == 1:
+            if recommendation['id'] not in final_playlist and can_insert(playlists, name):
+              final_playlist.append(recommendation['id'])
+              playlists[name].append(recommendation['id'])
+            elif recommendation['id'] in final_playlist:
+              playlists[name].append(recommendation['id'])
           print(f'  size: {len(playlists[name])}')
-      
-        # Special cases
-        print(f'  random prediction: 1')
-        if len(playlists['random']) < limit and recommendation['id'] not in playlists['random']:
-          playlists['random'].append(recommendation['id'])
-        print(f'  size: {len(playlists["random"])}')
-        #prediction = predictions_sum / (len(classifiers) - 1)
-        #print(f'  avg prediction: {prediction}')
-        #if len(playlists['avg']) < limit and recommendation['id'] not in playlists['avg'] and prediction >= 0.5:
-        #  playlists['avg'].append(recommendation['id'])
+        print()
+        print(f'    final size: {len(final_playlist)}')
       else:
         print(f'{recommendation["name"]} already labeled')
+
+#      # Special playlists
+#      if len(playlists['random']) < RANDOM_LIMIT:
+#        print(f'  random prediction: 1')
+#        playlists['random'].append(recommendation['id'])
+#        print(f'  size: {len(playlists["random"])}')
+#        if recommendations['id'] not in final_playlist:
+#          final_playlist.append(recommendation['id'])
   
-      # Check if playlists are full
-      for name, plst in playlists.items():
-        if len(plst) < limit:
-          go_on = True
-          break
-      if not go_on:
+      if len(final_playlist) >= limit:
+        go_on = False
         break
 
-  return playlists
+  # Save classifier playlists for analysis
+  for name, plst in playlists.items():
+    f = open(f'playlists/{plst_name}_{name}', 'w')
+    for track in plst:
+      f.write(f'{track}\n')
+    f.close()
+
+  random.shuffle(final_playlist)
+  return final_playlist
+
+### Utils
+# Can insert if playlist is not larger than any other by more than 1
+def can_insert(playlists, name):
+  min_cnt = min(map(lambda plst: len(plst), playlists.values()))
+  return len(playlists[name]) - min_cnt == 0
