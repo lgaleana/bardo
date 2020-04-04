@@ -139,19 +139,19 @@ def generate_recommendations(token, genres, limit, plst_name):
           if prediction == 1:
             if recommendation['id'] not in final_playlist and can_insert(playlists, name):
               final_playlist.append(recommendation['id'])
-              playlists[name].append(recommendation['id'])
+              playlists[name].append(recommendation['name'])
             elif recommendation['id'] in final_playlist:
-              playlists[name].append(recommendation['id'])
+              playlists[name].append(recommendation['name'])
           print(f'  size: {len(playlists[name])}')
         print()
-        print(f'    final size: {len(final_playlist)}')
+        print(f'  size: {len(final_playlist)}')
       else:
         print(f'{recommendation["name"]} already labeled')
 
 #      # Special playlists
 #      if len(playlists['random']) < RANDOM_LIMIT:
 #        print(f'  random prediction: 1')
-#        playlists['random'].append(recommendation['id'])
+#        playlists['random'].append(recommendation['name'])
 #        print(f'  size: {len(playlists["random"])}')
 #        if recommendations['id'] not in final_playlist:
 #          final_playlist.append(recommendation['id'])
@@ -162,7 +162,7 @@ def generate_recommendations(token, genres, limit, plst_name):
 
   # Save classifier playlists for analysis
   for name, plst in playlists.items():
-    f = open(f'playlists/{plst_name}_{name}', 'w')
+    f = open(f'playlists/{plst_name}_{name}.txt', 'w')
     for track in plst:
       f.write(f'{track}\n')
     f.close()

@@ -7,61 +7,78 @@ import sklearn.metrics as m
 
 
 PRINT_PARAMS = True
-SCORER = 'accuracy'
-POINTS = 40
+SCORER = 'f1'
+POINTS = 20
 
 ### Learning configs
-DATASET = 'datasets/dataset_orig.txt'
-TEST_SIZE = 0.25
-CV = 6
+# CV parameters
+lsp = [{
+  'C': [0.1, 1, 10, 100, 1000],
+  'class_weight': [{1: w} for w in list(range(1, 11))],
+}]
+sp = [{
+  'kernel': ['rbf'],
+  'C': [0.1, 1, 10, 100, 1000],
+  'gamma': ['scale', 'auto', 0.01, 0.1, 1, 10],
+  'class_weight': [{1: w} for w in list(range(1, 11))],
+}]
+kp = [{
+  'n_neighbors': list(range(1, 11)),
+  'p': list(range(1, 6)),
+  'weights': ['uniform', 'distance'],
+}]
+gp = [{
+  'n_estimators': [16, 32, 64, 100, 150, 200],
+  'learning_rate': [0.0001, 0.001, 0.01, 0.025, 0.05,  0.1, 0.25, 0.5],
+}]
+
+# Configs
+DATASET = 'datasets/dataset_all.txt'
+TEST_SIZE = 0
 learn_configs = [
   {
     'name': 'Linear SVC',
     'model': LinearSVC(dual=False), 
     'modes': [
+      {
+        'generator': s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
+        'standardize': True,
+        'params': lsp,
+      },
     ],
-    'parameters': [{
-      'C': [0.1, 1, 10, 100, 1000],
-      'class_weight': [{1: w} for w in list(range(1, 11))],
-    }],
   },
   {
     'name': 'SVC',
     'model': SVC(random_state=0), 
     'modes': [
-          ],
-    'parameters': [{
-      'kernel': ['rbf'],
-      'C': [0.1, 1, 10, 100, 1000],
-      'gamma': ['scale', 'auto', 0.01, 0.1, 1, 10],
-      'class_weight': [{1: w} for w in list(range(1, 11))],
-    }],
+      {
+        'generator': s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
+        'standardize': True,
+        'params': sp,
+      },
+    ],
   },
   {
     'name': 'KNN',
     'model': KNeighborsClassifier(),
     'modes': [
     ],
-    'parameters': [{
-      'n_neighbors': list(range(1, 11)),
-      'p': list(range(1, 6)),
-      'weights': ['uniform', 'distance'],
-    }],
   },
   {
     'name': 'GBDT',
     'model': GradientBoostingClassifier(random_state=0), 
     'modes': [
       {
-        'generator': s.PosAndNeutralNegGen(DATASET, TEST_SIZE),
+        'generator': s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
         'standardize': True,
-        'cv': CV,
+        'params': False,
+      },
+      {
+        'generator': s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
+        'standardize': True,
+        'params': gp,
       },
     ],
-    'parameters': [{
-      'n_estimators': [16, 32, 64, 100, 150, 200],
-      'learning_rate': [0.0001, 0.001, 0.01, 0.025, 0.05,  0.1, 0.25, 0.5],
-    }],
   },
 ]
 
@@ -76,16 +93,11 @@ for config in learn_configs:
       model=config['model'],
       data=data,
       standardize=mode['standardize'],
-      cv=mode['cv'],
-      parameters=config['parameters']
+      params=mode['params']
     )
     tu.train()
     if PRINT_PARAMS:
       print(tu.get_params())
-    tu.plot_learning_curve(
-      int(1 / TEST_SIZE),
-      SCORER,
-      POINTS,
-    )
+    tu.plot_learning_curve(SCORER, POINTS)
 t.print_line()
 print('Finished plotting')

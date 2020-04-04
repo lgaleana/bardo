@@ -3,7 +3,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 import sample_generators as s
 import train_utils as t
-import datetime
+from datetime import datetime
 
 
 LOG_TO_FILE = True
@@ -12,7 +12,7 @@ LOG_TO_FILE = True
 # Generators generate different training samples
 # We want to test many
 DATASET = 'datasets/dataset_all.txt'
-TEST_SIZE = 0
+TEST_SIZE = 0.2
 generators = [
   s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4),
   s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
@@ -48,8 +48,6 @@ exp_configs = [
     'name': 'Linear SVC',
     'model': LinearSVC(dual=False), 
     'modes': [
-      {'standardize': False, 'params': False},
-      {'standardize': True, 'params': False},
       {'standardize': False, 'params': lsp},
       {'standardize': True, 'params': lsp},
     ],
@@ -66,8 +64,6 @@ exp_configs = [
     'name': 'KNN',
     'model': KNeighborsClassifier(),
     'modes': [
-      {'standardize': True, 'params': False},
-      {'standardize': True, 'params': kp},
     ],
   },
   {
@@ -83,13 +79,10 @@ exp_configs = [
 
 ### Run experiments
 # Whether to log the data to a file
-now = str(datetime.datetime.now()).replace(':', '-').replace('.', '_').replace(' ', '_')
+now = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
 log_file = None
 if LOG_TO_FILE:
-  log_file = open(
-    f'reports/{now}.txt',
-    'a+',
-  )
+  log_file = open(f'reports/{now}.txt', 'w+')
   log_file.write(',Train Acc,TestAcc,,Train Pr,Test Pr,Test Rec\n')
 
 for generator in generators:
@@ -108,12 +101,17 @@ for generator in generators:
         standardize=mode['standardize'],
         params=mode['params'],
       )
-      #tu.train()
 
       train_acc, test_acc, train_pr, test_pr, test_rec = tu.get_cv_metrics()
+      if TEST_SIZE > 0:
+        tu.train()
+        train_acc_t, test_acc_t, train_pr_t, test_pr_t, test_rec_t = \
+            tu.get_test_metrics()
       if LOG_TO_FILE:
         print('Writting metrics')
         log_file.write(f'{tu.get_name()},{train_acc},{test_acc},,{train_pr},{test_pr},{test_rec}\n')
+        if TEST_SIZE > 0:
+          log_file.write(f'[TEST]{tu.get_name()},{train_acc_t},{test_acc_t},,{train_pr_t},{test_pr_t},{test_rec_t}\n')
       else:
         print(f'Train Acc Test Acc | Train Pr Test Pr Test Rec')
         print(f'   {train_acc:.2f}      {test_acc:.2f}      {train_pr:.2f}     {test_pr:.2f}    {test_rec:.2f}')

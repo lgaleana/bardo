@@ -1,22 +1,17 @@
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
-from sklearn.feature_selection import VarianceThreshold
 
 RANDOM_STATE = 0
 
 class SampleGenerator:
-  def __init__(self, dataset, test_size, var_threshold=1e-4):
+  def __init__(self, dataset, test_size):
     self.data = np.loadtxt(dataset, delimiter='\t')
   
     m = len(self.data[1])
     self.X = self.data[:,:m-1]
     self.y = self.data[:,m-1]
     self.labels = np.sort(np.unique(self.y))
-
-    # Remove low-variance features
-    self.selector = VarianceThreshold(var_threshold).fit(self.X)
-    self.X = self.selector.transform(self.X)
 
     if test_size > 0:
       # Split into train and test sets
@@ -48,9 +43,8 @@ class BinaryTestGen(SampleGenerator):
     high_pivot=3,
     balance_neg=False,
     balance_pos=False,
-    var_threshold=1e-4,
   ):
-    super().__init__(dataset, test_size, var_threshold)
+    super().__init__(dataset, test_size)
     self.low_pivot = low_pivot
     self.high_pivot = high_pivot
     self.balance_neg = balance_neg
@@ -112,7 +106,6 @@ class VeryBinaryTestGen(BinaryTestGen):
     balance_pos=False,
     very_low=True,
     very_high=True,
-    var_threshold=1e-4,
   ):
     BinaryTestGen.__init__(
       self,
@@ -122,7 +115,6 @@ class VeryBinaryTestGen(BinaryTestGen):
       high_pivot,
       balance_neg,
       balance_pos,
-      var_threshold,
     )
     self.very_low = very_low
     self.very_high = very_high

@@ -5,6 +5,12 @@ import sklearn.metrics as m
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.pipeline import Pipeline
+from sklearn.feature_selection import VarianceThreshold
+import warnings
+from sklearn.exceptions import ConvergenceWarning
+warnings.simplefilter("ignore", ConvergenceWarning)
+
+K = 5
 
 class TrainUtil:
   def __init__(
@@ -14,6 +20,7 @@ class TrainUtil:
     data,
     standardize=False,
     params=False,
+    var_threshold=1e-4
   ):
     self.name = name
     self.model = model
@@ -21,10 +28,14 @@ class TrainUtil:
     self.standardize = standardize
     self.params = params
     self.best_params = None
+    self.var_threshold = var_threshold
 
     if self.standardize:
       self.name = f'Scaled {self.name}'
       self.scaler = StandardScaler().fit(self.data.X_train)
+
+    # Selector of high-variance features
+    self.selector = VarianceThreshold(var_threshold).fit(self.data.X_train)
 
   def train(self):
     if self.params == False:
@@ -37,6 +48,7 @@ class TrainUtil:
     X_train = self.data.X_train
     if self.standardize:
       X_train = self.scaler.transform(X_train)
+    X_train = self.selector.transform(X_train)
     return model.fit(X_train, self.data.y_train)
 
   def do_cv_(self):
@@ -47,6 +59,7 @@ class TrainUtil:
     if self.standardize:
       model = Pipeline([
         ('scaler', StandardScaler()),
+        ('selector', VarianceThreshold(self.var_threshold)),
         ('model', model),
       ])
       if self.params != False:
@@ -72,12 +85,7 @@ class TrainUtil:
         average='macro',
         zero_division=0,
       ),
-      'f1': m.make_scorer(
-        m.f1_score,
-        labels=[1],
-        average='macro',
-        zero_division=0,
-      )
+      'f05': m.make_scorer(f05)
     }
 
     if self.params == False:
@@ -89,7 +97,7 @@ class TrainUtil:
         self.data.X_train,
         self.data.y_train,
         scoring=cv_metrics,
-        cv=5,
+        cv=K,
         return_train_score=True,
         return_estimator=True,
         n_jobs=4,
@@ -109,15 +117,16 @@ class TrainUtil:
         model,
         params,
         scoring=cv_metrics,
-        refit= 'f1',
-        cv=5,
+        refit= 'f05',
+        cv=K,
         return_train_score=True,
         n_jobs=4,
       )
+      # Catch warnings from flawed fits
       gs.fit(self.data.X_train, self.data.y_train)
       best_params = gs.best_estimator_.get_params()
       if self.standardize:
-        best_params = gs.best_estimator_.steps[1][1].get_params()
+        best_params = gs.best_estimator_.steps[2][1].get_params()
       self.best_params = best_params
       return {
         'train_acc': gs.cv_results_['mean_train_acc'][gs.best_index_],
@@ -137,9 +146,9 @@ class TrainUtil:
     return self.train_base_(self.model)
 
   def predict(self, X):
-    X = self.data.selector.transform(X)
     if self.standardize:
       X = self.scaler.transform(X)
+    X = self.selector.transform(X)
     return self.model.predict(X)
 
   def predict_prod(self, features):
@@ -182,19 +191,20 @@ class TrainUtil:
   def get_params(self):
     return self.model.get_params()
 
-  def plot_learning_curve(self, cv, scorer=None, points=20):
+  def plot_learning_curve(self, scorer=None, points=20):
     print('Plotting learning curve')
     # Make X and y similar to train and test transformations
     X = np.concatenate((self.data.X_train, self.data.X_test))
     y = np.concatenate((self.data.y_train, self.data.y_test))
     if self.standardize:
       X = self.scaler.transform(X)
+    X = self.selector.transform(X)
 
     train_sizes, train_scores, test_scores = learning_curve(
       self.model,
       X,
       y,
-      cv=cv,
+      cv=K,
       train_sizes=np.linspace(0.1, 1.0, points),
       scoring=scorer,
       n_jobs=4,
@@ -216,6 +226,15 @@ class TrainUtil:
     plt.title(f'{self.name}\n{self.data.__class__.__name__} learning curves')
     plt.legend()
     plt.show()
+
+def f05(y_true, y_pred):
+  pr = m.precision_score(y_true, y_pred, zero_division=0)
+  rec = m.recall_score(y_true, y_pred, zero_division=0)
+  divisor = ((0.25 * pr) + rec)
+  if divisor > 0:
+    return 1.25 * (pr * rec) /  divisor
+  else:
+    return  0
 
 def print_line():
   print('--------------------------------------------------------')
