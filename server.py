@@ -26,7 +26,7 @@ def make_playlists(token):
 @app.route('/')
 def main():
   return f'''
-  <H1>Bard: the AI Deep House Curator</h1>
+  <H1>Bard: AI Deep House Curator (MVP)</h1>
   <a href='https://accounts.spotify.com/authorize?client_id={CLIENT_ID}&response_type=code&redirect_uri={url_for('generate_playlist', _external=True)}&scope=playlist-modify-public playlist-modify-private&show_dialog=true'>Generate Playlist</a>
   '''
 
@@ -45,6 +45,6 @@ def generate_playlist():
     html = '<p>Invalid access</p>'
 
   return f'''
-  <h1>Bard: the Deep House Curator</h1>
+  <h1>Bard: Deep House Curator (MVP)</h1>
   {html}
   '''

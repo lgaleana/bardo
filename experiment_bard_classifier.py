@@ -12,10 +12,10 @@ LOG_TO_FILE = True
 # Generators generate different training samples
 # We want to test many
 DATASET = 'datasets/dataset_all.txt'
-TEST_SIZE = 0
+TEST_SIZE = 0.2
 generators = [
   s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4),
-  s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, False),
+  s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
   s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True),
   s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
 ]
@@ -47,9 +47,7 @@ exp_configs = [
     'name': 'Linear SVC',
     'model': LinearSVC(dual=False), 
     'modes': [
-      {'standardize': False, 'params': False},
       {'standardize': True, 'params': False},
-      {'standardize': False, 'params': lsp},
       {'standardize': True, 'params': lsp},
     ],
   },
@@ -65,8 +63,6 @@ exp_configs = [
     'name': 'KNN',
     'model': KNeighborsClassifier(),
     'modes': [
-      {'standardize': True, 'params': False},
-      {'standardize': True, 'params': kp},
     ],
   },
   {
@@ -105,21 +101,18 @@ for generator in generators:
         params=mode['params'],
       )
 
-      train_acc, test_acc, train_pr, test_pr, test_rec = tu.get_cv_metrics()
-      if TEST_SIZE > 0:
+      if TEST_SIZE == 0:
+        train_acc, test_acc, train_pr, test_pr, test_rec = tu.get_cv_metrics()
+      else:
         tu.train()
-        train_acc_t, test_acc_t, train_pr_t, test_pr_t, test_rec_t = \
-            tu.get_test_metrics()
+        train_acc, test_acc, train_pr, test_pr, test_rec = \
+          tu.get_test_metrics()
       if LOG_TO_FILE:
         print('Writting metrics')
         log_file.write(f'{tu.get_name()},{train_acc},{test_acc},,{train_pr},{test_pr},{test_rec}\n')
-        if TEST_SIZE > 0:
-          log_file.write(f'[TEST]{tu.get_name()},{train_acc_t},{test_acc_t},,{train_pr_t},{test_pr_t},{test_rec_t}\n')
       else:
         print(f'Train Acc Test Acc | Train Pr Test Pr Test Rec')
         print(f'   {train_acc:.2f}      {test_acc:.2f}      {train_pr:.2f}     {test_pr:.2f}    {test_rec:.2f}')
-        if TEST_SIZE > 0:
-          print(f'T: {train_acc:.2f}      {test_acc:.2f}      {train_pr:.2f}     {test_pr:.2f}    {test_rec:.2f}')
 
   t.print_line()
 if LOG_TO_FILE:
