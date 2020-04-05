@@ -40,22 +40,12 @@ learn_configs = [
     'name': 'Linear SVC',
     'model': LinearSVC(dual=False), 
     'modes': [
-      {
-        'generator': s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
-        'standardize': True,
-        'params': lsp,
-      },
     ],
   },
   {
     'name': 'SVC',
     'model': SVC(random_state=0), 
     'modes': [
-      {
-        'generator': s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
-        'standardize': True,
-        'params': sp,
-      },
     ],
   },
   {
@@ -68,6 +58,16 @@ learn_configs = [
     'name': 'GBDT',
     'model': GradientBoostingClassifier(random_state=0), 
     'modes': [
+      {
+        'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
+        'standardize': True,
+        'params': False,
+      },
+      {
+        'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
+        'standardize': True,
+        'params': gp,
+      },
       {
         'generator': s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
         'standardize': True,
@@ -95,9 +95,10 @@ for config in learn_configs:
       standardize=mode['standardize'],
       params=mode['params']
     )
-    tu.train()
-    if PRINT_PARAMS:
-      print(tu.get_params())
+    if mode['params'] != False:
+      tu.do_cv()
+      if PRINT_PARAMS:
+        print(tu.get_params())
     tu.plot_learning_curve(SCORER, POINTS)
 t.print_line()
 print('Finished plotting')

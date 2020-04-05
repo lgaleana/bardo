@@ -50,33 +50,32 @@ gbdt_params = [{
 ### Training configs
 # These classifiers were picked through experimentation
 DATASET = 'datasets/dataset_all.txt'
-TEST_SIZE = 0
 train_configs = [
   {
     'name': 'gbdt_very',
     'model': GradientBoostingClassifier(random_state=0),
-    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
+    'generator': s.VeryBinaryTestGen(DATASET, 0, 3, 4),
     'standardize': True,
     'params': False,
   },
   {
     'name': 'gbdt_cv_very',
     'model': GradientBoostingClassifier(random_state=0),
-    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
+    'generator': s.VeryBinaryTestGen(DATASET, 0, 3, 4),
     'standardize': True,
     'params': gbdt_params,
   },
   {
     'name': 'gbdt',
     'model': GradientBoostingClassifier(random_state=0),
-    'generator': s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
+    'generator': s.BinaryTestGen(DATASET, 0, 3, 4, True, True),
     'standardize': True,
     'params': False,
   },
   {
     'name': 'gbdt_cv',
     'model': GradientBoostingClassifier(random_state=0),
-    'generator': s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
+    'generator': s.BinaryTestGen(DATASET, 0, 3, 4, True, True),
     'standardize': True,
     'params': gbdt_params,
   },

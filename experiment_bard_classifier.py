@@ -12,10 +12,9 @@ LOG_TO_FILE = True
 # Generators generate different training samples
 # We want to test many
 DATASET = 'datasets/dataset_all.txt'
-TEST_SIZE = 0.2
+TEST_SIZE = 0
 generators = [
   s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4),
-  s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
   s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, False),
   s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True),
   s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
@@ -48,6 +47,8 @@ exp_configs = [
     'name': 'Linear SVC',
     'model': LinearSVC(dual=False), 
     'modes': [
+      {'standardize': False, 'params': False},
+      {'standardize': True, 'params': False},
       {'standardize': False, 'params': lsp},
       {'standardize': True, 'params': lsp},
     ],
@@ -64,6 +65,8 @@ exp_configs = [
     'name': 'KNN',
     'model': KNeighborsClassifier(),
     'modes': [
+      {'standardize': True, 'params': False},
+      {'standardize': True, 'params': kp},
     ],
   },
   {
@@ -115,6 +118,8 @@ for generator in generators:
       else:
         print(f'Train Acc Test Acc | Train Pr Test Pr Test Rec')
         print(f'   {train_acc:.2f}      {test_acc:.2f}      {train_pr:.2f}     {test_pr:.2f}    {test_rec:.2f}')
+        if TEST_SIZE > 0:
+          print(f'T: {train_acc:.2f}      {test_acc:.2f}      {train_pr:.2f}     {test_pr:.2f}    {test_rec:.2f}')
 
   t.print_line()
 if LOG_TO_FILE:

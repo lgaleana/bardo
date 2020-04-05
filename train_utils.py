@@ -51,7 +51,7 @@ class TrainUtil:
     X_train = self.selector.transform(X_train)
     return model.fit(X_train, self.data.y_train)
 
-  def do_cv_(self):
+  def do_cv(self):
     model = self.model
     params = self.params
 
@@ -122,7 +122,6 @@ class TrainUtil:
         return_train_score=True,
         n_jobs=4,
       )
-      # Catch warnings from flawed fits
       gs.fit(self.data.X_train, self.data.y_train)
       best_params = gs.best_estimator_.get_params()
       if self.standardize:
@@ -138,7 +137,7 @@ class TrainUtil:
 
   def train_cv_(self):
     if self.best_params is None:
-      gs = self.do_cv_()
+      gs = self.do_cv()
 
     # Use best params to train a new model with all train data
     print(f'-Training estimator with best params-')
@@ -182,7 +181,7 @@ class TrainUtil:
     return train_acc, test_acc, train_pr, test_pr, test_rec
 
   def get_cv_metrics(self):
-    cv = self.do_cv_()
+    cv = self.do_cv()
     return cv['train_acc'], cv['test_acc'], cv['train_pr'], cv['test_pr'], cv['test_rec']
 
   def get_name(self):
@@ -194,8 +193,7 @@ class TrainUtil:
   def plot_learning_curve(self, scorer=None, points=20):
     print('Plotting learning curve')
     # Make X and y similar to train and test transformations
-    X = np.concatenate((self.data.X_train, self.data.X_test))
-    y = np.concatenate((self.data.y_train, self.data.y_test))
+    X = self.data.X_train
     if self.standardize:
       X = self.scaler.transform(X)
     X = self.selector.transform(X)
@@ -203,7 +201,7 @@ class TrainUtil:
     train_sizes, train_scores, test_scores = learning_curve(
       self.model,
       X,
-      y,
+      self.data.y_train,
       cv=K,
       train_sizes=np.linspace(0.1, 1.0, points),
       scoring=scorer,
