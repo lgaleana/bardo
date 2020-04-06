@@ -2,5 +2,4 @@ __pycache__
 reports
 generate_dataset.py
 datasets
-DS_Store
-playlists
+.DS_Store

@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Bardo: AI music curator</title>
+  <meta name="description" content="Using AI to discover new music">
+</head>
+<body>
+  <h1>Bardo: AI music curator</h1>
+  {% if needs_rating|length > 0: %}
+    <p>Help us understand your music preferences. From the previous tracks that we recommended to you...</p>
+    <h3>Would you like to get more recommendations like this?</h3>
+    <form action="{{save_url}}" method="POST">
+      <ul>
+      {% for id, name in needs_rating.items(): %}
+      <!--    <li>{{name}}</li> -->
+      <li>{{id}}:  <input name="label" type="checkbox"> <label>(yes)</label></li>
+      <p>
+      {% endfor %}
+      </ul>
+      <input type="submit" value="Submit">
+    </form>
+  {% else: %}
+    <p>No tracks to rate</p>
+  {% endif %}
+</html>

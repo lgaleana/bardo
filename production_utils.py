@@ -58,27 +58,27 @@ train_configs = [
     'standardize': True,
     'params': False,
   },
-  {
-    'name': 'gbdt_cv_very',
-    'model': GradientBoostingClassifier(random_state=0),
-    'generator': s.VeryBinaryTestGen(DATASET, 0, 3, 4),
-    'standardize': True,
-    'params': gbdt_params,
-  },
-  {
-    'name': 'gbdt',
-    'model': GradientBoostingClassifier(random_state=0),
-    'generator': s.BinaryTestGen(DATASET, 0, 3, 4, True, True),
-    'standardize': True,
-    'params': False,
-  },
-  {
-    'name': 'gbdt_cv',
-    'model': GradientBoostingClassifier(random_state=0),
-    'generator': s.BinaryTestGen(DATASET, 0, 3, 4, True, True),
-    'standardize': True,
-    'params': gbdt_params,
-  },
+#  {
+#    'name': 'gbdt_cv_very',
+#    'model': GradientBoostingClassifier(random_state=0),
+#    'generator': s.VeryBinaryTestGen(DATASET, 0, 3, 4),
+#    'standardize': True,
+#    'params': gbdt_params,
+#  },
+#  {
+#    'name': 'gbdt',
+#    'model': GradientBoostingClassifier(random_state=0),
+#    'generator': s.BinaryTestGen(DATASET, 0, 3, 4, True, True),
+#    'standardize': True,
+#    'params': False,
+#  },
+#  {
+#    'name': 'gbdt_cv',
+#    'model': GradientBoostingClassifier(random_state=0),
+#    'generator': s.BinaryTestGen(DATASET, 0, 3, 4, True, True),
+#    'standardize': True,
+#    'params': gbdt_params,
+#  },
 ]
 
 ### Load labeled tracks
@@ -166,9 +166,11 @@ def generate_recommendations(token, genres, limit, plst_name):
 
   # Save classifier playlists for analysis
   for name, plst in playlists.items():
-    f = open(f'playlists/{plst_name}_{name}.txt', 'w')
-    for track in plst['names']:
-      f.write(f'{track}\n')
+    f = open(
+      f'datasets/playlists/lsgaleana-gmail_com/{plst_name}_{name}.txt', 'w',
+    )
+    for i, track in enumerate(plst['ids']):
+      f.write(f'{track},{plst["names"][i]}\n')
     f.close()
 
   # Put together final playlist
