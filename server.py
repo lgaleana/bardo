@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, url_for
+from flask import Flask, request, redirect, url_for, render_template
 import time
 import spotify_utils as su
 import production_utils as pu
@@ -25,26 +25,35 @@ def make_playlists(token):
 
 @app.route('/')
 def main():
-  return f'''
-  <H1>Bard: AI Deep House Curator (MVP)</h1>
-  <a href='https://accounts.spotify.com/authorize?client_id={CLIENT_ID}&response_type=code&redirect_uri={url_for('generate_playlist', _external=True)}&scope=playlist-modify-public playlist-modify-private&show_dialog=true'>Generate Playlist</a>
-  '''
+  return render_template(
+    'index.html',
+    playlist_url=url_for('generate_playlist'),
+  )
+
+@app.route('/identify')
+def identify():
+  print("hello")
+  return render_template(
+    'identify.html',
+    playlist_url=url_for('generate_playlist'),
+  )
 
 @app.route('/generate-playlist')
 def generate_playlist():
-  code = request.args.get('code')
-  if code:
-    token = su.request_token(
-      'authorization_code',
-      code,
-      url_for('generate_playlist', _external=True),
-    )
-    make_playlists(token)
-    html = 'Playlist generated'
+  bardo_id = request.args.get('bardo-id')
+  if bardo_id:
+    code = request.args.get('code')
+    if code:
+      token = su.request_token(
+        'authorization_code',
+        code,
+        url_for('generate_playlist', _external=True),
+      )
+      make_playlists(token)
+      return render_template('generate-playlist.html')
+    else:
+      return redirect(
+        f'https://accounts.spotify.com/authorize?client_id={CLIENT_ID}&response_type=code&redirect_uri={url_for("generate_playlist", _external=True)}&scope=playlist-modify-public playlist-modify-private&show_dialog=true',
+      )
   else:
-    html = '<p>Invalid access</p>'
-
-  return f'''
-  <h1>Bard: Deep House Curator (MVP)</h1>
-  {html}
-  '''
+    return redirect(url_for('identify'))

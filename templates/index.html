@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Bardo: AI deep house curator</title>
+  <meta name="description" content="Using AI to discover new deep house music">
+</head>
+<body>
+  <script>
+    window.onload = function() {
+      if (localStorage.bardoId !== undefined) {
+        var genPlst = document.getElementById("generatePlst");
+        genPlst.href += "?bardo-id=" + localStorage.bardoId;
+      }
+    }
+  </script>
+
+  <h1>Bardo: AI deep house curator</h1>
+  <a id="generatePlst" href="{{playlist_url}}">Generate Playlist</a></body>
+</html>
