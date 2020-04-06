@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Bardo: AI music curator</title>
+  <meta name="description" content="Using AI to discover new music">
+</head>
+<body>
+  <script>
+    window.onload = function() {
+      var redirect = "";
+      if (localStorage.bardoId !== undefined) {
+        redirect = "?bardo-id=" + localStorage.bardoId;
+      }
+      redirect += redirect + "&code={{code}}"
+      window.location.replace("/generate-playlist" + redirect);
+    }
+  </script>
+  <p>Validating Spotify authorization</p>
+</html>

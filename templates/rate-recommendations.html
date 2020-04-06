@@ -8,7 +8,7 @@
 <body>
   <h1>Bardo: AI music curator</h1>
   {% if needs_rating|length > 0: %}
-    <p>Help us understand your music preferences. From the previous tracks that we recommended to you...</p>
+    <p>First, help us understand if we're doing a good job. From the previous tracks that we recommended to you...</p>
     <h3>Would you like to get more recommendations like this?</h3>
     <form action="{{save_url}}" method="POST">
       <ul>
@@ -18,7 +18,7 @@
       <p>
       {% endfor %}
       </ul>
-      <input type="submit" value="Submit">
+      <p><input type="submit" value="Submit"></p>
     </form>
   {% else: %}
     <p>No tracks to rate</p>

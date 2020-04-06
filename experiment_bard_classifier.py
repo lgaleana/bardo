@@ -12,12 +12,13 @@ LOG_TO_FILE = True
 # Generators generate different training samples
 # We want to test many
 DATASET = 'datasets/dataset_all.txt'
-TEST_SIZE = 0.2
+TEST_SIZE = 0
 generators = [
-  s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4),
   s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
   s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True),
+  s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True),
   s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
+  s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True, False, True),
 ]
 
 # CV parameters

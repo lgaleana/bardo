@@ -65,6 +65,7 @@ def main():
     'index.html',
     playlist_url=url_for('generate_playlist'),
     rate_url=url_for('rate_recommendations'),
+    rate_plst_uri='rate_playlists',
   )
 
 @app.route('/identify')
@@ -81,26 +82,26 @@ def identify():
 def generate_playlist():
   bardo_id = request.args.get('bardo-id')
   if bardo_id:
-    needs_rating = load_tracks_to_rate(bardo_id)
+#    needs_rating = load_tracks_to_rate(bardo_id)
+    needs_rating = []
     if len(needs_rating) == 0:
       code = request.args.get('code')
       if code:
         token = su.request_token(
           'authorization_code',
           code,
-          url_for('generate_playlist', _external=True),
+          url_for('spotify_auth', _external=True),
         )
         make_playlists(token)
         return render_template('generate-playlist.html')
       else:
-        redirect_uri = url_for('generate_playlist', _external=True)
+        auth_uri = url_for('spotify_auth', _external=True)
         return redirect(
-          f'https://accounts.spotify.com/authorize?client_id={CLIENT_ID}&response_type=code&redirect_uri={redirect_uri}&scope=playlist-modify-public playlist-modify-private&show_dialog=true',
+          f'https://accounts.spotify.com/authorize?client_id={CLIENT_ID}&response_type=code&redirect_uri={auth_uri}&scope=playlist-modify-public playlist-modify-private&show_dialog=true',
         )
     else:
-      generate_url = url_for("generate_playlist").replace('/', '')
       return redirect(
-        f'{url_for("rate_recommendations")}?bardo-id={bardo_id}&redirect-url={generate_url}'
+        f'{url_for("rate_recommendations")}?bardo-id={bardo_id}&redirect-uri=generate_playlist'
       )
   else:
     generate_url = url_for("generate_playlist").replace('/', '')
@@ -108,21 +109,29 @@ def generate_playlist():
       f'{url_for("identify")}?redirect-url={generate_url}'
     )
 
+@app.route('/spotify-auth')
+def spotify_auth():
+  code = request.args.get('code')
+  if code:
+    return render_template('spotify-auth.html', code=code)
+  else:
+    return 'Invalid request'
+
 @app.route('/rate-recommendations')
 def rate_recommendations():
-  redirect_url = request.args.get('redirect-url')
-  if not redirect_url:
-    redirect_url = url_for('main')
+  redirect_uri = request.args.get('redirect-uri')
+  redirect = ''
+  if redirect_uri:
+    redirect = f'&redirect-uri={redirect_uri}'
 
   bardo_id = request.args.get('bardo-id')
   if bardo_id:
     needs_rating = load_tracks_to_rate(bardo_id)
     save_url = url_for('save_ratings')
-    redirect_url = redirect_url.replace('/', '')
     return render_template(
       'rate-recommendations.html',
       needs_rating=needs_rating,
-      save_url=f'{save_url}?bardo-id={bardo_id}&redirect-url={redirect_url}',
+      save_url=f'{save_url}?bardo-id={bardo_id}{redirect}',
     )
   else:
     rate_url = url_for("rate_recommendations").replace('/', '')
@@ -132,4 +141,13 @@ def rate_recommendations():
 
 @app.route('/save-ratings', methods=['POST'])
 def save_ratings():
-  return ''
+  bardo_id = request.args.get('bardo-id')
+  redirect_uri = request.args.get('redirect-uri')
+  if bardo_id and redirect_uri:
+    return redirect(f'{url_for(redirect_uri)}?bardo-id={bardo_id}')
+  else:
+    return 'Invalid request.'
+
+@app.route('/rate-playlists')
+def rate_playlists():
+  return render_template('rate-playlists.html')

@@ -13,6 +13,7 @@
         genPlst.href += "?bardo-id=" + localStorage.bardoId;
         var feedback = document.getElementById("feedback");
         feedback.href += "?bardo-id=" + localStorage.bardoId;
+        feedback.href += "&redirect-uri=" + "{{rate_plst_uri}}";
       }
     }
   </script>
@@ -20,5 +21,5 @@
   <h1>Bardo: AI music curator</h1>
   <ul>
     <li><a id="generatePlst" href="{{playlist_url}}">Generate playlist</a></body></li>
-    <li><a id="feedback" href="{{rate_url}}">Recommendations feedback</a></body></li>
+    <li><a id="feedback" href="{{rate_url}}">Music preferences</a></body></li>
 </html>
