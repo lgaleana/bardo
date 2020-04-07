@@ -6,21 +6,48 @@
   <meta name="description" content="Using AI to discover new music">
 </head>
 <body>
+  <script>
+    window.onload = function() {
+      var form = document.getElementById("form");
+      if (form) {
+        form.onsubmit = function() {
+          var likes = Array.from(document.getElementsByClassName("like"));
+          var noLikes = Array.from(document.getElementsByClassName("no-like"));
+          likes = likes.filter(like => like.checked);
+          noLikes = noLikes.filter(noLike => noLike.checked);
+          if (likes.length == 0 && noLikes.length == 0) {
+            var moveOn = confirm("Feedback is empty");
+            return moveOn;
+          }
+          return true;
+        }
+      }
+    }
+  </script>
   <h1>Bardo: AI music curator</h1>
+  <p>Help us understand if we're doing a good job. From the previous tracks that we recommended to you...</p>
   {% if needs_rating|length > 0: %}
-    <p>First, help us understand if we're doing a good job. From the previous tracks that we recommended to you...</p>
-    <h3>Would you like to get more recommendations like this?</h3>
-    <form action="{{save_url}}" method="POST">
+  <h3>Which recommendations did you really like and which ones you didn't?</h3>
+    <form id="form" action="{{save_url}}" method="POST">
+      <input type="hidden" name="bardo-id" value="{{bardo_id}}">
+      <input type="hidden" name="redirect-uri" value="{{redirect_uri}}">
       <ul>
       {% for id, name in needs_rating.items(): %}
       <!--    <li>{{name}}</li> -->
-      <li>{{id}}:  <input name="label" type="checkbox"> <label>(yes)</label></li>
+      <li>
+        <p><b>{{name}}</b></p>
+        <p>
+          <label>Really liked</label> <input class="like" type="checkbox" name="like" value="{{id}}">
+          <label>Didn't like</label> <input class="no-like" type="checkbox" name="no-like" value="{{id}}">
+          <input type="hidden" name="default" value="{{id}}">
+        </p>
+      </li>
       <p>
       {% endfor %}
       </ul>
       <p><input type="submit" value="Submit"></p>
     </form>
   {% else: %}
-    <p>No tracks to rate</p>
+    <h3>No tracks to rate</h3>
   {% endif %}
 </html>

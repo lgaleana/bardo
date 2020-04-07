@@ -23,49 +23,70 @@ def make_playlists(token):
   su.populate_playlist(token, playlist, tracks)
 
 def load_tracks_to_rate(bardo_id):
-  data_dir = 'datasets'
   idn = bardo_id.replace('@', '-').replace('.', '_')
-  id_dir = f'{data_dir}/{idn}'
+  id_dir = f'datasets/{idn}'
   plst_dir = f'{id_dir}/playlists'
-  rated_dir = f'{id_dir}/rated'
+  rated_dir = f'{id_dir}/feedback'
 
   if not os.path.isdir(id_dir):
     os.mkdir(id_dir)
-  if not os.path.isdir(rated_dir):
-    os.mkdir(rated_dir)
 
   if os.path.isdir(plst_dir):
     track_infos = []
     rated_tracks = []
-
     for filename in os.listdir(plst_dir): 
       if filename.endswith('.txt'):
         f = open(f'{plst_dir}/{filename}', 'r')
         for line in f:
           track_info = line.strip().split('\t')
           track_infos.append(track_info)
-    for filename in os.listdir(rated_dir): 
-      f = open(f'{rated_dir}/{filename}', 'r')
-      for line in f:
-        track = line.strip().split('\t')[0]
-        rated_tracks.append(track)
+    if os.path.isdir(rated_dir):
+      for filename in os.listdir(rated_dir): 
+        if filename.endswith('.txt'):
+          f = open(f'{rated_dir}/{filename}', 'r')
+          for line in f:
+            track = line.strip().split('\t')[0]
+            rated_tracks.append(track)
 
     needs_rating = {}
     for info in track_infos:
       if info[0] not in rated_tracks and info[0] not in needs_rating:
-        needs_rating[info[0]] = 0
-#        needs_rating[info[0]] = info[1]
+        needs_rating[info[0]] = info[1]
     return needs_rating
   else:
     return {}
+
+def save_feedback(bardo_id, likes, no_likes, neutral=[]):
+  likes = set(likes)
+  no_likes = set(no_likes)
+  neutral = set(neutral)
+  neutral = neutral - likes
+  neutral = neutral - no_likes
+  
+  idn = bardo_id.replace('@', '-').replace('.', '_')
+  id_dir = f'datasets/{idn}'
+  rated_dir = f'{id_dir}/feedback'
+
+  if not os.path.isdir(rated_dir):
+    os.mkdir(rated_dir)
+
+  now = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+  f = open(f'{rated_dir}/{now}.txt', 'w+')
+  for track in no_likes:
+    f.write(f'{track}\t2\n')
+  for track in neutral:
+    f.write(f'{track}\t4\n')
+  for track in likes:
+    f.write(f'{track}\t5\n')
+  f.close()
+  
 
 @app.route('/')
 def main():
   return render_template(
     'index.html',
     playlist_url=url_for('generate_playlist'),
-    rate_url=url_for('rate_recommendations'),
-    rate_plst_uri='rate_playlists',
+    rate_url=url_for('rate_playlists'),
   )
 
 @app.route('/identify')
@@ -82,8 +103,7 @@ def identify():
 def generate_playlist():
   bardo_id = request.args.get('bardo-id')
   if bardo_id:
-#    needs_rating = load_tracks_to_rate(bardo_id)
-    needs_rating = []
+    needs_rating = load_tracks_to_rate(bardo_id)
     if len(needs_rating) == 0:
       code = request.args.get('code')
       if code:
@@ -117,21 +137,38 @@ def spotify_auth():
   else:
     return 'Invalid request'
 
+@app.route('/rate-playlists')
+def rate_playlists():
+  bardo_id = request.args.get('bardo-id')
+  if bardo_id:
+    needs_rating = load_tracks_to_rate(bardo_id)
+    if len(needs_rating) == 0:
+      return render_template('rate-playlists.html')
+    else:
+      return redirect(
+        f'{url_for("rate_recommendations")}?bardo-id={bardo_id}&redirect-uri=rate_playlists'
+      )
+  else:
+    generate_url = url_for("rate_playlists").replace('/', '')
+    return redirect(
+      f'{url_for("identify")}?redirect-url={generate_url}'
+    )
+
 @app.route('/rate-recommendations')
 def rate_recommendations():
   redirect_uri = request.args.get('redirect-uri')
-  redirect = ''
-  if redirect_uri:
-    redirect = f'&redirect-uri={redirect_uri}'
+  if not redirect_uri:
+    redirect_uri = 'main'
 
   bardo_id = request.args.get('bardo-id')
   if bardo_id:
     needs_rating = load_tracks_to_rate(bardo_id)
-    save_url = url_for('save_ratings')
     return render_template(
       'rate-recommendations.html',
       needs_rating=needs_rating,
-      save_url=f'{save_url}?bardo-id={bardo_id}{redirect}',
+      bardo_id=bardo_id,
+      redirect_uri=redirect_uri,
+      save_url=url_for('save_ratings'),
     )
   else:
     rate_url = url_for("rate_recommendations").replace('/', '')
@@ -141,13 +178,17 @@ def rate_recommendations():
 
 @app.route('/save-ratings', methods=['POST'])
 def save_ratings():
-  bardo_id = request.args.get('bardo-id')
-  redirect_uri = request.args.get('redirect-uri')
+  bardo_id = request.form.get('bardo-id')
+  redirect_uri = request.form.get('redirect-uri')
+
+  save_feedback(
+    bardo_id,
+    request.form.getlist('like'),
+    request.form.getlist('no-like'),
+    request.form.getlist('default'),
+  )
+
   if bardo_id and redirect_uri:
     return redirect(f'{url_for(redirect_uri)}?bardo-id={bardo_id}')
   else:
     return 'Invalid request.'
-
-@app.route('/rate-playlists')
-def rate_playlists():
-  return render_template('rate-playlists.html')

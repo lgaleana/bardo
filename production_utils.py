@@ -59,27 +59,27 @@ train_configs = [
     'standardize': True,
     'params': False,
   },
-  {
-    'name': 'gbdt_cv',
-    'model': GradientBoostingClassifier(random_state=0),
-    'generator': s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
-    'standardize': True,
-    'params': gbdt_params,
-  },
-  {
-    'name': 'gbdt_very',
-    'model': GradientBoostingClassifier(random_state=0),
-    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True, False, True),
-    'standardize': True,
-    'params': False,
-  },
-  {
-    'name': 'gbdt_very_cv',
-    'model': GradientBoostingClassifier(random_state=0),
-    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True, False, True),
-    'standardize': True,
-    'params': gbdt_params,
-  },
+#  {
+#    'name': 'gbdt_cv',
+#    'model': GradientBoostingClassifier(random_state=0),
+#    'generator': s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
+#    'standardize': True,
+#    'params': gbdt_params,
+#  },
+#  {
+#    'name': 'gbdt_very',
+#    'model': GradientBoostingClassifier(random_state=0),
+#    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True, False, True),
+#    'standardize': True,
+#    'params': False,
+#  },
+#  {
+#    'name': 'gbdt_very_cv',
+#    'model': GradientBoostingClassifier(random_state=0),
+#    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True, False, True),
+#    'standardize': True,
+#    'params': gbdt_params,
+#  },
 ]
 
 ### Load labeled tracks
@@ -158,7 +158,7 @@ def generate_recommendations(token, genres, limit, plst_name):
       f'datasets/lsgaleana-gmail_com/playlists/{plst_name}_{name}.txt', 'w+',
     )
     for i, track in enumerate(plst['ids']):
-      f.write(f'{track},{plst["names"][i]}\n')
+      f.write(f'{track}\t{plst["names"][i]}\n')
     f.close()
 
   # Put together final playlist
