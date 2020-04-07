@@ -88,7 +88,7 @@ class BinaryTestGen(SampleGenerator):
     print('--------------------------------------------------------')
 
   def gen(self):
-    print(f'---Generating balanced positive and negative, with pivots {self.low_pivot} and {self.high_pivot}---')
+    print(f'---Generating balanced positive and negative---')
     self.balance_()
     self.transform_binary_()
     self.print_binary_size_()
@@ -104,8 +104,7 @@ class VeryBinaryTestGen(BinaryTestGen):
     high_pivot=3,
     balance_neg=False,
     balance_pos=False,
-    very_low=True,
-    very_high=True,
+    very=0,
   ):
     BinaryTestGen.__init__(
       self,
@@ -116,13 +115,12 @@ class VeryBinaryTestGen(BinaryTestGen):
       balance_neg,
       balance_pos,
     )
-    self.very_low = very_low
-    self.very_high = very_high
+    self.very = very
 
   def make_very_(self):
     labels = np.sort(np.unique(self.y_train))
     # Duplicate bottom (very negative) labels
-    if self.very_low:
+    if self.very <= 0:
       self.X_train = np.concatenate((
         self.X_train,
         self.X_train[self.y_train==labels[0]],
@@ -132,7 +130,7 @@ class VeryBinaryTestGen(BinaryTestGen):
         self.y_train[self.y_train==labels[0]],
       ))
     # Duplicate top (very positive) labels
-    if self.very_high:
+    if self.very >= 0:
       self.X_train = np.concatenate((
         self.X_train,
         self.X_train[self.y_train==labels[labels.size - 1]],
@@ -141,16 +139,15 @@ class VeryBinaryTestGen(BinaryTestGen):
         self.y_train,
         self.y_train[self.y_train==labels[labels.size - 1]],
       ))
-    if self.very_low or self.very_high:
-      # We need to shuffle again
-      self.X_train, self.y_train = shuffle(
-        self.X_train,
-        self.y_train,
-        random_state=RANDOM_STATE,
-      )
+    # We need to shuffle again
+    self.X_train, self.y_train = shuffle(
+      self.X_train,
+      self.y_train,
+      random_state=RANDOM_STATE,
+    )
 
   def gen(self):
-    print(f'---Generating very balanced positive and negative, with pivots {self.low_pivot} and {self.high_pivot}---')
+    print(f'---Generating very balanced positive and negatives')
     self.make_very_()
     self.balance_()
     self.transform_binary_()
@@ -163,4 +160,4 @@ class VeryBinaryTestGen(BinaryTestGen):
 #BinaryTestGen(DATASET, TEST_SIZE, 3, 4).gen()
 #VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4).gen()
 #BinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True).gen()
-#VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, False, True, True).gen()
+#VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, False).gen()

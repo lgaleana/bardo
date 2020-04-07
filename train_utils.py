@@ -27,15 +27,10 @@ class TrainUtil:
     self.data = data
     self.standardize = standardize
     self.params = params
-    self.best_params = None
     self.var_threshold = var_threshold
 
     if self.standardize:
       self.name = f'Scaled {self.name}'
-      self.scaler = StandardScaler().fit(self.data.X_train)
-
-    # Selector of high-variance features
-    self.selector = VarianceThreshold(var_threshold).fit(self.data.X_train)
 
   def train(self):
     if self.params == False:
@@ -47,13 +42,19 @@ class TrainUtil:
   def train_base_(self, model):
     X_train = self.data.X_train
     if self.standardize:
+      self.scaler = StandardScaler().fit(self.data.X_train)
       X_train = self.scaler.transform(X_train)
+    # Selector of high-variance features
+    self.selector = VarianceThreshold(self.var_threshold).fit(self.data.X_train)
     X_train = self.selector.transform(X_train)
     return model.fit(X_train, self.data.y_train)
 
   def do_cv(self):
     model = self.model
     params = self.params
+
+    X = np.concatenate((self.data.X_train, self.data.X_test))
+    y = np.concatenate((self.data.y_train, self.data.y_test))
 
     # Adjust params for standardization
     if self.standardize:
@@ -94,8 +95,8 @@ class TrainUtil:
       self.name = f'CV {self.name}'
       results = cross_validate(
         model,
-        self.data.X_train,
-        self.data.y_train,
+        X,
+        y,
         scoring=cv_metrics,
         cv=K,
         return_train_score=True,
@@ -122,26 +123,24 @@ class TrainUtil:
         return_train_score=True,
         n_jobs=4,
       )
-      gs.fit(self.data.X_train, self.data.y_train)
+      gs.fit(X, y)
       best_params = gs.best_estimator_.get_params()
       if self.standardize:
         best_params = gs.best_estimator_.steps[2][1].get_params()
-      self.best_params = best_params
       return {
         'train_acc': gs.cv_results_['mean_train_acc'][gs.best_index_],
         'test_acc': gs.cv_results_['mean_test_acc'][gs.best_index_],
         'train_pr': gs.cv_results_['mean_train_pr'][gs.best_index_],
         'test_pr': gs.cv_results_['mean_test_pr'][gs.best_index_],
         'test_rec': gs.cv_results_['mean_test_rec'][gs.best_index_],
+        'params': best_params,
       }
 
   def train_cv_(self):
-    if self.best_params is None:
-      gs = self.do_cv()
-
+    gs = self.do_cv()
     # Use best params to train a new model with all train data
     print(f'-Training estimator with best params-')
-    self.model.set_params(**self.best_params)
+    self.model.set_params(**gs['params'])
     return self.train_base_(self.model)
 
   def predict(self, X):
@@ -193,15 +192,16 @@ class TrainUtil:
   def plot_learning_curve(self, scorer=None, points=20):
     print('Plotting learning curve')
     # Make X and y similar to train and test transformations
-    X = self.data.X_train
+    X = np.concatenate((self.data.X_train, self.data.X_test))
+    y = np.concatenate((self.data.y_train, self.data.y_test))
     if self.standardize:
-      X = self.scaler.transform(X)
-    X = self.selector.transform(X)
+      X = StandardScaler().fit_transform(X)
+    X = VarianceThreshold(self.var_threshold).fit_transform(X)
 
     train_sizes, train_scores, test_scores = learning_curve(
       self.model,
       X,
-      self.data.y_train,
+      y,
       cv=K,
       train_sizes=np.linspace(0.1, 1.0, points),
       scoring=scorer,

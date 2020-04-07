@@ -7,18 +7,20 @@ from datetime import datetime
 
 
 LOG_TO_FILE = True
+DO_TEST = True
 
 ### Experimentation configs
 # Generators generate different training samples
 # We want to test many
 DATASET = 'datasets/dataset_all.txt'
-TEST_SIZE = 0
+TEST_SIZE = 0.25
 generators = [
+  s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4),
   s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
   s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True),
   s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True),
   s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
-  s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True, False, True),
+  s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
 ]
 
 # CV parameters
@@ -83,7 +85,10 @@ now = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
 log_file = None
 if LOG_TO_FILE:
   log_file = open(f'reports/{now}.txt', 'w+')
-  log_file.write(',Train Acc,TestAcc,,Train Pr,Test Pr,Test Rec\n')
+  header = ',Train Acc,TestAcc,,Train Pr,Test Pr,Test Rec'
+  if DO_TEST:
+    header += ',T:,TestAcc,,Test Pr,Test Rec\n'
+  log_file.write(header)
 
 for generator in generators:
   data = generator.gen()
@@ -102,18 +107,23 @@ for generator in generators:
         params=mode['params'],
       )
 
-      if TEST_SIZE == 0:
-        train_acc, test_acc, train_pr, test_pr, test_rec = tu.get_cv_metrics()
-      else:
+      train_acc, test_acc, train_pr, test_pr, test_rec = tu.get_cv_metrics()
+      if DO_TEST:
         tu.train()
-        train_acc, test_acc, train_pr, test_pr, test_rec = \
+        train_acc_t, test_acc_t, train_pr_t, test_pr_t, test_rec_t = \
           tu.get_test_metrics()
       if LOG_TO_FILE:
         print('Writting metrics')
-        log_file.write(f'{tu.get_name()},{train_acc},{test_acc},,{train_pr},{test_pr},{test_rec}\n')
+        metrics = f'{tu.get_name()},{train_acc},{test_acc},,{train_pr},{test_pr},{test_rec}'
+        if DO_TEST:
+          metrics += f',,{test_acc_t},,{test_pr_t},{test_rec_t}\n'
+        log_file.write(metrics)
       else:
         print(f'Train Acc Test Acc | Train Pr Test Pr Test Rec')
         print(f'   {train_acc:.2f}      {test_acc:.2f}      {train_pr:.2f}     {test_pr:.2f}    {test_rec:.2f}')
+        if DO_TEST:
+          print(f'TEST-')
+          print(f'           {test_acc_t:.2f}           {test_pr_t:.2f}  {test_rec_t:.2f}')
 
   t.print_line()
 if LOG_TO_FILE:
