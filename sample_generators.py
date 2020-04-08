@@ -7,6 +7,7 @@ RANDOM_STATE = 0
 class SampleGenerator:
   def __init__(self, dataset, test_size):
     self.data = np.loadtxt(dataset, delimiter='\t')
+    self.test_size = test_size
   
     m = len(self.data[1])
     self.X = self.data[:,:m-1]
@@ -30,8 +31,11 @@ class SampleGenerator:
         random_state=RANDOM_STATE,
       )
 
+  def get_name():
+    return self.__class__.__name__
+
   def gen(self):
-    print('---Generating data as it comes---')
+    print(selg.get_name())
     return self
 
 class BinaryTestGen(SampleGenerator):
@@ -80,6 +84,18 @@ class BinaryTestGen(SampleGenerator):
     self.y_train[self.y_train>self.high_pivot] = 1
     self.y_test[self.y_test>self.high_pivot] = 1
 
+  def get_name():
+    name = f'{self.__class__.__name__}'
+    if self.balance_neg or self.balance_pos:
+      name += ', '
+    if self.balance_neg:
+      name += f'balanced to {self.low_pivot}'
+    if self.balance_neg and self.balance_pos:
+      name += ' and '
+    if self.balance_pos:
+      name += f'balanced to {self.high_pivot}'
+    return name
+
   def print_binary_size_(self):
     # Print # of positive and negative samples
     print(f'Positives: {len(self.y_train[self.y_train==1]) + len(self.y_test[self.y_test==1])}')
@@ -88,7 +104,7 @@ class BinaryTestGen(SampleGenerator):
     print('--------------------------------------------------------')
 
   def gen(self):
-    print(f'---Generating balanced positive and negative---')
+    print(self.get_name())
     self.balance_()
     self.transform_binary_()
     self.print_binary_size_()
@@ -146,8 +162,16 @@ class VeryBinaryTestGen(BinaryTestGen):
       random_state=RANDOM_STATE,
     )
 
+  def get_name():
+    name = 'Very'
+    if self.very < 0:
+      name += ' low '
+    elif self.very > 0:
+      name += ' high '
+    return f'{name} {super().get_name()}'
+
   def gen(self):
-    print(f'---Generating very balanced positive and negatives')
+    print(self.get_name())
     self.make_very_()
     self.balance_()
     self.transform_binary_()

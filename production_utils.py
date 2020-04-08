@@ -55,31 +55,31 @@ train_configs = [
   {
     'name': 'gbdt',
     'model': GradientBoostingClassifier(random_state=0),
-    'generator': s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
+    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True),
     'standardize': True,
     'params': False,
   },
-#  {
-#    'name': 'gbdt_cv',
-#    'model': GradientBoostingClassifier(random_state=0),
-#    'generator': s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
-#    'standardize': True,
-#    'params': gbdt_params,
-#  },
-#  {
-#    'name': 'gbdt_very',
-#    'model': GradientBoostingClassifier(random_state=0),
-#    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True, False, True),
-#    'standardize': True,
-#    'params': False,
-#  },
-#  {
-#    'name': 'gbdt_very_cv',
-#    'model': GradientBoostingClassifier(random_state=0),
-#    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True, False, True),
-#    'standardize': True,
-#    'params': gbdt_params,
-#  },
+  {
+    'name': 'gbdt_cv',
+    'model': GradientBoostingClassifier(random_state=0),
+    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True),
+    'standardize': True,
+    'params': gbdt_params,
+  },
+  {
+    'name': 'gbdt_very',
+    'model': GradientBoostingClassifier(random_state=0),
+    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
+    'standardize': True,
+    'params': False,
+  },
+  {
+    'name': 'gbdt_very_cv',
+    'model': GradientBoostingClassifier(random_state=0),
+    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
+    'standardize': True,
+    'params': gbdt_params,
+  },
 ]
 
 ### Load labeled tracks
@@ -131,7 +131,7 @@ def generate_recommendations(token, genres, limit, plst_name):
       go_on = False
       # Check if track is labeled or has been seen
       if recommendation['name'] not in tracks:
-        tracks.append(recommendations['name'])
+        tracks.append(recommendation['name'])
         features = su.get_tracks_features(token, [recommendation])[0]
         analysis = su.get_track_analysis(token, recommendation)
         # Get predictions from all classifiers

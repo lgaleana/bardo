@@ -18,8 +18,10 @@ generators = [
   s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4),
   s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
   s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True),
+  s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True, -1),
   s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True),
   s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
+  s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True, 1),
   s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
 ]
 
@@ -94,7 +96,7 @@ for generator in generators:
   data = generator.gen()
 
   if LOG_TO_FILE:
-    log_file.write(f'{data.__class__.__name__}\n') 
+    log_file.write(f'{data.get_name()}\n') 
 
   # Training of all configs
   for config in exp_configs:

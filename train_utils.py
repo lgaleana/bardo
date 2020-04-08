@@ -53,8 +53,11 @@ class TrainUtil:
     model = self.model
     params = self.params
 
-    X = np.concatenate((self.data.X_train, self.data.X_test))
-    y = np.concatenate((self.data.y_train, self.data.y_test))
+    X = self.data.X_train
+    y = self.data.y_train
+    if self.data.test_size > 0:
+      X = np.concatenate((X, self.data.X_test))
+      y = np.concatenate((y, self.data.y_test))
 
     # Adjust params for standardization
     if self.standardize:

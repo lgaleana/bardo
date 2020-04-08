@@ -3,7 +3,7 @@ import production_utils as pu
 from datetime import datetime
 import os
 
-def make_playlist(code, redirect_url):
+def make_playlist(code, redirect_url, limit):
   token = su.request_token(
     'authorization_code',
     code,
@@ -14,7 +14,7 @@ def make_playlist(code, redirect_url):
   tracks = pu.generate_recommendations(
     token,
     ['deep-house'],
-    PLAYLIST_LIMIT,
+    limit,
     now,
   )
 

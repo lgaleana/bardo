@@ -35,7 +35,11 @@ def generate_playlist():
     if len(needs_rating) == 0:
       code = request.args.get('code')
       if code:
-        su.make_playlist(code, url_for('spotify_auth', _external=True))
+        su.make_playlist(
+          code,
+          url_for('spotify_auth', _external=True),
+          PLAYLIST_LIMIT,
+        )
         return render_template('generate-playlist.html')
       else:
         auth_uri = url_for('spotify_auth', _external=True)
