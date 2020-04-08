@@ -29,8 +29,6 @@
   {% if needs_rating|length > 0: %}
   <h3>Which recommendations did you really like and which ones you didn't?</h3>
     <form id="form" action="{{save_url}}" method="POST">
-      <input type="hidden" name="bardo-id" value="{{bardo_id}}">
-      <input type="hidden" name="redirect-uri" value="{{redirect_uri}}">
       <ul>
       {% for id, name in needs_rating.items(): %}
       <!--    <li>{{name}}</li> -->

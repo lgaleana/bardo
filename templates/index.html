@@ -11,8 +11,8 @@
       if (localStorage.bardoId !== undefined) {
         var genPlst = document.getElementById("generatePlst");
         genPlst.href += "?bardo-id=" + localStorage.bardoId;
-        var feedback = document.getElementById("feedback");
-        feedback.href += "?bardo-id=" + localStorage.bardoId;
+        var profile = document.getElementById("profile");
+        profile.href += "?bardo-id=" + localStorage.bardoId;
       }
     }
   </script>
@@ -20,5 +20,5 @@
   <h1>Bardo: AI music curator</h1>
   <ul>
     <li><a id="generatePlst" href="{{playlist_url}}">Get music recommendations</a></body></li>
-    <li><a id="feedback" href="{{rate_url}}">My music preferences</a></body></li>
+    <li><a id="profile" href="{{rate_url}}">My music preferences</a></body></li>
 </html>

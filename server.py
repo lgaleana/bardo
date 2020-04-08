@@ -14,7 +14,7 @@ def main():
   return render_template(
     'index.html',
     playlist_url=url_for('generate_playlist'),
-    rate_url=url_for('rate_playlists'),
+    rate_url=url_for('profile'),
   )
 
 @app.route('/identify')
@@ -60,19 +60,19 @@ def spotify_auth():
   else:
     return 'Invalid request'
 
-@app.route('/rate-playlists')
-def rate_playlists():
+@app.route('/profile')
+def profile():
   bardo_id = request.args.get('bardo-id')
   if bardo_id:
     needs_rating = su.load_tracks_to_rate(bardo_id)
     if len(needs_rating) == 0:
-      return render_template('rate-playlists.html')
+      return render_template('profile.html')
     else:
       return redirect(
-        f'{url_for("rate_recommendations")}?bardo-id={bardo_id}&redirect-uri=rate_playlists'
+        f'{url_for("rate_recommendations")}?bardo-id={bardo_id}&redirect-uri=profile'
       )
   else:
-    generate_url = url_for("rate_playlists").replace('/', '')
+    generate_url = url_for("profile").replace('/', '')
     return redirect(
       f'{url_for("identify")}?redirect-url={generate_url}'
     )
@@ -86,12 +86,11 @@ def rate_recommendations():
   bardo_id = request.args.get('bardo-id')
   if bardo_id:
     needs_rating = su.load_tracks_to_rate(bardo_id)
+    save_url = url_for('save_ratings')
     return render_template(
       'rate-recommendations.html',
       needs_rating=needs_rating,
-      bardo_id=bardo_id,
-      redirect_uri=redirect_uri,
-      save_url=url_for('save_ratings'),
+      save_url=f'{save_url}?bardo-id={bardo_id}&redirect-uri={redirect_uri}',
     )
   else:
     rate_url = url_for("rate_recommendations").replace('/', '')
@@ -101,17 +100,16 @@ def rate_recommendations():
 
 @app.route('/save-ratings', methods=['POST'])
 def save_ratings():
-  bardo_id = request.form.get('bardo-id')
-  redirect_uri = request.form.get('redirect-uri')
-
-  su.save_feedback(
-    bardo_id,
-    request.form.getlist('like'),
-    request.form.getlist('no-like'),
-    request.form.getlist('default'),
-  )
+  bardo_id = request.args.get('bardo-id')
+  redirect_uri = request.args.get('redirect-uri')
 
   if bardo_id and redirect_uri:
+    su.save_feedback(
+      bardo_id,
+      request.form.getlist('like'),
+      request.form.getlist('no-like'),
+      request.form.getlist('default'),
+    )
     return redirect(f'{url_for(redirect_uri)}?bardo-id={bardo_id}')
   else:
     return 'Invalid request.'
