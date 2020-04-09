@@ -59,27 +59,27 @@ train_configs = [
     'standardize': True,
     'params': False,
   },
-  {
-    'name': 'gbdt_cv',
-    'model': GradientBoostingClassifier(random_state=0),
-    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True),
-    'standardize': True,
-    'params': gbdt_params,
-  },
-  {
-    'name': 'gbdt_very',
-    'model': GradientBoostingClassifier(random_state=0),
-    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
-    'standardize': True,
-    'params': False,
-  },
-  {
-    'name': 'gbdt_very_cv',
-    'model': GradientBoostingClassifier(random_state=0),
-    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
-    'standardize': True,
-    'params': gbdt_params,
-  },
+#  {
+#    'name': 'gbdt_cv',
+#    'model': GradientBoostingClassifier(random_state=0),
+#    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True),
+#    'standardize': True,
+#    'params': gbdt_params,
+#  },
+#  {
+#    'name': 'gbdt_very',
+#    'model': GradientBoostingClassifier(random_state=0),
+#    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
+#    'standardize': True,
+#    'params': False,
+#  },
+#  {
+#    'name': 'gbdt_very_cv',
+#    'model': GradientBoostingClassifier(random_state=0),
+#    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
+#    'standardize': True,
+#    'params': gbdt_params,
+#  },
 ]
 
 ### Load labeled tracks

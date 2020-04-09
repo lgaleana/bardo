@@ -28,13 +28,13 @@ def request_token(grant_type='client_credentials', code=None, redirect_uri=None)
   r = requests.post(AUTHORIZATION_URL, data=parameters, headers=headers)
   return r.json()['access_token']
 
-def get_playlist(token, playlist_id, stars):
+def get_playlist(token, playlist_id, name):
   headers = {'Authorization': f'Bearer {token}'}
   offset = 0
   playlist = []
 
   while True:
-    print(f'Getting playlist {stars}-stars, offset {offset}')
+    print(f'Getting playlist {name}, offset {offset}')
     url = PLAYLIST_URL.format(playlist_id, offset)
     r = requests.get(url, headers=headers)
     items = r.json()['items']

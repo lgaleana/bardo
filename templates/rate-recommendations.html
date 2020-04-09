@@ -11,11 +11,9 @@
       var form = document.getElementById("form");
       if (form) {
         form.onsubmit = function() {
-          var likes = Array.from(document.getElementsByClassName("like"));
-          var noLikes = Array.from(document.getElementsByClassName("no-like"));
-          likes = likes.filter(like => like.checked);
-          noLikes = noLikes.filter(noLike => noLike.checked);
-          if (likes.length == 0 && noLikes.length == 0) {
+          var feedback = Array.from(document.getElementsByClassName("feedback"));
+          feedback = feedback.filter(f => f.checked);
+          if (feedback.length == 0) {
             var moveOn = confirm("Feedback is empty");
             return moveOn;
           }
@@ -31,13 +29,11 @@
     <form id="form" action="{{save_url}}" method="POST">
       <ul>
       {% for id, name in needs_rating.items(): %}
-      <!--    <li>{{name}}</li> -->
       <li>
         <p><b>{{name}}</b></p>
         <p>
-          <label>Really liked</label> <input class="like" type="checkbox" name="like" value="{{id}}">
-          <label>Didn't like</label> <input class="no-like" type="checkbox" name="no-like" value="{{id}}">
-          <input type="hidden" name="default" value="{{id}}">
+          <label>Really liked</label> <input class="feedback" type="radio" name="feedback-{{id}}" value="like">
+          <label>Didn't like</label> <input class="feedback" type="radio" name="feedback-{{id}}" value="no-like">
         </p>
       </li>
       <p>

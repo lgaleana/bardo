@@ -31,7 +31,7 @@ class SampleGenerator:
         random_state=RANDOM_STATE,
       )
 
-  def get_name():
+  def get_name(self):
     return self.__class__.__name__
 
   def gen(self):
@@ -84,7 +84,7 @@ class BinaryTestGen(SampleGenerator):
     self.y_train[self.y_train>self.high_pivot] = 1
     self.y_test[self.y_test>self.high_pivot] = 1
 
-  def get_name():
+  def get_name(self):
     name = f'{self.__class__.__name__}'
     if self.balance_neg or self.balance_pos:
       name += ', '
@@ -162,7 +162,7 @@ class VeryBinaryTestGen(BinaryTestGen):
       random_state=RANDOM_STATE,
     )
 
-  def get_name():
+  def get_name(self):
     name = 'Very'
     if self.very < 0:
       name += ' low '

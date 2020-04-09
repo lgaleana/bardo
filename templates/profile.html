@@ -8,11 +8,12 @@
 <body>
   <h1>Bardo: AI music curator</h1>
   <p>Let us know your favorite tracks and the ones that you don't like. We'll use this data to understand your music preferences.</p>
-  <form>
+  <form action="{{save_url}}" method="POST">
     <h3>Favorite tracks</h3>
     <input type="input" name="favorite"> <label>Copy/paste a Spotify playlist URL</label>
     <h3>Tracks that you don't like</h3>
-    <input type="input" name="not-favorite"> <label>Copy/paste a Spotify playlist URL</label>
+    <input type="input" name="no-favorite"> <label>Copy/paste a Spotify playlist URL</label>
+    <input type="hidden" name="token" value="{{token}}">
     <p><input type="submit" value="Submit"></p>
   </form>
 </html>

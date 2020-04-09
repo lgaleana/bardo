@@ -11,9 +11,9 @@
       var redirect = "";
       if (localStorage.bardoId !== undefined) {
         redirect = "?bardo-id=" + localStorage.bardoId;
+        redirect += "&token={{token}}"
       }
-      redirect += redirect + "&code={{code}}"
-      window.location.replace("/generate-playlist" + redirect);
+      window.location.replace("{{redirect_url}}" + redirect);
     }
   </script>
   <p>Validating Spotify authorization</p>
