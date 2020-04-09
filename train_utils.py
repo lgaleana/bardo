@@ -89,7 +89,12 @@ class TrainUtil:
         average='macro',
         zero_division=0,
       ),
-      'f05': m.make_scorer(f05)
+      'f1': m.make_scorer(
+        m.f1_score,
+        labels=[1],
+        average='macro',
+        zero_division=0,
+      ),
     }
 
     if self.params == False:
@@ -121,7 +126,7 @@ class TrainUtil:
         model,
         params,
         scoring=cv_metrics,
-        refit= 'f05',
+        refit= 'f1',
         cv=K,
         return_train_score=True,
         n_jobs=4,

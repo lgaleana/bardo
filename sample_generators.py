@@ -87,13 +87,13 @@ class BinaryTestGen(SampleGenerator):
   def get_name(self):
     name = f'{self.__class__.__name__}'
     if self.balance_neg or self.balance_pos:
-      name += ', '
+      name += ' '
     if self.balance_neg:
-      name += f'balanced to {self.low_pivot}'
+      name += f'balanced to low {self.low_pivot}'
     if self.balance_neg and self.balance_pos:
       name += ' and '
     if self.balance_pos:
-      name += f'balanced to {self.high_pivot}'
+      name += f'balanced to high {self.high_pivot}'
     return name
 
   def print_binary_size_(self):
@@ -163,11 +163,11 @@ class VeryBinaryTestGen(BinaryTestGen):
     )
 
   def get_name(self):
-    name = 'Very'
+    name = ''
     if self.very < 0:
-      name += ' low '
+      name += 'Bottom'
     elif self.very > 0:
-      name += ' high '
+      name += 'Top'
     return f'{name} {super().get_name()}'
 
   def gen(self):
