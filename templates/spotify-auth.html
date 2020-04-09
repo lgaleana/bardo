@@ -8,11 +8,11 @@
 <body>
   <script>
     window.onload = function() {
-      var redirect = "";
-      if (localStorage.bardoId !== undefined) {
-        redirect = "?bardo-id=" + localStorage.bardoId;
-        redirect += "&token={{token}}"
+      var redirect = "?";
+      if (localStorage.bardoId) {
+        redirect += "bardo-id=" + localStorage.bardoId + "&";
       }
+      redirect += "token={{token}}";
       window.location.replace("{{redirect_url}}" + redirect);
     }
   </script>

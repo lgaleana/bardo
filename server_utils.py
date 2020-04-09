@@ -1,18 +1,17 @@
 import spotify_utils as su
 import production_utils as pu
-from datetime import datetime
 import os
 
-def make_playlist(token, limit):
-  now = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+def make_playlist(token, genres, limit, plst_name, exp_config):
   tracks = pu.generate_recommendations(
     token,
-    ['deep-house'],
+    genres,
     limit,
-    now,
+    plst_name,
+    exp_config,
   )
 
-  playlist = su.create_playlist(token, f'{now}')
+  playlist = su.create_playlist(token, plst_name)
   su.populate_playlist(token, playlist, tracks)
 
 def load_profile(bardo_id):
@@ -141,7 +140,7 @@ def process_feedback_input(needs_rating, form):
 
   return feedback
 
-def save_feedback(bardo_id, feedback, d):
+def save_feedback(bardo_id, feedback, d, name):
   idn = bardo_id.replace('@', '-').replace('.', '_')
   id_dir = f'datasets/{idn}'
   feedback_dir = f'{id_dir}/{d}'
@@ -151,8 +150,7 @@ def save_feedback(bardo_id, feedback, d):
   if not os.path.isdir(feedback_dir):
     os.mkdir(feedback_dir)
 
-  now = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-  f = open(f'{feedback_dir}/{now}.txt', 'w+')
+  f = open(f'{feedback_dir}/{name}.txt', 'w+')
   for track in feedback:
     f.write(f'{track["id"]}\t{track["name"]}\t{track["stars"]}\n')
   f.close()

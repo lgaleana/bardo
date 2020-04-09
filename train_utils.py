@@ -51,7 +51,7 @@ class TrainUtil:
 
   def do_cv(self):
     model = self.model
-    params = self.params
+    params = []
 
     X = self.data.X_train
     y = self.data.y_train
@@ -60,19 +60,18 @@ class TrainUtil:
       y = np.concatenate((y, self.data.y_test))
 
     # Adjust params for standardization
+    steps = []
     if self.standardize:
-      model = Pipeline([
-        ('scaler', StandardScaler()),
-        ('selector', VarianceThreshold(self.var_threshold)),
-        ('model', model),
-      ])
-      if self.params != False:
-        params = []
-        for combination in self.params:
-          new_comb = {}
-          for name, param in combination.items():
-            new_comb[f'model__{name}'] = param
-          params.append(new_comb)
+      steps.append(('scaler', StandardScaler()))
+    steps.append(('selector', VarianceThreshold(self.var_threshold)))
+    steps.append(('model', model))
+    model = Pipeline(steps)
+    if self.params != False:
+      for combination in self.params:
+        new_comb = {}
+        for name, param in combination.items():
+          new_comb[f'model__{name}'] = param
+        params.append(new_comb)
 
     # Define cv metrics
     cv_metrics = {
@@ -89,12 +88,7 @@ class TrainUtil:
         average='macro',
         zero_division=0,
       ),
-      'f1': m.make_scorer(
-        m.f1_score,
-        labels=[1],
-        average='macro',
-        zero_division=0,
-      ),
+      'f05': m.make_scorer(f05),
     }
 
     if self.params == False:
@@ -121,19 +115,21 @@ class TrainUtil:
     else:
       # Do cross-validation to obtain best params
       print(f'---CV search for {self.name}---')
-      self.name = f'CV search {self.name}'
+      if 'CV search ' not in self.name:
+        self.name = f'CV search {self.name}'
       gs = GridSearchCV(
         model,
         params,
         scoring=cv_metrics,
-        refit= 'f1',
+        refit= 'f05',
         cv=K,
         return_train_score=True,
         n_jobs=4,
       )
       gs.fit(X, y)
-      best_params = gs.best_estimator_.get_params()
-      if self.standardize:
+      if not self.standardize:
+        best_params = gs.best_estimator_.steps[1][1].get_params()
+      else:
         best_params = gs.best_estimator_.steps[2][1].get_params()
       return {
         'train_acc': gs.cv_results_['mean_train_acc'][gs.best_index_],

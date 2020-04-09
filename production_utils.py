@@ -110,13 +110,19 @@ def load_prod_classifiers():
 
 ### Get a playlist with recommendations
 # Creates a playlist with {limit} tracks from different classifiers
-def generate_recommendations(token, genres, limit, plst_name):
+def generate_recommendations(token, genres, limit, plst_name, exp_config):
   final_playlist = []
   # We will store tracks recommended by every classifier up to a limit
   INDIVIDUAL_LIMIT = 10
   playlists = {}
   for name in classifiers:
-    playlists[name] = {
+    if name in exp_config:
+      playlists[name] = {
+        'ids': [],
+        'names': [],
+      }
+  if 'random' in exp_config:
+    playlists['random'] = {
       'ids': [],
       'names': [],
     }
@@ -142,6 +148,13 @@ def generate_recommendations(token, genres, limit, plst_name):
             playlists[name]['ids'].append(recommendation['id'])
             playlists[name]['names'].append(recommendation['name'])
           print(f'  size: {len(playlists[name]["ids"])}')
+
+        if 'random' in classifiers and recommendation['name'] not in playlists['random']['names'] and len(playlists['random']['ids']) < INDIVIDUAL_LIMIT:
+          print(f'  random prediction: 1.0')
+          playlists['random']['ids'].append(recommendation['id'])
+          playlists['random']['names'].append(recommendation['name'])
+          print(f'  size: {len(playlists["random"]["ids"])}')
+
       else:
         print(f'{recommendation["name"]} already labeled')
 
