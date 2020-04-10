@@ -7,8 +7,13 @@ from datetime import datetime
 app = Flask(__name__)
 
 CLIENT_ID = '8de267b03c464274a3546bfe84496696'
-PLAYLIST_LIMIT = 20
-EXP_CONFIG = ['gbdt']
+PLAYLIST_LIMIT = 10
+EXP_CONFIG = [
+  'svc_cv_very_balanced',
+  'gbdt_cv_very',
+  'gbdt_very_high',
+  'svc_cv_very',
+]
 post_auth = 'main'
 
 pu.load_prod_classifiers()

@@ -5,7 +5,10 @@ import train_utils as t
 import sample_generators as s
 import spotify_utils as su
 import random
+from time import time
 
+
+SECS_IN_10_MIN = 600
 
 ### Fixed params
 # Classifiers
@@ -22,19 +25,6 @@ svc_params = [{
   'kernel': ['rbf'],
   'C': [0.1, 1, 10, 100, 1000],
   'gamma': ['scale', 'auto', 0.01, 0.1, 1, 10],
-  'class_weight': [{1: w} for w in list(range(1, 11))],
-},
-{
-  'kernel': ['sigmoid'],
-  'C': [0.1, 1, 10, 100, 1000],
-  'gamma': ['scale', 'auto', 0.01, 0.1, 1, 10],
-  'class_weight': [{1: w} for w in list(range(1, 11))],
-},
-{
-  'kernel': ['polynomial'],
-  'C': [0.1, 1, 10, 100, 1000],
-  'gamma': ['scale', 'auto', 0.01, 0.1, 1, 10],
-  'degree': list(range(2, 7)),
   'class_weight': [{1: w} for w in list(range(1, 11))],
 }]
 knn_params = [{
@@ -53,33 +43,33 @@ DATASET = 'datasets/dataset_all.txt'
 TEST_SIZE = 0
 train_configs = [
   {
-    'name': 'gbdt',
+    'name': 'svc_cv_very_balanced',
+    'model': SVC(random_state=0),
+    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
+    'standardize': True,
+    'params': svc_params,
+  },
+  {
+    'name': 'gbdt_cv_very',
+    'model': GradientBoostingClassifier(random_state=0),
+    'generator':   s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
+    'standardize': True,
+    'params': gbdt_params,
+  },
+  {
+    'name': 'gbdt_very_high',
     'model': GradientBoostingClassifier(random_state=0),
     'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True),
     'standardize': True,
     'params': False,
   },
-#  {
-#    'name': 'gbdt_cv',
-#    'model': GradientBoostingClassifier(random_state=0),
-#    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True),
-#    'standardize': True,
-#    'params': gbdt_params,
-#  },
-#  {
-#    'name': 'gbdt_very',
-#    'model': GradientBoostingClassifier(random_state=0),
-#    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
-#    'standardize': True,
-#    'params': False,
-#  },
-#  {
-#    'name': 'gbdt_very_cv',
-#    'model': GradientBoostingClassifier(random_state=0),
-#    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
-#    'standardize': True,
-#    'params': gbdt_params,
-#  },
+  {
+    'name': 'svc_cv_very',
+    'model': SVC(random_state=0),
+    'generator':   s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
+    'standardize': True,
+    'params': svc_params,
+  },
 ]
 
 ### Load labeled tracks
@@ -128,10 +118,12 @@ def generate_recommendations(token, genres, limit, plst_name, exp_config):
     }
   
   go_on = True
-  while go_on:
+  start_time = time()
+  while go_on and time() - start_time < SECS_IN_10_MIN:
     # We get 100 recommendations
     t.print_line()
     recommendations = su.get_recommendations(token, genres)
+    print(f'{(time() - start_time) / 10} mins elapsed')
     t.print_line()
     for recommendation in recommendations:
       go_on = False
@@ -149,12 +141,11 @@ def generate_recommendations(token, genres, limit, plst_name, exp_config):
             playlists[name]['names'].append(recommendation['name'])
           print(f'  size: {len(playlists[name]["ids"])}')
 
-        if 'random' in classifiers and recommendation['name'] not in playlists['random']['names'] and len(playlists['random']['ids']) < INDIVIDUAL_LIMIT:
+        if 'random' in playlists and recommendation['name'] not in playlists['random']['names'] and len(playlists['random']['ids']) < INDIVIDUAL_LIMIT:
           print(f'  random prediction: 1.0')
           playlists['random']['ids'].append(recommendation['id'])
           playlists['random']['names'].append(recommendation['name'])
           print(f'  size: {len(playlists["random"]["ids"])}')
-
       else:
         print(f'{recommendation["name"]} already labeled')
 
