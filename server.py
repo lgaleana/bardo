@@ -116,7 +116,7 @@ def profile():
         post_auth = 'profile'
         return redirect(f'https://accounts.spotify.com/authorize?client_id={CLIENT_ID}&response_type=code&redirect_uri={url_for("spotify_auth", _external=True)}&scope=playlist-modify-public playlist-modify-private')
     else:
-      rulr = url_for('rate_recommendations')
+      rurl = url_for('rate_recommendations')
       return redirect(f'{rurl}?bardo-id={bardo_id}&redirect-uri=profile')
   else:
     iurl =url_for('identify') 
