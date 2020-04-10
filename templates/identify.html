@@ -18,6 +18,9 @@
   <h3>What's your email?</h3>
   <form id="emailForm" action="{{redirect_url}}" method="get">
     <input id="email" type="email" name="bardo-id" required>
+    {% for arg in args %}
+      <input type="hidden" name="{{arg[0]}}" value="{{arg[1]}}">
+    {% endfor %}
     <input type="submit" value="Submit">
   </form>
   <p><i>We'll use your email to identify your music preferences and make recommendations.</i></p>
