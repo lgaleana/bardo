@@ -21,21 +21,21 @@ def load_profile(bardo_id):
 
   profile_files = []
   if os.path.isdir(rated_dir):
-    profile_files = profile_files + map(
+    profile_files = profile_files + list(map(
       lambda filename: f'{rated_dir}/{filename}',
       filter(
         lambda filename: filename.endswith('.txt'),
         os.listdir(rated_dir),
       ),
-    )
+    ))
   if os.path.isdir(profile_dir):
-    profile_files = profile_files + map(
+    profile_files = profile_files + list(map(
       lambda filename: f'{profile_dir}/{filename}',
       filter(
         lambda filename: filename.endswith('.txt'),
         os.listdir(profile_dir),
       ),
-    )
+    ))
   profile_files.sort()
 
   profile = []
@@ -46,7 +46,7 @@ def load_profile(bardo_id):
       profile.append({
         'id': track_info[0],
         'name': track_info[1],
-        'stars': track_info[2],
+        'stars': int(track_info[2]),
       })
     f.close()
 

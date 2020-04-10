@@ -81,8 +81,17 @@ def profile():
     if len(needs_rating) == 0:
       token = request.args.get('token')
       if token:
+        liked_url = url_for('tracks', bardo_id=bardo_id, label='liked')
+        not_liked_url = url_for('tracks', bardo_id=bardo_id, label='not-liked')
+        all_url = url_for('tracks', bardo_id=bardo_id, label='all')
         save_url = f'{url_for("save_playlists")}?bardo-id={bardo_id}&token={token}'
-        return render_template('profile.html', save_url=save_url)
+        return render_template(
+          'profile.html',
+          liked_url=liked_url,
+          not_liked_url=not_liked_url,
+          all_url=all_url,
+          save_url=save_url,
+        )
       else:
         global post_auth
         post_auth = 'profile'
@@ -95,6 +104,18 @@ def profile():
     return redirect(
       f'{url_for("identify")}?redirect-uri=profile'
     )
+
+@app.route('/tracks/<bardo_id>/<label>')
+def tracks(bardo_id, label):
+  profile = s.load_profile(bardo_id)
+  if label == 'liked':
+    profile = filter(lambda track: track['stars'] >= 5, profile)
+  elif label == 'not-liked':
+    profile = filter(lambda track: track['stars'] <= 2, profile)
+  elif label != 'all':
+    return 'Invalid request.'
+
+  return render_template('tracks.html', tracks=profile)
 
 @app.route('/save-playlists', methods=['POST'])
 def save_playlists():
