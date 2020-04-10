@@ -8,7 +8,7 @@
 <body>
   <h1>Bardo: AI music curator</h1>
   <p>We'll use your music preferences to create a personalized playlist in your spotify account.</p>
-  <form action="{{generate_url}}" method="GET">
+  <form action="{{url_for('generate_playlist')}}" method="GET">
     <p>
       <p><b>Source</b></p>
       <p>

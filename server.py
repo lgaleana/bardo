@@ -21,11 +21,7 @@ pu.load_prod_classifiers()
 
 @app.route('/')
 def main():
-  return render_template(
-    'index.html',
-    playlist_url=url_for('playlist_selection'),
-    rate_url=url_for('profile'),
-  )
+  return render_template('index.html')
 
 @app.route('/playlist-selection')
 def playlist_selection():
@@ -34,7 +30,6 @@ def playlist_selection():
   if token:
     return render_template(
       'playlist-selection.html',
-      generate_url=url_for('generate_playlist'),
       bardo_id=bardo_id if bardo_id else '',
       token=token,
       exp_clfs=','.join(EXP_CONFIG),
@@ -61,12 +56,14 @@ def generate_playlist():
           data={'token': token, 'genre': genre, 'source': source},
         )
       else:
+        rurl = url_for('rate_recommendations')
         return redirect(
-          f'{url_for("rate_recommendations")}?bardo-id={bardo_id}&token={token}&genre={genre}&source={source}&redirect-uri=generate_playlist'
+          f'{rurl}?bardo-id={bardo_id}&token={token}&genre={genre}&source={source}&redirect-uri=generate_playlist'
         )
     else:
+      iurl = url_for('identify')
       return redirect(
-        f'{url_for("identify")}?token={token}&genre={genre}&source={source}&redirect-uri=generate_playlist'
+        f'{iurl}?token={token}&genre={genre}&source={source}&redirect-uri=generate_playlist'
       )
   else:
     return 'Invalid request.'
@@ -119,13 +116,11 @@ def profile():
         post_auth = 'profile'
         return redirect(f'https://accounts.spotify.com/authorize?client_id={CLIENT_ID}&response_type=code&redirect_uri={url_for("spotify_auth", _external=True)}&scope=playlist-modify-public playlist-modify-private')
     else:
-      return redirect(
-        f'{url_for("rate_recommendations")}?bardo-id={bardo_id}&redirect-uri=profile'
-      )
+      rulr = url_for('rate_recommendations')
+      return redirect(f'{rurl}?bardo-id={bardo_id}&redirect-uri=profile')
   else:
-    return redirect(
-      f'{url_for("identify")}?redirect-uri=profile'
-    )
+    iurl =url_for('identify') 
+    return redirect(f'{iurl}?redirect-uri=profile')
 
 @app.route('/tracks/<bardo_id>/<label>')
 def tracks(bardo_id, label):
@@ -185,8 +180,9 @@ def rate_recommendations():
       save_url=f'{save_url}',
     )
   else:
+    iurl = url_for('identify')
     return redirect(
-      f'{url_for("identify")}?redirect-uri=rate_recommendations'
+      f'{iurl}?redirect-uri=rate_recommendations'
     )
 
 @app.route('/save-ratings/<bardo_id>', methods=['POST'])
