@@ -16,8 +16,8 @@ def make_playlist(token, genres, limit, plst_name, exp_config):
 
 def load_profile(bardo_id):
   idn = bardo_id.replace('@', '-').replace('.', '_')
-  rated_dir = f'datasets/{idn}{id_dir}/feedback'
-  profile_dir = f'datasets/{idn}{id_dir}/profile'
+  rated_dir = f'datasets/{idn}/feedback'
+  profile_dir = f'datasets/{idn}/profile'
 
   profile_files = []
   if os.path.isdir(rated_dir):

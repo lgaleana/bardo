@@ -42,13 +42,13 @@ gbdt_params = [{
 DATASET = 'datasets/dataset_all.txt'
 TEST_SIZE = 0
 train_configs = [
-  {
-    'name': 'svc_cv_very_balanced',
-    'model': SVC(random_state=0),
-    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
-    'standardize': True,
-    'params': svc_params,
-  },
+#  {
+#    'name': 'svc_cv_very_balanced',
+#    'model': SVC(random_state=0),
+#    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
+#    'standardize': True,
+#    'params': svc_params,
+#  },
   {
     'name': 'gbdt_cv_very',
     'model': GradientBoostingClassifier(random_state=0),
@@ -56,35 +56,35 @@ train_configs = [
     'standardize': True,
     'params': gbdt_params,
   },
-  {
-    'name': 'gbdt_very_high',
-    'model': GradientBoostingClassifier(random_state=0),
-    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True),
-    'standardize': True,
-    'params': False,
-  },
-  {
-    'name': 'svc_cv_very',
-    'model': SVC(random_state=0),
-    'generator':   s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
-    'standardize': True,
-    'params': svc_params,
-  },
+#  {
+#    'name': 'gbdt_very_high',
+#    'model': GradientBoostingClassifier(random_state=0),
+#    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True),
+#    'standardize': True,
+#    'params': False,
+#  },
+#  {
+#    'name': 'svc_cv_very',
+#    'model': SVC(random_state=0),
+#    'generator':   s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
+#    'standardize': True,
+#    'params': svc_params,
+#  },
 ]
 
-### Load labeled tracks
-# So that we don't recommend them
-print('---Loading tracks DB---')
-tracks = []
-with open('datasets/tracks.txt') as f:
-  for line in f:
-    track = line.strip().split('\t')[1]
-    tracks.append(track)
-t.print_line()
 
 ### Train production classifiers
+# And load labeled tracks so we don't recommend them
 classifiers = {}
+tracks = []
 def load_prod_classifiers():
+  print('---Loading tracks DB---')
+  with open('datasets/tracks.txt') as f:
+    for line in f:
+      track = line.strip().split('\t')[1]
+      tracks.append(track)
+  t.print_line()
+
   for config in train_configs:
     data = config['generator'].gen()
     tu = t.TrainUtil(
@@ -123,7 +123,6 @@ def generate_recommendations(token, genres, limit, plst_name, exp_config):
     # We get 100 recommendations
     t.print_line()
     recommendations = su.get_recommendations(token, genres)
-    print(f'{(time() - start_time) / 10} mins elapsed')
     t.print_line()
     for recommendation in recommendations:
       go_on = False
@@ -155,22 +154,18 @@ def generate_recommendations(token, genres, limit, plst_name, exp_config):
           break
       if not go_on:
         break
+    print(f'{(time() - start_time) / 60} mins elapsed')
 
   # Save classifier playlists for analysis
+  # and put together final playlist
   for name, plst in playlists.items():
     f = open(
       f'datasets/lsgaleana-gmail_com/playlists/{plst_name}_{name}.txt', 'w+',
     )
     for i, track in enumerate(plst['ids']):
+      final_playlist.append(track)
       f.write(f'{track}\t{plst["names"][i]}\n')
     f.close()
-
-  # Put together final playlist
-  for _ in range(INDIVIDUAL_LIMIT):
-    for name, plst in playlists.items():
-      if plst['ids'][0] not in final_playlist:
-        final_playlist.append(plst['ids'][0])
-      playlists[name]['ids'] = plst['ids'][1:]
 
   random.shuffle(final_playlist)
   return final_playlist
