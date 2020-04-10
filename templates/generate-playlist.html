@@ -4,8 +4,30 @@
   <meta charset="utf-8">
   <title>Bardo: AI music curator</title>
   <meta name="description" content="Using AI to discover new music">
+  <style>
+    #loading {
+      height: 16px;
+      width: 16px;
+      margin-left: 10px;
+    }
+  </style>
 </head>
 <body>
+  <script>
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "{{make_url}}", true);
+    xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    xhr.onload = function (e) {
+      if (xhr.readyState === 4) {
+        var message = document.getElementById("message");
+        message.innerHTML = xhr.responseText;
+      }
+    };
+    xhr.onerror = function (e) {
+      message.innerHTML = "There was an error generating the playlist.";
+    };
+    xhr.send('{{data | tojson | safe}}'); 
+  </script>
   <h1>Bardo: AI music curator</h1>
-  <p>Playlist generated</p>
+  <p id="message">The playlist is being generated... It could take up to 10 minutes<img id="loading" src="{{url_for('static', filename='loading.gif')}}">.</p>
 </html>

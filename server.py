@@ -1,6 +1,6 @@
 from flask import Flask, request, redirect, url_for, render_template
 import production_utils as pu
-import server_utils as s
+import db_utils as db
 import spotify_utils as su
 from datetime import datetime
 
@@ -16,6 +16,7 @@ EXP_CONFIG = [
 ]
 post_auth = 'main'
 
+
 pu.load_prod_classifiers()
 
 @app.route('/')
@@ -30,17 +31,13 @@ def main():
 def playlist_selection():
   bardo_id = request.args.get('bardo-id')
   token = request.args.get('token')
-  bardo_param = ''
-  if bardo_id:
-    bardo_param = f'&bardo-id={bardo_id}'
   if token:
-    generate_url = url_for('generate_playlist')
-    exp_clfs = ','.join(EXP_CONFIG)
     return render_template(
       'playlist-selection.html',
-      bardo_url=f'{generate_url}?token={token}&engine=bardo{bardo_param}',
-      random_url=f'{generate_url}?&token={token}&engine=random{bardo_param}',
-      experiment_url=f'{generate_url}?&token={token}&engine={exp_clfs}{bardo_param}',
+      generate_url=url_for('generate_playlist'),
+      bardo_id=bardo_id if bardo_id else '',
+      token=token,
+      exp_clfs=','.join(EXP_CONFIG),
     )
   else:
     global post_auth
@@ -51,28 +48,50 @@ def playlist_selection():
 def generate_playlist():
   bardo_id = request.args.get('bardo-id')
   token = request.args.get('token')
-  engine = request.args.get('engine')
-  if not engine:
-    engine = 'bardo'
+  genre = request.args.get('genre')
+  source = request.args.get('source')
 
-  genres = ['deep-house']
-  now = datetime.now().strftime("%d-%m-%Y_%H-%M")
-  exp_config = engine.split(',')
-
-  if token:
+  if token and genre and source:
     if bardo_id:
-      needs_rating = s.load_tracks_to_rate(bardo_id)
+      needs_rating = db.load_tracks_to_rate(bardo_id)
       if len(needs_rating) == 0:
-        s.make_playlist(token, genres, PLAYLIST_LIMIT, now, exp_config)
-        return render_template('generate-playlist.html')
+        return render_template(
+          'generate-playlist.html',
+          make_url=url_for('make_playlist', bardo_id=bardo_id),
+          data={'token': token, 'genre': genre, 'source': source},
+        )
       else:
         return redirect(
-          f'{url_for("rate_recommendations")}?bardo-id={bardo_id}&token={token}&engine={engine}&redirect-uri=generate_playlist'
+          f'{url_for("rate_recommendations")}?bardo-id={bardo_id}&token={token}&genre={genre}&source={source}&redirect-uri=generate_playlist'
         )
     else:
       return redirect(
-        f'{url_for("identify")}?token={token}&engine={engine}&redirect-uri=generate_playlist'
+        f'{url_for("identify")}?token={token}&genre={genre}&source={source}&redirect-uri=generate_playlist'
       )
+  else:
+    return 'Invalid request.'
+
+@app.route('/make-playlist/<bardo_id>', methods=['POST'])
+def make_playlist(bardo_id):
+  token = request.json.get('token')
+  genre = request.json.get('genre')
+  source = request.json.get('source')
+
+  if token and source and genre:
+    now = datetime.now().strftime("%d-%m-%Y_%H-%M")
+    tracks = pu.generate_recommendations(
+      token,
+      genre.split(','),
+      source.split(','),
+      PLAYLIST_LIMIT,
+      f'Bardo {now}',
+    )
+    if len(tracks) > 0:
+      playlist = su.create_playlist(token, plst_name)
+      su.populate_playlist(token, playlist, tracks)
+      return f'Playlist {playlist["name"]} has been created in your spotify account.'
+    else:
+      return 'No tracks were generated. Please try again.'
   else:
     return 'Invalid request.'
 
@@ -80,7 +99,7 @@ def generate_playlist():
 def profile():
   bardo_id = request.args.get('bardo-id')
   if bardo_id:
-    needs_rating = s.load_tracks_to_rate(bardo_id)
+    needs_rating = db.load_tracks_to_rate(bardo_id)
     if len(needs_rating) == 0:
       token = request.args.get('token')
       if token:
@@ -110,7 +129,7 @@ def profile():
 
 @app.route('/tracks/<bardo_id>/<label>')
 def tracks(bardo_id, label):
-  profile = s.load_profile(bardo_id)
+  profile = db.load_profile(bardo_id)
   if label == 'liked':
     profile = filter(lambda track: track['stars'] >= 5, profile)
   elif label == 'not-liked':
@@ -127,14 +146,14 @@ def save_playlists(bardo_id):
   not_favorite_url = request.form.get('no-favorite')
 
   if token and (favorite_url or not_favorite_url):
-    feedback = s.process_plst_feedback(
+    feedback = db.process_plst_feedback(
       token,
       favorite_url,
       not_favorite_url,
     )
     if len(feedback) > 0:
       now = datetime.now().strftime("%d-%m-%Y")
-      s.save_feedback(bardo_id, feedback, 'profile', now)
+      db.save_feedback(bardo_id, feedback, 'profile', now)
       return 'Tracks saved.'
     else:
       return 'No tracks saved.'
@@ -157,11 +176,9 @@ def identify():
 def rate_recommendations():
   bardo_id = request.args.get('bardo-id')
   if bardo_id:
-    needs_rating = s.load_tracks_to_rate(bardo_id)
+    needs_rating = db.load_tracks_to_rate(bardo_id)
     save_url = url_for('save_ratings', bardo_id=bardo_id)
-    save_url += '?'
-    for name, param in request.args.items():
-      save_url += f'{name}={param}&'
+    save_url += '?' + get_request_params(request.args)
     return render_template(
       'rate-recommendations.html',
       needs_rating=needs_rating,
@@ -177,17 +194,14 @@ def save_ratings(bardo_id):
   redirect_uri = request.args.get('redirect-uri')
 
   now = datetime.now().strftime("%d-%m-%Y_%H-%M")
-  s.save_feedback(bardo_id, s.process_feedback_input(
-    s.load_tracks_to_rate(bardo_id),
+  db.save_feedback(bardo_id, db.process_feedback_input(
+    db.load_tracks_to_rate(bardo_id),
     request.form,
   ), 'feedback', now)
 
   if redirect_uri:
     redirect_url = url_for(redirect_uri)
-    redirect_url += '?'
-    for name, param in request.args.items():
-      if name != 'redirect-uri':
-        redirect_url += f'{name}={param}&'
+    redirect_url += '?' + get_request_params(request.args, 'redirect-uri')
     return redirect(f'{redirect_url}')
   else:
     return 'Tracks saved.'
@@ -208,3 +222,10 @@ def spotify_auth():
     )
   else:
     return 'Invalid request'
+
+def get_request_params(request, exclude=''):
+  params = ''
+  for name, param in request.items():
+    if name != exclude:
+      params += f'{name}={param}&'
+  return params

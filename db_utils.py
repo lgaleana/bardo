@@ -2,18 +2,6 @@ import spotify_utils as su
 import production_utils as pu
 import os
 
-def make_playlist(token, genres, limit, plst_name, exp_config):
-  tracks = pu.generate_recommendations(
-    token,
-    genres,
-    limit,
-    plst_name,
-    exp_config,
-  )
-
-  playlist = su.create_playlist(token, plst_name)
-  su.populate_playlist(token, playlist, tracks)
-
 def load_profile(bardo_id):
   idn = bardo_id.replace('@', '-').replace('.', '_')
   rated_dir = f'datasets/{idn}/feedback'

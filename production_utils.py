@@ -100,7 +100,7 @@ def load_prod_classifiers():
 
 ### Get a playlist with recommendations
 # Creates a playlist with {limit} tracks from different classifiers
-def generate_recommendations(token, genres, limit, plst_name, exp_config):
+def generate_recommendations(token, genres, exp_config, limit, plst_name):
   final_playlist = []
   # We will store tracks recommended by every classifier up to a limit
   INDIVIDUAL_LIMIT = 10
