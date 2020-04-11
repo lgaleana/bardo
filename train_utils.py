@@ -167,18 +167,21 @@ class TrainUtil:
       train_pred,
       labels=[1],
       average='macro',
+      zero_division=0,
     )
     test_pr = m.precision_score(
       self.data.y_test,
       test_pred,
       labels=[1],
       average='macro',
+      zero_division=0,
     )
     test_rec = m.recall_score(
       self.data.y_test,
       test_pred,
       labels=[1],
       average='macro',
+      zero_division=0,
     )
 
     return train_acc, test_acc, train_pr, test_pr, test_rec

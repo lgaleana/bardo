@@ -7,13 +7,14 @@ from datetime import datetime
 app = Flask(__name__)
 
 CLIENT_ID = '8de267b03c464274a3546bfe84496696'
-PLAYLIST_LIMIT = 10
 EXP_CONFIG = [
-  'svc_cv_very_balanced',
-  'gbdt_cv_very',
-  'gbdt_very_high',
-  'svc_cv_very',
+  'svc',
+  'lsvc_very',
+  'svc_bottom_high',
+  'svc_very_high',
 ]
+PLAYLIST_LIMIT = 10
+TIME_LIMIT = 600
 post_auth = 'main'
 
 
@@ -75,20 +76,21 @@ def make_playlist(bardo_id):
   source = request.json.get('source')
 
   if token and source and genre:
-    now = datetime.now().strftime("%d-%m-%Y_%H-%M")
-    tracks = pu.generate_recommendations(
+    playlists = pu.gen_recs(
       token,
       genre.split(','),
       source.split(','),
+      'MX',
       PLAYLIST_LIMIT,
-      f'Bardo {now}',
+      TIME_LIMIT,
     )
-    if len(tracks) > 0:
-      playlist = su.create_playlist(token, plst_name)
-      su.populate_playlist(token, playlist, tracks)
-      return f'Playlist {playlist["name"]} has been created in your spotify account.'
-    else:
-      return 'No tracks were generated. Please try again.'
+    now = datetime.now().strftime("%d-%m-%Y_%H-%M")
+    db.save_playlists(bardo_id, playlists, now)
+
+    final_plst = playlists['final']
+    playlist = su.create_playlist(token, f'Bardo {now}')
+    su.populate_playlist(token, playlist, final_plst['ids'])
+    return f'Playlist <b>{playlist["name"]}</b> has been created in your spotify account.'
   else:
     return 'Invalid request.'
 

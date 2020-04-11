@@ -4,18 +4,11 @@ from sklearn.ensemble import GradientBoostingClassifier
 import train_utils as t
 import sample_generators as s
 import spotify_utils as su
-import random
+from random import shuffle
 from time import time
 
 
-SECS_IN_10_MIN = 600
-
 ### Fixed params
-# Classifiers
-linear_svc = LinearSVC(dual=False)
-svc = SVC(random_state=0)
-knn = KNeighborsClassifier()
-gbdt = GradientBoostingClassifier(random_state=0)
 # Cross validation
 linear_svc_params = [{
   'C': [0.1, 1, 10, 100, 1000],
@@ -42,49 +35,55 @@ gbdt_params = [{
 DATASET = 'datasets/dataset_all.txt'
 TEST_SIZE = 0
 train_configs = [
-#  {
-#    'name': 'svc_cv_very_balanced',
-#    'model': SVC(random_state=0),
-#    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
-#    'standardize': True,
-#    'params': svc_params,
-#  },
-#  {
-#    'name': 'gbdt_cv_very',
-#    'model': GradientBoostingClassifier(random_state=0),
-#    'generator':   s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
-#    'standardize': True,
-#    'params': gbdt_params,
-#  },
   {
-    'name': 'gbdt_very_high',
-    'model': GradientBoostingClassifier(random_state=0),
-    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True),
+    'name': 'svc',
+    'model': SVC(random_state=0),
+    'generator': s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4),
     'standardize': True,
     'params': False,
   },
 #  {
-#    'name': 'svc_cv_very',
-#    'model': SVC(random_state=0),
-#    'generator':   s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
+#    'name': 'lsvc_very',
+#    'model': LinearSVC(dual=False),
+#    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
 #    'standardize': True,
-#    'params': svc_params,
+#    'params': linear_svc_params,
 #  },
+  {
+    'name': 'svc_bottom_high',
+    'model': SVC(random_state=0),
+    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True, -1),
+    'standardize': True,
+    'params': False,
+  },
+  {
+    'name': 'svc_very_high',
+    'model': SVC(random_state=0),
+    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True),
+    'standardize': True,
+    'params': False,
+  },
 ]
 
 
 ### Train production classifiers
-# And load labeled tracks so we don't recommend them
 classifiers = {}
 tracks = []
+pos_tracks = []
 def load_prod_classifiers():
+  # Load tracks that have already been labeled, so that we don't recommend them
   print('---Loading tracks DB---')
+  pos = []
   with open('datasets/tracks.txt') as f:
     for line in f:
-      track = line.strip().split('\t')[1]
-      tracks.append(track)
+      info = line.strip().split('\t')
+      tracks.append(info[1])
+      if float(info[len(info) - 1]) >= 5:
+        pos_tracks.append(info[0])
+  shuffle(pos_tracks)
   t.print_line()
 
+  # Classifiers
   for config in train_configs:
     data = config['generator'].gen()
     tu = t.TrainUtil(
@@ -98,43 +97,42 @@ def load_prod_classifiers():
     classifiers[config['name']] = tu
   print('Finished training')
 
-### Get a playlist with recommendations
-# Creates a playlist with {limit} tracks from different classifiers
-def generate_recommendations(token, genres, exp_config, limit, plst_name):
-  final_playlist = []
-  # We will store tracks recommended by every classifier up to a limit
-  INDIVIDUAL_LIMIT = 10
+### Get recommendatons from seed tracks or genres
+def gen_recs(token, sgenres, exp_config,  market, slimit, tlimit):
+  # We want tracks from every classifier
   playlists = {}
   for name in classifiers:
-    if name in exp_config:
-      playlists[name] = {
-        'ids': [],
-        'names': [],
-      }
+#    if name in exp_config:
+    playlists[name] = {
+      'ids': [],
+      'names': [],
+    }
   if 'random' in exp_config:
     playlists['random'] = {
       'ids': [],
       'names': [],
     }
+  seeds = {'genres': sgenres}
 
-  # Instrumentalness controls
-  STEP = 0.1
-  minin = 0.0
-  maxin = 1.0
-  nextmin = 0.1
-  
   go_on = True
   start_time = time()
-  while go_on and time() - start_time < SECS_IN_10_MIN:
+  nlabel = 0
+  while go_on and time() - start_time < tlimit:
+    # Add seed tracks
+    stracks = []
+    if nlabel <= 5 and len(pos_tracks) > 0:
+      stracks = [pos_tracks.pop(0)]
+    else:
+      seeds['tracks'] = stracks
+
     nlabel = 0
     # We get 100 recommendations
-    t.print_line()
-    recommendations = su.get_recommendations(token, genres, minin, maxin)
+    recommendations = su.get_recommendations(token, seeds, market)
     t.print_line()
     for recommendation in recommendations:
       go_on = False
-      # Check if track is labeled or has been seen
-      if recommendation['name'] not in tracks:
+      # Check if track is playable of if it's been labeled
+      if recommendation['is_playable'] and recommendation['name'] not in tracks:
         nlabel += 1
         tracks.append(recommendation['name'])
         features = su.get_tracks_features(token, [recommendation])[0]
@@ -143,12 +141,14 @@ def generate_recommendations(token, genres, exp_config, limit, plst_name):
         for name, clf in classifiers.items():
           prediction = clf.predict_prod(features + analysis)
           print(f'  {name} prediction: {prediction}')
-          if prediction == 1 and recommendation['name'] not in playlists[name]['names'] and len(playlists[name]['ids']) < INDIVIDUAL_LIMIT:
+          if prediction == 1 and recommendation['name'] not in playlists[name]['names'] and len(playlists[name]['ids']) < slimit:
             playlists[name]['ids'].append(recommendation['id'])
             playlists[name]['names'].append(recommendation['name'])
+            if recommendation['id'] not in pos_tracks:
+              pos_tracks.append(recommendation['id'])
           print(f'  size: {len(playlists[name]["ids"])}')
 
-        if 'random' in playlists and recommendation['name'] not in playlists['random']['names'] and len(playlists['random']['ids']) < INDIVIDUAL_LIMIT:
+        if 'random' in playlists and recommendation['name'] not in playlists['random']['names'] and len(playlists['random']['ids']) < slimit:
           print(f'  random prediction: 1.0')
           playlists['random']['ids'].append(recommendation['id'])
           playlists['random']['names'].append(recommendation['name'])
@@ -157,35 +157,25 @@ def generate_recommendations(token, genres, exp_config, limit, plst_name):
         print(f'{recommendation["name"]} already labeled')
 
       for plst in playlists.values():
-        if len(plst['ids']) < INDIVIDUAL_LIMIT:
+        if len(plst['ids']) < slimit:
           go_on = True
           break
       if not go_on:
         break
-    print(f'Labeled {nlabel}')
+    t.print_line()
     print(f'{(time() - start_time) / 60} mins elapsed')
+    print(f'{nlabel} new track labeled')
 
-    # Tune instrumentalness with the goal of increasing tracks to label
-    if nlabel == 0:
-      minin = 0.0
-      maxin = 1.0
-    elif nlabel < 10:
-      minin = nextmin
-      maxmin = nextmin + STEP
-      nextmin += STEP
-    if nextmin > 1 - STEP:
-      nextmin = 0.0
-
-  # Save classifier playlists for analysis
-  # and put together final playlist
+  # Add final playlist
+  final_playlist = {
+    'ids': [],
+    'names': [],
+  }
   for name, plst in playlists.items():
-    f = open(
-      f'datasets/lsgaleana-gmail_com/playlists/{plst_name}_{name}.txt', 'w+',
-    )
     for i, track in enumerate(plst['ids']):
-      final_playlist.append(track)
-      f.write(f'{track}\t{plst["names"][i]}\n')
-    f.close()
+      if track not in final_playlist:
+        final_playlist['ids'].append(track)
+        final_playlist['names'].append(plst['names'][i])
+  playlists['final'] = final_playlist
 
-  random.shuffle(final_playlist)
-  return final_playlist
+  return playlists

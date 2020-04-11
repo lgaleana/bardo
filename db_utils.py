@@ -142,3 +142,21 @@ def save_feedback(bardo_id, feedback, d, name):
   for track in feedback:
     f.write(f'{track["id"]}\t{track["name"]}\t{track["stars"]}\n')
   f.close()
+
+def save_playlists(bardo_id, playlists, plst_name):
+  idn = bardo_id.replace('@', '-').replace('.', '_')
+  id_dir = f'datasets/{idn}'
+  plst_dir = f'{id_dir}/playlists'
+
+  if not os.path.isdir(id_dir):
+    os.mkdir(id_dir)
+  if not os.path.isdir(plst_dir):
+    os.mkdir(plst_dir)
+
+  for clf, plst in playlists.items():
+    f = open(
+      f'{plst_dir}/{plst_name}_{clf}.txt', 'w+',
+    )
+    for i, track in enumerate(plst['ids']):
+      f.write(f'{track}\t{plst["names"][i]}\n')
+    f.close() 
