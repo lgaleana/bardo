@@ -165,10 +165,10 @@ class VeryBinaryTestGen(BinaryTestGen):
   def get_name(self):
     name = ''
     if self.very < 0:
-      name += 'Bottom'
+      name += 'Bottom '
     elif self.very > 0:
-      name += 'Top'
-    return f'{name} {super().get_name()}'
+      name += 'Top '
+    return f'{name}{super().get_name()}'
 
   def gen(self):
     print(self.get_name())
@@ -178,10 +178,14 @@ class VeryBinaryTestGen(BinaryTestGen):
     self.print_binary_size_()
 
     return self
-#
+
 #TEST_SIZE = 0.25
 #DATASET = 'datasets/dataset_all.txt'
-#BinaryTestGen(DATASET, TEST_SIZE, 3, 4).gen()
-#VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4).gen()
-#BinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True).gen()
-#VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, False).gen()
+#BinaryTestGen(DATASET, TEST_SIZE, 3, 4).gen(),
+#VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4).gen(),
+#BinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True).gen(),
+#VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True, -1).gen(),
+#VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True).gen(),
+#BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True).gen(),
+#VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True, 1).gen(),
+#VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True).gen(),

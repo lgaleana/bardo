@@ -74,8 +74,6 @@ exp_configs = [
     'name': 'GBDT',
     'model': GradientBoostingClassifier(random_state=0), 
     'modes': [
-      {'standardize': True, 'params': False},
-      {'standardize': True, 'params': gp},
     ],
   },
 ]
