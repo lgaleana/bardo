@@ -116,18 +116,26 @@ def generate_recommendations(token, genres, exp_config, limit, plst_name):
       'ids': [],
       'names': [],
     }
+
+  # Instrumentalness controls
+  STEP = 0.1
+  minin = 0.0
+  maxin = 1.0
+  nextmin = 0.1
   
   go_on = True
   start_time = time()
   while go_on and time() - start_time < SECS_IN_10_MIN:
+    nlabel = 0
     # We get 100 recommendations
     t.print_line()
-    recommendations = su.get_recommendations(token, genres)
+    recommendations = su.get_recommendations(token, genres, minin, maxin)
     t.print_line()
     for recommendation in recommendations:
       go_on = False
       # Check if track is labeled or has been seen
       if recommendation['name'] not in tracks:
+        nlabel += 1
         tracks.append(recommendation['name'])
         features = su.get_tracks_features(token, [recommendation])[0]
         analysis = su.get_track_analysis(token, recommendation)
@@ -154,7 +162,19 @@ def generate_recommendations(token, genres, exp_config, limit, plst_name):
           break
       if not go_on:
         break
+    print(f'Labeled {nlabel}')
     print(f'{(time() - start_time) / 60} mins elapsed')
+
+    # Tune instrumentalness with the goal of increasing tracks to label
+    if nlabel == 0:
+      minin = 0.0
+      maxin = 1.0
+    elif nlabel < 10:
+      minin = nextmin
+      maxmin = nextmin + STEP
+      nextmin += STEP
+    if nextmin > 1 - STEP:
+      nextmin = 0.0
 
   # Save classifier playlists for analysis
   # and put together final playlist

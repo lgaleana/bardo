@@ -186,10 +186,10 @@ def get_track_analysis(token, track):
 
   return useful_features
 
-def get_recommendations(token, genres):
+def get_recommendations(token, genres, minin=0.0, maxin=1.0):
   genres_str = ','.join(genres)
   print(f'Getting {genres_str} recommendations')
-  url = f'https://api.spotify.com/v1/recommendations?limit=100&market=MX&seed_genres={genres_str}'
+  url = f'https://api.spotify.com/v1/recommendations?limit=100&market=MX&seed_genres={genres_str}&min_instrumentalness={minin}&max_instrumentalness={maxin}'
   headers = {'Authorization': f'Bearer {token}'}
   r = requests.get(url, headers=headers)
   return r.json()['tracks']
