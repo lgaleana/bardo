@@ -15,7 +15,14 @@ DO_TEST = True
 DATASET = 'datasets/dataset_all.txt'
 TEST_SIZE = 0.25
 generators = [
+  s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4),
+  s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
+  s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True),
   s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True, -1),
+  s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True),
+  s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
+  s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True, 1),
+  s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
 ]
 
 # CV parameters
@@ -97,37 +104,6 @@ for generator in generators:
       tu = t.TrainUtil(
         name=config['name'],
         model=config['model'],
-        data=data,
-        standardize=mode['standardize'],
-        params=mode['params'],
-      )
-
-      train_acc, test_acc, train_pr, test_pr, test_rec = tu.get_cv_metrics()
-      if DO_TEST:
-        tu.train()
-        train_acc_t, test_acc_t, train_pr_t, test_pr_t, test_rec_t = \
-          tu.get_test_metrics()
-      if LOG_TO_FILE:
-        print('Writting metrics')
-        metrics = f'{tu.get_name()},{train_acc},{test_acc},,{train_pr},{test_pr},{test_rec}'
-        if DO_TEST:
-          metrics += f',,{test_acc_t},,{test_pr_t},{test_rec_t}\n'
-        log_file.write(metrics)
-      else:
-        print(f'Train Acc Test Acc | Train Pr Test Pr Test Rec')
-        print(f'   {train_acc:.2f}      {test_acc:.2f}      {train_pr:.2f}     {test_pr:.2f}    {test_rec:.2f}')
-        if DO_TEST:
-          print(f'TEST-')
-          print(f'           {test_acc_t:.2f}           {test_pr_t:.2f}  {test_rec_t:.2f}')
-
-      m = SVC(random_state=0)
-      if 'Linear' in config['name']:
-        m = LinearSVC(dual=False)
-      elif 'GBDT' in config['name']:
-        m = GradientBoostingClassifier(random_state=0)
-      tu = t.TrainUtil(
-        name=config['name'],
-        model=m,
         data=data,
         standardize=mode['standardize'],
         params=mode['params'],
