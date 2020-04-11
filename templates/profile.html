@@ -22,10 +22,10 @@
   <hr>
   <p>Let us know your favorite tracks and the ones that you don't like, from your Spotify account.</p>
   <form action="{{url_for('save_playlists', bardo_id=bardo_id)}}?token={{token}}" method="POST">
-    <h3>Favorite tracks</h3>
-    <input type="text" name="favorite"> <label>Copy/paste a Spotify playlist URL</label>
-    <h3>Tracks that you don't like</h3>
-    <input type="text" name="no-favorite"> <label>Copy/paste a Spotify playlist URL</label>
+    <p><b>Favorite tracks</b></p>
+    <p><input type="text" name="favorite"> <label>Copy/paste a Spotify playlist URL</label></p>
+    <p><b>Tracks that you don't like</b></p>
+    <p><input type="text" name="no-favorite"> <label>Copy/paste a Spotify playlist URL</label></p>
     <p><input type="submit" value="Submit"></p>
   </form>
 </html>

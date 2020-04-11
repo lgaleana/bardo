@@ -94,7 +94,6 @@ class TrainUtil:
     if self.params == False:
       # Do cross-validation to estimate metrics
       print(f'---CV for {self.name}---')
-      self.name = f'CV {self.name}'
       results = cross_validate(
         model,
         X,
@@ -102,7 +101,6 @@ class TrainUtil:
         scoring=cv_metrics,
         cv=K,
         return_train_score=True,
-        return_estimator=True,
         n_jobs=4,
       )
       return {
@@ -115,8 +113,8 @@ class TrainUtil:
     else:
       # Do cross-validation to obtain best params
       print(f'---CV search for {self.name}---')
-      if 'CV search ' not in self.name:
-        self.name = f'CV search {self.name}'
+      if 'CV' not in self.name:
+        self.name = f'CV {self.name}'
       gs = GridSearchCV(
         model,
         params,
