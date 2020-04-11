@@ -8,14 +8,13 @@
     #loading {
       height: 16px;
       width: 16px;
-      margin-left: 10px;
     }
   </style>
 </head>
 <body>
   <script>
     var xhr = new XMLHttpRequest();
-    xhr.open("POST", "{{make_url}}", true);
+    xhr.open("POST", "{{url_for('make_playlist', bardo_id=bardo_id)}}", true);
     xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     xhr.onload = function (e) {
       if (xhr.readyState === 4) {
@@ -28,6 +27,6 @@
     };
     xhr.send('{{data | tojson | safe}}'); 
   </script>
-  <h1>Bardo: AI music curator</h1>
-  <p id="message">The playlist is being generated... It could take up to 10 minutes<img id="loading" src="{{url_for('static', filename='loading.gif')}}">.</p>
+  <h1>Bardo Recommendations</h1>
+  <p id="message">The playlist is being generated... <img id="loading" src="{{url_for('static', filename='loading.gif')}}"> It could take up to 10 minutes.</p>
 </html>

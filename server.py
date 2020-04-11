@@ -52,7 +52,7 @@ def generate_playlist():
       if len(needs_rating) == 0:
         return render_template(
           'generate-playlist.html',
-          make_url=url_for('make_playlist', bardo_id=bardo_id),
+          bardo_id=bardo_id,
           data={'token': token, 'genre': genre, 'source': source},
         )
       else:
@@ -100,16 +100,10 @@ def profile():
     if len(needs_rating) == 0:
       token = request.args.get('token')
       if token:
-        liked_url = url_for('tracks', bardo_id=bardo_id, label='liked')
-        not_liked_url = url_for('tracks', bardo_id=bardo_id, label='not-liked')
-        all_url = url_for('tracks', bardo_id=bardo_id, label='all')
-        save_url = url_for('save_playlists', bardo_id=bardo_id)
         return render_template(
           'profile.html',
-          liked_url=liked_url,
-          not_liked_url=not_liked_url,
-          all_url=all_url,
-          save_url=f'{save_url}?token={token}',
+          bardo_id=bardo_id,
+          token=token,
         )
       else:
         global post_auth
@@ -163,7 +157,7 @@ def identify():
   args = filter(lambda arg: arg[0] != 'redirect-uri', request.args.items())
   return render_template(
     'identify.html',
-    redirect_url=url_for(redirect_uri),
+    redirect_url=redirect_uri,
     args=args,
   )
 

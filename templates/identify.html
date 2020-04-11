@@ -21,7 +21,7 @@
 
   <h1>Bardo: AI music curator</h1>
   <h3>What's your email?</h3>
-  <form id="emailForm" action="{{redirect_url}}" method="get">
+  <form id="emailForm" action="{{url_for(redirect_url)}}" method="get">
     <input id="email" type="email" name="bardo-id" required>
     {% for arg in args %}
       <input type="hidden" name="{{arg[0]}}" value="{{arg[1]}}">
