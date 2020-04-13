@@ -6,26 +6,32 @@ import sample_generators as s
 import spotify_utils as su
 from random import shuffle
 from time import time
+from copy import deepcopy
 
 
 ### Fixed params
+# Classifiers
+svc = SVC(random_state=0)
+linear_svc = LinearSVC(dual=False)
+knn = KNeighborsClassifier()
+gbdt = GradientBoostingClassifier(random_state=0)
 # Cross validation
-linear_svc_params = [{
+lsp = [{
   'C': [0.1, 1, 10, 100, 1000],
   'class_weight': [{1: w} for w in list(range(1, 11))],
 }]
-svc_params = [{
+sp = [{
   'kernel': ['rbf'],
   'C': [0.1, 1, 10, 100, 1000],
   'gamma': ['scale', 'auto', 0.01, 0.1, 1, 10],
   'class_weight': [{1: w} for w in list(range(1, 11))],
 }]
-knn_params = [{
+kp = [{
   'n_neighbors': list(range(1, 11)),
   'p': list(range(1, 6)),
   'weights': ['uniform', 'distance'],
 }]
-gbdt_params = [{
+gp = [{
   'n_estimators': [16, 32, 64, 100, 150, 200],
   'learning_rate': [0.0001, 0.001, 0.01, 0.025, 0.05,  0.1, 0.25, 0.5],
 }]
@@ -33,35 +39,35 @@ gbdt_params = [{
 ### Training configs
 # These classifiers were picked through experimentation
 DATASET = 'datasets/dataset_all.txt'
-TEST_SIZE = 0
+K = 5
 train_configs = [
   {
-    'name': 'svc',
-    'model': SVC(random_state=0),
-    'generator': s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4),
+    'name': 'svc_cv',
+    'model': deepcopy(svc),
+    'generator': s.BinaryTestGen(DATASET, 3, 4),
     'standardize': True,
-    'params': False,
-  },
-#  {
-#    'name': 'lsvc_very',
-#    'model': LinearSVC(dual=False),
-#    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
-#    'standardize': True,
-#    'params': linear_svc_params,
-#  },
-  {
-    'name': 'svc_bottom_high',
-    'model': SVC(random_state=0),
-    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True, -1),
-    'standardize': True,
-    'params': False,
+    'params': sp,
   },
   {
-    'name': 'svc_very_high',
-    'model': SVC(random_state=0),
-    'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True),
+    'name': 'linear_svc_high',
+    'model': deepcopy(linear_svc),
+    'generator': s.BinaryTestGen(DATASET, 3, 4, False, True),
     'standardize': True,
-    'params': False,
+    'params': None,
+  },
+  {
+    'name': 'linear_svc_balanced',
+    'model': deepcopy(linear_svc),
+    'generator': s.BinaryTestGen(DATASET, 3, 4, True, True),
+    'standardize': True,
+    'params': None,
+  },
+  {
+    'name': 'svc_cv_very',
+    'model': deepcopy(svc),
+    'generator': s.VeryBinaryTestGen(DATASET, 3, 4),
+    'standardize': True,
+    'params': sp,
   },
 ]
 
@@ -85,11 +91,11 @@ def load_prod_classifiers():
 
   # Classifiers
   for config in train_configs:
-    data = config['generator'].gen()
     tu = t.TrainUtil(
       name=config['name'],
       model=config['model'],
-      data=data,
+      data=config['generator'],
+      k=K,
       standardize=config['standardize'],
       params=config['params']
     )
@@ -119,11 +125,10 @@ def gen_recs(token, sgenres, exp_config,  market, slimit, tlimit):
   nlabel = 0
   while go_on and time() - start_time < tlimit:
     # Add seed tracks
-    stracks = []
     if nlabel <= 5 and len(pos_tracks) > 0:
-      stracks = [pos_tracks.pop(0)]
+      seeds['tracks'] = [pos_tracks.pop(0)]
     else:
-      seeds['tracks'] = stracks
+      seeds['tracks'] = []
 
     nlabel = 0
     # We get 100 recommendations

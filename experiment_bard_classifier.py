@@ -14,15 +14,16 @@ DO_TEST = True
 # We want to test many
 DATASET = 'datasets/dataset_all.txt'
 TEST_SIZE = 0.25
+K = 5
 generators = [
-  s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4),
-  s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4),
-  s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True),
-  s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True, -1),
-  s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True),
-  s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
-  s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True, 1),
-  s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
+  s.BinaryTestGen(DATASET, 3, 4),
+  s.VeryBinaryTestGen(DATASET, 3, 4),
+  s.BinaryTestGen(DATASET, 3, 4, False, True),
+  s.VeryBinaryTestGen(DATASET, 3, 4, False, True, -1),
+  s.VeryBinaryTestGen(DATASET, 3, 4, False, True),
+  s.BinaryTestGen(DATASET, 3, 4, True, True),
+  s.VeryBinaryTestGen(DATASET, 3, 4, True, True, 1),
+  s.VeryBinaryTestGen(DATASET, 3, 4, True, True),
 ]
 
 # CV parameters
@@ -52,7 +53,7 @@ exp_configs = [
     'name': 'Linear SVC',
     'model': LinearSVC(dual=False), 
     'modes': [
-      {'standardize': True, 'params': False},
+      {'standardize': True, 'params': None},
       {'standardize': True, 'params': lsp},
     ],
   },
@@ -60,7 +61,7 @@ exp_configs = [
     'name': 'SVC',
     'model': SVC(random_state=0), 
     'modes': [
-      {'standardize': True, 'params': False},
+      {'standardize': True, 'params': None},
       {'standardize': True, 'params': sp},
     ],
   },
@@ -68,12 +69,16 @@ exp_configs = [
     'name': 'KNN',
     'model': KNeighborsClassifier(),
     'modes': [
+      {'standardize': True, 'params': None},
+      {'standardize': True, 'params': kp},
     ],
   },
   {
     'name': 'GBDT',
     'model': GradientBoostingClassifier(random_state=0), 
     'modes': [
+      {'standardize': True, 'params': None},
+      {'standardize': True, 'params': gp},
     ],
   },
 ]
@@ -91,27 +96,30 @@ if LOG_TO_FILE:
   log_file.write(header)
 
 for generator in generators:
-  data = generator.gen()
+  print(generator.get_name())
+  t.print_line()
 
   if LOG_TO_FILE:
-    log_file.write(f'{data.get_name()}\n') 
+    log_file.write(f'{generator.get_name()}\n') 
 
   # Training of all configs
   for config in exp_configs:
     for mode in config['modes']:
       tu = t.TrainUtil(
         name=config['name'],
-        model=config['model'],
-        data=data,
+        model=deepcopy(config['model']),
+        data=deepcopy(generator),
+        k=K,
         standardize=mode['standardize'],
         params=mode['params'],
       )
 
       train_acc, test_acc, train_pr, test_pr, test_rec = tu.get_cv_metrics()
       if DO_TEST:
-        tu.train()
+        tu.train(TEST_SIZE)
         train_acc_t, test_acc_t, train_pr_t, test_pr_t, test_rec_t = \
           tu.get_test_metrics()
+
       if LOG_TO_FILE:
         print('Writting metrics')
         metrics = f'{tu.get_name()},{train_acc},{test_acc},,{train_pr},{test_pr},{test_rec}'

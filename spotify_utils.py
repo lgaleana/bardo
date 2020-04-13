@@ -190,7 +190,8 @@ def get_track_analysis(token, track):
 def get_recommendations(token, seeds, market=''):
   sparams = []
   for name, seed in seeds.items():
-    sparams.append(f'seed_{name}={",".join(seed)}')
+    if len(seed) > 0:
+      sparams.append(f'seed_{name}={",".join(seed)}')
   params = ''
   if len(sparams) > 0:
     params = f'&{"&".join(sparams)}'

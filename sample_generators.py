@@ -5,15 +5,35 @@ from sklearn.utils import shuffle
 RANDOM_STATE = 0
 
 class SampleGenerator:
-  def __init__(self, dataset, test_size):
+  def __init__(self, dataset):
     self.data = np.loadtxt(dataset, delimiter='\t')
-    self.test_size = test_size
   
     m = len(self.data[1])
     self.X = self.data[:,:m-1]
     self.y = self.data[:,m-1]
-    self.labels = np.sort(np.unique(self.y))
 
+    self.X, self.y = shuffle(
+      self.X,
+      self.y,
+      random_state=RANDOM_STATE,
+    )
+
+class BinaryTestGen(SampleGenerator):
+  def __init__(
+    self,
+    dataset,
+    low_pivot=3,
+    high_pivot=3,
+    balance_neg=False,
+    balance_pos=False,
+  ):
+    super().__init__(dataset)
+    self.low_pivot = low_pivot
+    self.high_pivot = high_pivot
+    self.balance_neg = balance_neg
+    self.balance_pos = balance_pos
+
+  def gen_split_(self, test_size):
     if test_size > 0:
       # Split into train and test sets
       self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
@@ -22,43 +42,14 @@ class SampleGenerator:
         test_size=test_size,
         random_state=RANDOM_STATE,
       )
+      # Remove pivots from test
+      self.X_test = self.X_test[self.y_test!=self.low_pivot]
+      self.y_test = self.y_test[self.y_test!=self.low_pivot]
+      self.X_test = self.X_test[self.y_test!=self.high_pivot]
+      self.y_test = self.y_test[self.y_test!=self.high_pivot]
     else:
       # Use all data for training
-      self.X_test, self.y_test = np.empty([0, 0]), np.empty([0, 0])
-      self.X_train, self.y_train = shuffle(
-        self.X,
-        self.y,
-        random_state=RANDOM_STATE,
-      )
-
-  def get_name(self):
-    return self.__class__.__name__
-
-  def gen(self):
-    print(selg.get_name())
-    return self
-
-class BinaryTestGen(SampleGenerator):
-  def __init__(
-    self,
-    dataset,
-    test_size,
-    low_pivot=3,
-    high_pivot=3,
-    balance_neg=False,
-    balance_pos=False,
-  ):
-    super().__init__(dataset, test_size)
-    self.low_pivot = low_pivot
-    self.high_pivot = high_pivot
-    self.balance_neg = balance_neg
-    self.balance_pos = balance_pos
-
-    # Remove pivots from test
-    self.X_test = self.X_test[self.y_test!=self.low_pivot]
-    self.y_test = self.y_test[self.y_test!=self.low_pivot]
-    self.X_test = self.X_test[self.y_test!=self.high_pivot]
-    self.y_test = self.y_test[self.y_test!=self.high_pivot]
+      self.X_train, self.y_train = self.X, self.y
 
   def balance_(self):
     # Make low pivot negative
@@ -76,13 +67,13 @@ class BinaryTestGen(SampleGenerator):
       self.X_train = self.X_train[self.y_train!=self.high_pivot]
       self.y_train = self.y_train[self.y_train!=self.high_pivot]
 
-  def transform_binary_(self):
-    # Labels below low pivot become negative
+  def transform_binary_(self, test_size):
+    # Labels below low pivot become negative; above high pivot, positive
     self.y_train[self.y_train<self.low_pivot] = 0
-    self.y_test[self.y_test<self.low_pivot] = 0
-    # Labels above high pivot become positive
     self.y_train[self.y_train>self.high_pivot] = 1
-    self.y_test[self.y_test>self.high_pivot] = 1
+    if test_size > 0:
+      self.y_test[self.y_test<self.low_pivot] = 0
+      self.y_test[self.y_test>self.high_pivot] = 1
 
   def get_name(self):
     name = f'{self.__class__.__name__}'
@@ -103,11 +94,11 @@ class BinaryTestGen(SampleGenerator):
     print(f'Total: {len(self.y_train) + len(self.y_test)}')
     print('--------------------------------------------------------')
 
-  def gen(self):
-    print(self.get_name())
+  def gen(self, test_size):
+    self.gen_split_(test_size)
     self.balance_()
-    self.transform_binary_()
-    self.print_binary_size_()
+    self.transform_binary_(test_size)
+#    self.print_binary_size_()
 
     return self
 
@@ -115,7 +106,6 @@ class VeryBinaryTestGen(BinaryTestGen):
   def __init__(
     self,
     dataset,
-    test_size,
     low_pivot=3,
     high_pivot=3,
     balance_neg=False,
@@ -125,7 +115,6 @@ class VeryBinaryTestGen(BinaryTestGen):
     BinaryTestGen.__init__(
       self,
       dataset,
-      test_size,
       low_pivot,
       high_pivot,
       balance_neg,
@@ -170,22 +159,22 @@ class VeryBinaryTestGen(BinaryTestGen):
       name += 'Top '
     return f'{name}{super().get_name()}'
 
-  def gen(self):
-    print(self.get_name())
+  def gen(self, test_size):
+    self.gen_split_(test_size)
     self.make_very_()
     self.balance_()
-    self.transform_binary_()
-    self.print_binary_size_()
+    self.transform_binary_(test_size)
+#    self.print_binary_size_()
 
     return self
-
-#TEST_SIZE = 0.25
+#
 #DATASET = 'datasets/dataset_all.txt'
-#BinaryTestGen(DATASET, TEST_SIZE, 3, 4).gen(),
-#VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4).gen(),
-#BinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True).gen(),
-#VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True, -1).gen(),
-#VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, False, True).gen(),
-#BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True).gen(),
-#VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True, 1).gen(),
-#VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True).gen(),
+#TEST_SIZE = 0.25
+#BinaryTestGen(DATASET, 3, 4).gen(TEST_SIZE),
+#VeryBinaryTestGen(DATASET, 3, 4).gen(TEST_SIZE),
+#BinaryTestGen(DATASET, 3, 4, False, True).gen(TEST_SIZE),
+#VeryBinaryTestGen(DATASET, 3, 4, False, True, -1).gen(TEST_SIZE),
+#VeryBinaryTestGen(DATASET, 3, 4, False, True).gen(TEST_SIZE),
+#BinaryTestGen(DATASET, 3, 4, True, True).gen(TEST_SIZE),
+#VeryBinaryTestGen(DATASET, 3, 4, True, True, 1).gen(TEST_SIZE),
+#VeryBinaryTestGen(DATASET, 3, 4, True, True).gen(TEST_SIZE),

@@ -9,8 +9,7 @@ from sklearn.feature_selection import VarianceThreshold
 import warnings
 from sklearn.exceptions import ConvergenceWarning
 warnings.simplefilter("ignore", ConvergenceWarning)
-
-K = 5
+from copy import deepcopy
 
 class TrainUtil:
   def __init__(
@@ -18,55 +17,63 @@ class TrainUtil:
     name,
     model,
     data,
+    k=5,
     standardize=False,
-    params=False,
-    var_threshold=1e-4
+    var_threshold=1e-4,
+    params=None,
   ):
     self.name = name
-    self.model = model
-    self.data = data
+    # Base model contains the initial model config
+    self.base_model = model
+    # The actual model that was fit
+    self.model = None
+    # Base data to be generated with different test sizes
+    self.base_data = data
+    # The actual data that was used to fit the model
+    self.data = None
+    # Number of folds for cross validation
+    self.k = k
     self.standardize = standardize
-    self.params = params
+    # Variance threshold for feature selection
     self.var_threshold = var_threshold
+    # Param grid to find the best params
+    self.params = params
+    self.best_params = None
 
     if self.standardize:
       self.name = f'Scaled {self.name}'
 
-  def train(self):
-    if self.params == False:
+  def train(self, test_size=0.0):
+    self.data = deepcopy(self.base_data).gen(test_size)
+    if self.params is None:
       print(f'---Training {self.name}---')
-      return self.train_base_(self.model)
+      self.model = self.train_base_(deepcopy(self.base_model))
     else:
-      return self.train_cv_()
+      self.model = self.train_cv_()
 
   def train_base_(self, model):
     X_train = self.data.X_train
     if self.standardize:
-      self.scaler = StandardScaler().fit(self.data.X_train)
+      self.scaler = StandardScaler().fit(X_train)
       X_train = self.scaler.transform(X_train)
     # Selector of high-variance features
-    self.selector = VarianceThreshold(self.var_threshold).fit(self.data.X_train)
+    self.selector = VarianceThreshold(self.var_threshold).fit(X_train)
     X_train = self.selector.transform(X_train)
     return model.fit(X_train, self.data.y_train)
 
   def do_cv(self):
-    model = self.model
-    params = []
+    data = deepcopy(self.base_data).gen(0.0)
+    X, y = data.X_train, data.y_train
 
-    X = self.data.X_train
-    y = self.data.y_train
-    if self.data.test_size > 0:
-      X = np.concatenate((X, self.data.X_test))
-      y = np.concatenate((y, self.data.y_test))
-
-    # Adjust params for standardization
+    # Build model pipeline
     steps = []
     if self.standardize:
       steps.append(('scaler', StandardScaler()))
     steps.append(('selector', VarianceThreshold(self.var_threshold)))
-    steps.append(('model', model))
-    model = Pipeline(steps)
-    if self.params != False:
+    steps.append(('model', deepcopy(self.base_model)))
+    pipe = Pipeline(steps)
+    params = []
+    if self.params is not None:
       for combination in self.params:
         new_comb = {}
         for name, param in combination.items():
@@ -91,15 +98,15 @@ class TrainUtil:
       'f05': m.make_scorer(f05),
     }
 
-    if self.params == False:
+    if self.params is None:
       # Do cross-validation to estimate metrics
       print(f'---CV for {self.name}---')
       results = cross_validate(
-        model,
+        pipe,
         X,
         y,
         scoring=cv_metrics,
-        cv=K,
+        cv=self.k,
         return_train_score=True,
         n_jobs=4,
       )
@@ -113,37 +120,37 @@ class TrainUtil:
     else:
       # Do cross-validation to obtain best params
       print(f'---CV search for {self.name}---')
-      if 'CV' not in self.name:
-        self.name = f'CV {self.name}'
+      self.name = f'CV {self.name}'
       gs = GridSearchCV(
-        model,
+        pipe,
         params,
         scoring=cv_metrics,
         refit= 'f05',
-        cv=K,
+        cv=5,
         return_train_score=True,
         n_jobs=4,
       )
       gs.fit(X, y)
       if not self.standardize:
-        best_params = gs.best_estimator_.steps[1][1].get_params()
+        self.best_params = gs.best_estimator_.steps[1][1].get_params()
       else:
-        best_params = gs.best_estimator_.steps[2][1].get_params()
+        self.best_params = gs.best_estimator_.steps[2][1].get_params()
       return {
         'train_acc': gs.cv_results_['mean_train_acc'][gs.best_index_],
         'test_acc': gs.cv_results_['mean_test_acc'][gs.best_index_],
         'train_pr': gs.cv_results_['mean_train_pr'][gs.best_index_],
         'test_pr': gs.cv_results_['mean_test_pr'][gs.best_index_],
         'test_rec': gs.cv_results_['mean_test_rec'][gs.best_index_],
-        'params': best_params,
       }
 
   def train_cv_(self):
-    gs = self.do_cv()
-    # Use best params to train a new model with all train data
+    model = deepcopy(self.base_model)
+    if self.best_params is None:
+      gs = self.do_cv()
+    # Use best params to train the model
     print(f'-Training estimator with best params-')
-    self.model.set_params(**gs['params'])
-    return self.train_base_(self.model)
+    model.set_params(**self.best_params)
+    return self.train_base_(model)
 
   def predict(self, X):
     if self.standardize:
@@ -191,9 +198,6 @@ class TrainUtil:
   def get_name(self):
     return self.name
 
-  def get_params(self):
-    return self.model.get_params()
-
   def plot_learning_curve(self, scorer=None, points=20):
     print('Plotting learning curve')
     # Make X and y similar to train and test transformations
@@ -204,10 +208,10 @@ class TrainUtil:
     X = VarianceThreshold(self.var_threshold).fit_transform(X)
 
     train_sizes, train_scores, test_scores = learning_curve(
-      self.model,
+      deepcopy(self.model),
       X,
       y,
-      cv=K,
+      cv=self.k,
       train_sizes=np.linspace(0.1, 1.0, points),
       scoring=scorer,
       n_jobs=4,
