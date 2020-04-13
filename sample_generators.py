@@ -54,14 +54,12 @@ class BinaryTestGen(SampleGenerator):
   def balance_(self):
     # Make low pivot negative
     if self.balance_neg:
-      self.X_train[self.y_train==self.low_pivot] = self.low_pivot - 1
       self.y_train[self.y_train==self.low_pivot] = self.low_pivot - 1
     else:
       self.X_train = self.X_train[self.y_train!=self.low_pivot]
       self.y_train = self.y_train[self.y_train!=self.low_pivot]
     # Make high pivot positive
     if self.balance_pos:
-      self.X_train[self.y_train==self.high_pivot] = self.high_pivot + 1
       self.y_train[self.y_train==self.high_pivot] = self.high_pivot + 1
     else:
       self.X_train = self.X_train[self.y_train!=self.high_pivot]
@@ -95,6 +93,7 @@ class BinaryTestGen(SampleGenerator):
     print('--------------------------------------------------------')
 
   def gen(self, test_size):
+#    print(self.get_name())
     self.gen_split_(test_size)
     self.balance_()
     self.transform_binary_(test_size)
@@ -160,6 +159,7 @@ class VeryBinaryTestGen(BinaryTestGen):
     return f'{name}{super().get_name()}'
 
   def gen(self, test_size):
+#    print(self.get_name())
     self.gen_split_(test_size)
     self.make_very_()
     self.balance_()

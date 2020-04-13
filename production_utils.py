@@ -178,7 +178,7 @@ def gen_recs(token, sgenres, exp_config,  market, slimit, tlimit):
   }
   for name, plst in playlists.items():
     for i, track in enumerate(plst['ids']):
-      if track not in final_playlist:
+      if track not in final_playlist['ids']:
         final_playlist['ids'].append(track)
         final_playlist['names'].append(plst['names'][i])
   playlists['final'] = final_playlist

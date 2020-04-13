@@ -4,6 +4,7 @@ from sklearn.ensemble import GradientBoostingClassifier
 import sample_generators as s
 import train_utils as t
 from datetime import datetime
+from copy import deepcopy
 
 
 LOG_TO_FILE = True
@@ -69,8 +70,6 @@ exp_configs = [
     'name': 'KNN',
     'model': KNeighborsClassifier(),
     'modes': [
-      {'standardize': True, 'params': None},
-      {'standardize': True, 'params': kp},
     ],
   },
   {
