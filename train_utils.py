@@ -126,7 +126,7 @@ class TrainUtil:
         params,
         scoring=cv_metrics,
         refit= 'f05',
-        cv=5,
+        cv=self.k,
         return_train_score=True,
         n_jobs=4,
       )

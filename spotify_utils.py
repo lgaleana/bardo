@@ -10,7 +10,7 @@ AUTHORIZATION_URL = 'https://accounts.spotify.com/api/token'
 PLAYLIST_URL = 'https://api.spotify.com/v1/playlists/{}/tracks?limit=100&offset={}'
 FEATURES_URL = 'https://api.spotify.com/v1/audio-features'
 ANALYSIS_URL = 'https://api.spotify.com/v1/audio-analysis'
-RECS_URL = 'https://api.spotify.com/v1/recommendations?limit=100'
+RECS_URL = 'https://api.spotify.com/v1/recommendations'
 CREATE_PLAYLIST_URL = 'https://api.spotify.com/v1/users/lsgaleana/playlists'
 POPULATE_PLAYLIST_URL = 'https://api.spotify.com/v1/playlists/{}/tracks?uris={}'
 
@@ -187,7 +187,7 @@ def get_track_analysis(token, track):
 
   return useful_features
 
-def get_recommendations(token, seeds, market=''):
+def get_recommendations(token, seeds, limit, market=''):
   sparams = []
   for name, seed in seeds.items():
     if len(seed) > 0:
@@ -197,7 +197,7 @@ def get_recommendations(token, seeds, market=''):
     params = f'&{"&".join(sparams)}'
   if market:
     params += f'&market={market}'
-  url = f'{RECS_URL}{params}'
+  url = f'{RECS_URL}?limit={limit}{params}'
   print(f'Getting recommendations: {url}')
   headers = {'Authorization': f'Bearer {token}'}
   r = requests.get(url, headers=headers)

@@ -42,32 +42,25 @@ DATASET = 'datasets/dataset_all.txt'
 K = 5
 train_configs = [
   {
-    'name': 'svc_cv',
+    'name': 'svc_very_high',
     'model': deepcopy(svc),
-    'generator': s.BinaryTestGen(DATASET, 3, 4),
-    'standardize': True,
-    'params': sp,
-  },
-  {
-    'name': 'linear_svc_high',
-    'model': deepcopy(linear_svc),
-    'generator': s.BinaryTestGen(DATASET, 3, 4, False, True),
+    'generator': s.VeryBinaryTestGen(DATASET, 3, 4, False, True),
     'standardize': True,
     'params': None,
   },
   {
-    'name': 'linear_svc_balanced',
-    'model': deepcopy(linear_svc),
+    'name': 'svc_cv_bottom_high',
+    'model': deepcopy(svc),
+    'generator': s.VeryBinaryTestGen(DATASET, 3, 4, False, True, -1),
+    'standardize': True,
+    'params': sp,
+  },
+  {
+    'name': 'svc_balanced',
+    'model': deepcopy(svc),
     'generator': s.BinaryTestGen(DATASET, 3, 4, True, True),
     'standardize': True,
     'params': None,
-  },
-  {
-    'name': 'svc_cv_very',
-    'model': deepcopy(svc),
-    'generator': s.VeryBinaryTestGen(DATASET, 3, 4),
-    'standardize': True,
-    'params': sp,
   },
 ]
 
@@ -84,7 +77,7 @@ def load_prod_classifiers():
     for line in f:
       info = line.strip().split('\t')
       tracks.append(info[1])
-      if float(info[len(info) - 1]) >= 5:
+      if float(info[len(info) - 1]) == 6:
         pos_tracks.append(info[0])
   shuffle(pos_tracks)
   t.print_line()
@@ -127,12 +120,14 @@ def gen_recs(token, sgenres, exp_config,  market, slimit, tlimit):
     # Add seed tracks
     if nlabel <= 5 and len(pos_tracks) > 0:
       seeds['tracks'] = [pos_tracks.pop(0)]
+      rlimit = 10
     else:
       seeds['tracks'] = []
+      rlimit = 100
 
     nlabel = 0
     # We get 100 recommendations
-    recommendations = su.get_recommendations(token, seeds, market)
+    recommendations = su.get_recommendations(token, seeds, rlimit, market)
     t.print_line()
     for recommendation in recommendations:
       go_on = False
