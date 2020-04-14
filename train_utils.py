@@ -63,7 +63,6 @@ class TrainUtil:
 
   def do_cv(self):
     data = deepcopy(self.base_data).gen(0.0)
-    X, y = data.X_train, data.y_train
 
     # Build model pipeline
     steps = []
@@ -103,8 +102,8 @@ class TrainUtil:
       print(f'---CV for {self.name}---')
       results = cross_validate(
         pipe,
-        X,
-        y,
+        data.X_train,
+        data.y_train,
         scoring=cv_metrics,
         cv=self.k,
         return_train_score=True,
@@ -130,7 +129,7 @@ class TrainUtil:
         return_train_score=True,
         n_jobs=4,
       )
-      gs.fit(X, y)
+      gs.fit(data.X_train, data.y_train)
       if not self.standardize:
         self.best_params = gs.best_estimator_.steps[1][1].get_params()
       else:

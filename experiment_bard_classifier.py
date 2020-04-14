@@ -7,7 +7,7 @@ from datetime import datetime
 from copy import deepcopy
 
 
-LOG_TO_FILE = False
+LOG_TO_FILE = True
 DO_TEST = True
 
 ### Experimentation configs

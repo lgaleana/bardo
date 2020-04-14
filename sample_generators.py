@@ -41,6 +41,7 @@ class BinaryTestGen(SampleGenerator):
         self.y,
         test_size=test_size,
         random_state=RANDOM_STATE,
+        stratify=self.y,
       )
       # Remove pivots from test
       self.X_test = self.X_test[self.y_test!=self.low_pivot]
