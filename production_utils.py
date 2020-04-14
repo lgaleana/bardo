@@ -8,59 +8,32 @@ from random import shuffle
 from time import time
 from copy import deepcopy
 
-
-### Fixed params
 # Classifiers
 svc = SVC(random_state=0)
 linear_svc = LinearSVC(dual=False)
 knn = KNeighborsClassifier()
 gbdt = GradientBoostingClassifier(random_state=0)
-# Cross validation
-lsp = [{
-  'C': [0.1, 1, 10, 100, 1000],
-  'class_weight': [{1: w} for w in list(range(1, 11))],
-}]
-sp = [{
-  'kernel': ['rbf'],
-  'C': [0.1, 1, 10, 100, 1000],
-  'gamma': ['scale', 'auto', 0.01, 0.1, 1, 10],
-  'class_weight': [{1: w} for w in list(range(1, 11))],
-}]
-kp = [{
-  'n_neighbors': list(range(1, 11)),
-  'p': list(range(1, 6)),
-  'weights': ['uniform', 'distance'],
-}]
-gp = [{
-  'n_estimators': [16, 32, 64, 100, 150, 200],
-  'learning_rate': [0.0001, 0.001, 0.01, 0.025, 0.05,  0.1, 0.25, 0.5],
-}]
-
-### Training configs
 # These classifiers were picked through experimentation
 DATASET = 'datasets/dataset_all.txt'
 K = 5
 train_configs = [
   {
-    'name': 'svc_very_high',
-    'model': deepcopy(svc),
-    'generator': s.VeryBinaryTestGen(DATASET, 3, 4, False, True),
-    'standardize': True,
-    'params': None,
-  },
-  {
-    'name': 'svc_cv_bottom_high',
+    'name': 'svc_bottom_high',
     'model': deepcopy(svc),
     'generator': s.VeryBinaryTestGen(DATASET, 3, 4, False, True, -1),
     'standardize': True,
-    'params': sp,
   },
   {
-    'name': 'svc_balanced',
+    'name': 'svc_very',
     'model': deepcopy(svc),
-    'generator': s.BinaryTestGen(DATASET, 3, 4, True, True),
+    'generator': s.VeryBinaryTestGen(DATASET, 3, 4),
     'standardize': True,
-    'params': None,
+  },
+  {
+    'name': 'svc_cv_very',
+    'model': SVC(C=1.0, gamma=0.1, class_weight={1: 2}, random_state=0),
+    'generator': s.VeryBinaryTestGen(DATASET, 3, 4),
+    'standardize': True,
   },
 ]
 
@@ -71,7 +44,7 @@ tracks = []
 pos_tracks = []
 def load_prod_classifiers():
   # Load tracks that have already been labeled, so that we don't recommend them
-  print('---Loading tracks DB---')
+  print('Loading tracks DB')
   pos = []
   with open('datasets/tracks.txt') as f:
     for line in f:
@@ -80,7 +53,6 @@ def load_prod_classifiers():
       if float(info[len(info) - 1]) == 6:
         pos_tracks.append(info[0])
   shuffle(pos_tracks)
-  t.print_line()
 
   # Classifiers
   for config in train_configs:
@@ -88,9 +60,9 @@ def load_prod_classifiers():
       name=config['name'],
       model=config['model'],
       data=config['generator'],
-      k=K,
+      test_size=0.0,
       standardize=config['standardize'],
-      params=config['params']
+      k=K,
     )
     tu.train()
     classifiers[config['name']] = tu
@@ -120,7 +92,7 @@ def gen_recs(token, sgenres, exp_config,  market, slimit, tlimit):
     # Add seed tracks
     if nlabel <= 5 and len(pos_tracks) > 0:
       seeds['tracks'] = [pos_tracks.pop(0)]
-      rlimit = 10
+      rlimit = 20
     else:
       seeds['tracks'] = []
       rlimit = 100

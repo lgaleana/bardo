@@ -33,7 +33,6 @@ lsp = [{
   'class_weight': [{1: w} for w in list(range(1, 11))],
 }]
 sp = [{
-  'kernel': ['rbf'],
   'C': [0.1, 1, 10, 100, 1000],
   'gamma': ['scale', 'auto', 0.01, 0.1, 1, 10],
   'class_weight': [{1: w} for w in list(range(1, 11))],
@@ -108,19 +107,20 @@ for generator in generators:
         name=config['name'],
         model=deepcopy(config['model']),
         data=deepcopy(generator),
-        k=K,
+        test_size=TEST_SIZE,
         standardize=mode['standardize'],
+        k=K,
         params=mode['params'],
       )
 
       train_acc, test_acc, train_pr, test_pr, test_rec = tu.get_cv_metrics()
       if DO_TEST:
-        tu.train(TEST_SIZE)
+        tu.train()
         train_acc_t, test_acc_t, train_pr_t, test_pr_t, test_rec_t = \
           tu.get_test_metrics()
 
       if LOG_TO_FILE:
-        print('Writting metrics')
+        print('---Writting metrics---')
         metrics = f'{tu.get_name()},{train_acc},{test_acc},,{train_pr},{test_pr},{test_rec}'
         if DO_TEST:
           metrics += f',,{test_acc_t},,{test_pr_t},{test_rec_t}\n'

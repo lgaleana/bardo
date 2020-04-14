@@ -17,60 +17,71 @@ class TrainUtil:
     name,
     model,
     data,
-    k=5,
+    test_size,
     standardize=False,
     var_threshold=1e-4,
+    k=5,
     params=None,
   ):
     self.name = name
-    # Base model contains the initial model config
+    # Initial config of the model
     self.base_model = model
-    # The actual model that was fit
-    self.model = None
-    # Base data to be generated with different test sizes
+    # Actual model that was trained
+    self.model = None 
+    # Base data to be generated
     self.base_data = data
     # The actual data that was used to fit the model
     self.data = None
-    # Number of folds for cross validation
-    self.k = k
+    self.test_size = test_size
     self.standardize = standardize
     # Variance threshold for feature selection
     self.var_threshold = var_threshold
+    # Number of folds for cross validation
+    self.k = k
     # Param grid to find the best params
     self.params = params
     self.best_params = None
 
     if self.standardize:
       self.name = f'Scaled {self.name}'
+    if self.params is not None:
+      self.name = f'CV {self.name}'
 
-  def train(self, test_size=0.0):
-    self.data = deepcopy(self.base_data).gen(test_size)
+  def train(self):
+    print(f'Training {self.name}')
+    model = deepcopy(self.base_model)
     if self.params is None:
-      print(f'---Training {self.name}---')
-      self.model = self.train_base_(deepcopy(self.base_model))
+      self.train_base_(model)
     else:
-      self.model = self.train_cv_()
+      self.find_best_params_()
+      # Use best params to train the model
+      model.set_params(**self.best_params)
+      self.train_base_(model)
 
   def train_base_(self, model):
+    # Assign the data that will be used for future prediction
+    self.data = deepcopy(self.base_data).gen(self.test_size)
+    # Transform the features
     X_train = self.data.X_train
     if self.standardize:
       self.scaler = StandardScaler().fit(X_train)
       X_train = self.scaler.transform(X_train)
-    # Selector of high-variance features
     self.selector = VarianceThreshold(self.var_threshold).fit(X_train)
     X_train = self.selector.transform(X_train)
-    return model.fit(X_train, self.data.y_train)
+    # Assign the model that wil be used for future prediction
+    self.model = model.fit(X_train, self.data.y_train)
 
-  def do_cv(self):
-    data = deepcopy(self.base_data).gen(0.0)
+  def find_best_params_(self):
+    if self.best_params is not None:
+      return
 
-    # Build model pipeline
-    steps = []
-    if self.standardize:
-      steps.append(('scaler', StandardScaler()))
-    steps.append(('selector', VarianceThreshold(self.var_threshold)))
-    steps.append(('model', deepcopy(self.base_model)))
-    pipe = Pipeline(steps)
+    print(f'Finding best params for {self.name}')
+    model = deepcopy(self.base_model)
+    data = deepcopy(self.base_data).gen(self.test_size)
+    pipe, metrics = self.setup_cv_(model)
+    metrics['f05'] = m.make_scorer(f05)
+
+    # Set up params for pipeline
     params = []
     if self.params is not None:
       for combination in self.params:
@@ -79,77 +90,22 @@ class TrainUtil:
           new_comb[f'model__{name}'] = param
         params.append(new_comb)
 
-    # Define cv metrics
-    cv_metrics = {
-      'acc': 'accuracy',
-      'pr': m.make_scorer(
-        m.precision_score,
-        labels=[1],
-        average='macro',
-        zero_division=0,
-      ),
-      'rec': m.make_scorer(
-        m.recall_score,
-        labels=[1],
-        average='macro',
-        zero_division=0,
-      ),
-      'f05': m.make_scorer(f05),
-    }
+    # Do cross-validation to obtain best params
+    gs = GridSearchCV(
+      pipe,
+      params,
+      scoring=metrics,
+      refit= 'f05',
+      cv=self.k,
+      return_train_score=True,
+      n_jobs=4,
+    )
+    gs.fit(data.X_train, data.y_train)
 
-    if self.params is None:
-      # Do cross-validation to estimate metrics
-      print(f'---CV for {self.name}---')
-      results = cross_validate(
-        pipe,
-        data.X_train,
-        data.y_train,
-        scoring=cv_metrics,
-        cv=self.k,
-        return_train_score=True,
-        n_jobs=4,
-      )
-      return {
-        'train_acc': np.mean(results['train_acc']),
-        'test_acc': np.mean(results['test_acc']),
-        'train_pr': np.mean(results['train_pr']),
-        'test_pr': np.mean(results['test_pr']),
-        'test_rec': np.mean(results['test_rec']),
-      }
+    if not self.standardize:
+      self.best_params = gs.best_estimator_.steps[1][1].get_params()
     else:
-      # Do cross-validation to obtain best params
-      print(f'---CV search for {self.name}---')
-      self.name = f'CV {self.name}'
-      gs = GridSearchCV(
-        pipe,
-        params,
-        scoring=cv_metrics,
-        refit= 'f05',
-        cv=self.k,
-        return_train_score=True,
-        n_jobs=4,
-      )
-      gs.fit(data.X_train, data.y_train)
-      if not self.standardize:
-        self.best_params = gs.best_estimator_.steps[1][1].get_params()
-      else:
-        self.best_params = gs.best_estimator_.steps[2][1].get_params()
-      return {
-        'train_acc': gs.cv_results_['mean_train_acc'][gs.best_index_],
-        'test_acc': gs.cv_results_['mean_test_acc'][gs.best_index_],
-        'train_pr': gs.cv_results_['mean_train_pr'][gs.best_index_],
-        'test_pr': gs.cv_results_['mean_test_pr'][gs.best_index_],
-        'test_rec': gs.cv_results_['mean_test_rec'][gs.best_index_],
-      }
-
-  def train_cv_(self):
-    model = deepcopy(self.base_model)
-    if self.best_params is None:
-      gs = self.do_cv()
-    # Use best params to train the model
-    print(f'-Training estimator with best params-')
-    model.set_params(**self.best_params)
-    return self.train_base_(model)
+      self.best_params = gs.best_estimator_.steps[2][1].get_params()
 
   def predict(self, X):
     if self.standardize:
@@ -191,11 +147,63 @@ class TrainUtil:
     return train_acc, test_acc, train_pr, test_pr, test_rec
 
   def get_cv_metrics(self):
-    cv = self.do_cv()
-    return cv['train_acc'], cv['test_acc'], cv['train_pr'], cv['test_pr'], cv['test_rec']
+    print(f'CV for {self.name}')
+    model = deepcopy(self.base_model)
+    if self.params is not None:
+      self.find_best_params_()
+      model.set_params(**self.best_params)
+
+    # Doing CV on all data
+    data = deepcopy(self.base_data).gen(0.0)
+    pipe, metrics = self.setup_cv_(model)
+
+    results = cross_validate(
+      pipe,
+      data.X_train,
+      data.y_train,
+      scoring=metrics,
+      cv=self.k,
+      return_train_score=True,
+      n_jobs=4,
+    )
+
+    return np.mean(results['train_acc']), np.mean(results['test_acc']), \
+      np.mean(results['train_pr']), np.mean(results['test_pr']), \
+      np.mean(results['test_rec'])
+
+  def setup_cv_(self, model):
+  # Build model pipeline
+    steps = []
+    if self.standardize:
+      steps.append(('scaler', StandardScaler()))
+    steps.append(('selector', VarianceThreshold(self.var_threshold)))
+    steps.append(('model', model))
+    pipe = Pipeline(steps)
+
+    # Define cv metrics
+    metrics = {
+      'acc': 'accuracy',
+      'pr': m.make_scorer(
+        m.precision_score,
+        labels=[1],
+        average='macro',
+        zero_division=0,
+      ),
+      'rec': m.make_scorer(
+        m.recall_score,
+        labels=[1],
+        average='macro',
+        zero_division=0,
+      ),
+    }
+
+    return pipe, metrics
 
   def get_name(self):
     return self.name
+
+  def get_params(self):
+    return self.model.get_params()
 
   def plot_learning_curve(self, scorer=None, points=20):
     print('Plotting learning curve')
