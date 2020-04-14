@@ -2,3 +2,4 @@ flask
 sklearn
 numpy
 gunicorn
+matplotlib
