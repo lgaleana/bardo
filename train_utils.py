@@ -79,7 +79,12 @@ class TrainUtil:
     model = deepcopy(self.base_model)
     data = deepcopy(self.base_data).gen(self.test_size)
     pipe, metrics = self.setup_cv_(model)
-    metrics['f05'] = m.make_scorer(f05)
+    metrics['f1'] = m.make_scorer(
+      m.f1_score,
+      labels=[1],
+      average='macro',
+      zero_division=0,
+    )
 
     # Set up params for pipeline
     params = []
@@ -95,7 +100,7 @@ class TrainUtil:
       pipe,
       params,
       scoring=metrics,
-      refit= 'f05',
+      refit= 'f1',
       cv=self.k,
       return_train_score=True,
       n_jobs=4,
