@@ -6,33 +6,34 @@ import sample_generators as s
 import spotify_utils as su
 from random import shuffle
 from time import time
-from copy import deepcopy
 
-# Classifiers
+### Train configs
+# Classifiers initial configs
 svc = SVC(random_state=0)
 linear_svc = LinearSVC(dual=False)
 knn = KNeighborsClassifier()
 gbdt = GradientBoostingClassifier(random_state=0)
+# Configs
 # These classifiers were picked through experimentation
 DATASET = 'datasets/dataset_all.txt'
 K = 5
 train_configs = [
   {
     'name': 'svc_bottom_high',
-    'model': deepcopy(svc),
+    'model': SVC(C=0.95, random_state=0),
     'generator': s.VeryBinaryTestGen(DATASET, 3, 4, False, True, -1),
     'standardize': True,
   },
   {
     'name': 'svc_very',
-    'model': deepcopy(svc),
+    'model': SVC(random_state=0),
     'generator': s.VeryBinaryTestGen(DATASET, 3, 4),
     'standardize': True,
   },
   {
-    'name': 'svc_cv_very',
-    'model': SVC(C=1.0, gamma=0.1, class_weight={1: 2}, random_state=0),
-    'generator': s.VeryBinaryTestGen(DATASET, 3, 4),
+    'name': 'gbdt_bottom_high',
+    'model': GradientBoostingClassifier(learning_rate=0.095, random_state=0),
+    'generator': s.VeryBinaryTestGen(DATASET, 3, 4, False, True, -1),
     'standardize': True,
   },
 ]

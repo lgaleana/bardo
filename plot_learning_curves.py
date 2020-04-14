@@ -3,82 +3,26 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 import sample_generators as s
 import train_utils as t
-import sklearn.metrics as m
 
-
-PRINT_PARAMS = True
+### Learn configs
+# Curve params
 SCORER = 'f1'
 POINTS = 20
-
-### Learning configs
-# CV parameters
-lsp = [{
-  'C': [0.1, 1, 10, 100, 1000],
-  'class_weight': [{1: w} for w in list(range(1, 11))],
-}]
-sp = [{
-  'kernel': ['rbf'],
-  'C': [0.1, 1, 10, 100, 1000],
-  'gamma': ['scale', 'auto', 0.01, 0.1, 1, 10],
-  'class_weight': [{1: w} for w in list(range(1, 11))],
-}]
-kp = [{
-  'n_neighbors': list(range(1, 11)),
-  'p': list(range(1, 6)),
-  'weights': ['uniform', 'distance'],
-}]
-gp = [{
-  'n_estimators': [16, 32, 64, 100, 150, 200],
-  'learning_rate': [0.0001, 0.001, 0.01, 0.025, 0.05,  0.1, 0.25, 0.5],
-}]
-
+# Classifier initial configs
+svc = SVC(random_state=0)
+linear_svc = LinearSVC(dual=False)
+knn = KNeighborsClassifier()
+gbdt = GradientBoostingClassifier(random_state=0)
 # Configs
 DATASET = 'datasets/dataset_all.txt'
-TEST_SIZE = 0
+K = 5
+TEST_SIZE = 0.25
 learn_configs = [
   {
-    'name': 'Linear SVC',
-    'model': LinearSVC(dual=False), 
-    'modes': [
-    ],
-  },
-  {
-    'name': 'SVC',
-    'model': SVC(random_state=0), 
-    'modes': [
-    ],
-  },
-  {
-    'name': 'KNN',
-    'model': KNeighborsClassifier(),
-    'modes': [
-    ],
-  },
-  {
-    'name': 'GBDT',
-    'model': GradientBoostingClassifier(random_state=0), 
-    'modes': [
-      {
-        'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
-        'standardize': True,
-        'params': False,
-      },
-      {
-        'generator': s.VeryBinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
-        'standardize': True,
-        'params': gp,
-      },
-      {
-        'generator': s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
-        'standardize': True,
-        'params': False,
-      },
-      {
-        'generator': s.BinaryTestGen(DATASET, TEST_SIZE, 3, 4, True, True),
-        'standardize': True,
-        'params': gp,
-      },
-    ],
+    'name': 'svc_very',
+    'model': SVC(C=0.995, random_state=0),
+    'generator': s.VeryBinaryTestGen(DATASET, 3, 4),
+    'standardize': True,
   },
 ]
 
@@ -86,19 +30,19 @@ learn_configs = [
 ### Plot curves
 # Training of all configs
 for config in learn_configs:
-  for mode in config['modes']:
-    data = mode['generator'].gen()
-    tu = t.TrainUtil(
-      name=config['name'],
-      model=config['model'],
-      data=data,
-      standardize=mode['standardize'],
-      params=mode['params']
-    )
-    if mode['params'] != False:
-      tu.do_cv()
-      if PRINT_PARAMS:
-        print(tu.get_params())
-    tu.plot_learning_curve(SCORER, POINTS)
+  tu = t.TrainUtil(
+    name=config['name'],
+    model=config['model'],
+    data=config['generator'],
+    test_size=TEST_SIZE,
+    standardize=config['standardize'],
+    k=K,
+  )
+  tu.train()
+  train_acc, test_acc, train_pr, test_pr, test_rec = \
+    tu.get_test_metrics()
+  print(f'Train Acc Test Acc | Train Pr Test Pr Test Rec')
+  print(f'   {train_acc:.2f}      {test_acc:.2f}      {train_pr:.2f}     {test_pr:.2f}    {test_rec:.2f}')
+  tu.plot_learning_curve(SCORER, POINTS)
 t.print_line()
 print('Finished plotting')

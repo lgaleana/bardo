@@ -207,17 +207,22 @@ class TrainUtil:
 
   def plot_learning_curve(self, scorer=None, points=20):
     print('Plotting learning curve')
-    # Make X and y similar to train and test transformations
-    X = np.concatenate((self.data.X_train, self.data.X_test))
-    y = np.concatenate((self.data.y_train, self.data.y_test))
+    model = deepcopy(self.base_model)
+    if self.params is not None:
+      self.find_best_params_()
+      model.set_params(**self.best_params)
+    # Doing CV on all data
+    data = deepcopy(self.base_data).gen(0.0)
+
+    X = data.X_train
     if self.standardize:
       X = StandardScaler().fit_transform(X)
     X = VarianceThreshold(self.var_threshold).fit_transform(X)
 
     train_sizes, train_scores, test_scores = learning_curve(
-      deepcopy(self.model),
+      model,
       X,
-      y,
+      data.y_train,
       cv=self.k,
       train_sizes=np.linspace(0.1, 1.0, points),
       scoring=scorer,
@@ -235,7 +240,7 @@ class TrainUtil:
       label='Test',
     )
 
-    plt.ylabel('Acc')
+    plt.ylabel('Score')
     plt.xlabel('Size')
     plt.title(f'{self.name}\n{self.data.__class__.__name__} learning curves')
     plt.legend()
