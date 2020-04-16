@@ -12,9 +12,9 @@
 </head>
 <body>
   <h1>Bardo Feedback</h1>
-  <p>Help us understand if we're doing a good job. From the previous tracks that we recommended to you...</p>
+  <p>Help Bardo understand if it's doing a good job. From your previous recommendations...</p>
   {% if needs_rating|length > 0: %}
-  <h3>How much did you like them?</h3>
+  <h3>How much did you like these tracks?</h3>
     <form id="form" action="{{save_url}}" method="POST">
       <ul>
       {% for id, name in needs_rating.items(): %}

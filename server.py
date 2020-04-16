@@ -43,7 +43,14 @@ def generate_playlist():
   source = request.args.get('source')
   market = request.args.get('market')
 
-  if token and genre and source:
+  if not genre:
+    genre = 'deep-house'
+  if not source:
+    source = 'bardo'
+  if not market:
+    market = 'US'
+
+  if token:
     if bardo_id:
       needs_rating = db.load_tracks_to_rate(bardo_id)
       if len(needs_rating) == 0:
@@ -118,15 +125,11 @@ def profile():
     iurl =url_for('identify') 
     return redirect(f'{iurl}?redirect-uri=profile')
 
-@app.route('/tracks/<bardo_id>/<label>')
-def tracks(bardo_id, label):
+@app.route('/tracks/<bardo_id>/<stars>')
+def tracks(bardo_id, stars):
+  stars = int(stars)
   profile = db.load_profile(bardo_id)
-  if label == 'liked':
-    profile = filter(lambda track: track['stars'] >= 5, profile)
-  elif label == 'not-liked':
-    profile = filter(lambda track: track['stars'] <= 2, profile)
-  elif label != 'all':
-    return 'Invalid request.'
+  profile = filter(lambda track: track['stars'] == stars, profile)
 
   return render_template('tracks.html', tracks=profile)
 

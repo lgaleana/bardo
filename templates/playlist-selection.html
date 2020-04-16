@@ -12,13 +12,13 @@
 </head>
 <body>
   <h1>Bardo Recommendations</h1>
-  <p>We'll use your music preferences to create a personalized playlist in your spotify account.</p>
+  <p>Bardo will use your music preferences to create a personalized playlist in your spotify account.</p>
   <form action="{{url_for('generate_playlist')}}" method="GET">
     <p><b>Source</b></p>
     <p>
-      <!-- <label>Bardo AI</label><input type="radio" name="source" value="bardo"> -->
-      <!-- <label>Spotify random</label><input type="radio" name="source" value="random"> -->
-      <label>Experimental</label> <input type="radio" name="source" value="{{exp_clfs}}" checked required>
+      <label>Bardo AI</label><input type="radio" name="source" value="gbdt_bottom_high" required checked>
+      <label>Spotify random</label><input type="radio" name="source" value="random" required>
+      <label>A/B</label> <input type="radio" name="source" value="{{exp_clfs}}" required> <i>A/B will include a random mix of Bardo AI and a new experimental source.</i>
     </p>
     <p><b>Genres</b></p>
     <p>
@@ -26,8 +26,8 @@
     </p>
     <p><b>Country</b></p>
     <p>
-      <label>US</label> <input type="radio" name="market" value="US" checked required>
-      <label>MX</label> <input type="radio" name="market" value="MX" checked required>
+      <label>US</label> <input type="radio" name="market" value="US" required>
+      <label>MX</label> <input type="radio" name="market" value="MX" required>
       <label> 
       <i>This parameter is important because some tracks might not be playable depending on the country.</i></p>
     </p>

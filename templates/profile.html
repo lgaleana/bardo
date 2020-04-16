@@ -13,18 +13,20 @@
 <body>
   <h1>Bardo Profile</h1>
   <p>This is the data that Bardo uses to generate music recommendations.</p>
-  <p><a href="{{url_for('tracks', bardo_id=bardo_id, label='liked')}}">Liked tracks</a></p>
-  <p><a href="{{url_for('tracks', bardo_id=bardo_id, label='not-liked')}}">Tracks not liked</a></p>
-  <p><a href="{{url_for('tracks', bardo_id=bardo_id, label='all')}}">All tracks</a></p>
+  <p><a href="{{url_for('tracks', bardo_id=bardo_id, stars='5')}}">Loved tracks</a></p>
+  <p><a href="{{url_for('tracks', bardo_id=bardo_id, stars='4')}}">Liked tracks</a></p>
+  <p><a href="{{url_for('tracks', bardo_id=bardo_id, stars='3')}}">Neutral tracks</a></p>
+  <p><a href="{{url_for('tracks', bardo_id=bardo_id, stars='2')}}">Not-liked tracks</a></p>
+  <p><a href="{{url_for('tracks', bardo_id=bardo_id, stars='1')}}">Hated tracks</a></p>
   <hr>
-  <p>Help us understand if we're doing a good job. From the previous tracks that we recommended to you...</p>
+  <p>Help Bardo understand if it's doing a good job. From your previous recommendations...</p>
   <p><a href="{{url_for('rate_recommendations')}}?bardo-id={{bardo_id}}">Rate Bardo recommendations</a></p>
   <hr>
-  <p>Let us know your favorite tracks and the ones that you don't like, from your Spotify account:</p>
+  <p>Help Bardo understand your music preferences. Do you have Spotify playlists that you want to share?</p>
   <form action="{{url_for('save_playlists', bardo_id=bardo_id)}}?token={{token}}" method="POST">
-    <p><b>Tracks</b></p>
+    <p><b>Playlist</b></p>
     <p><input type="text" name="url"> <label><i>Copy/paste a Spotify playlist URL.</i></p>
-    <p><b>How much do you like them></b></p>
+    <p><b>How much do you like the tracks in this playlist?</b></p>
     <p>
       <label>Hate</label> <input type="radio" name="feedback" value="1" required> 
       <label>Don't like</label> <input type="radio" name="feedback" value="2" required> 
