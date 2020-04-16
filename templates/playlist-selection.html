@@ -14,26 +14,22 @@
   <h1>Bardo Recommendations</h1>
   <p>We'll use your music preferences to create a personalized playlist in your spotify account.</p>
   <form action="{{url_for('generate_playlist')}}" method="GET">
+    <p><b>Source</b></p>
     <p>
-      <p><b>Source</b></p>
-      <p>
       <!-- <label>Bardo AI</label><input type="radio" name="source" value="bardo"> -->
       <!-- <label>Spotify random</label><input type="radio" name="source" value="random"> -->
-        <label>Experimental</label> <input type="radio" name="source" value="{{exp_clfs}}" checked required>
-      </p>
+      <label>Experimental</label> <input type="radio" name="source" value="{{exp_clfs}}" checked required>
     </p>
-      <p><b>Genres</b></p>
-      <p>
-        <label>Deep house</label> <input type="checkbox" name="genre" value="deep-house" checked required>
-      </p>
+    <p><b>Genres</b></p>
+    <p>
+      <label>Deep house</label> <input type="checkbox" name="genre" value="deep-house" checked required>
     </p>
-    </p>
-      <p><b>Country</b></p>
-      <p>
-        <label>US</label> <input type="radio" name="market" value="US" checked required>
-        <label>MX</label> <input type="radio" name="market" value="MX" checked required>
-        <label><i>This parameter is important because some tracks might not be playable depending on the country.</i></p>
-      </p>
+    <p><b>Country</b></p>
+    <p>
+      <label>US</label> <input type="radio" name="market" value="US" checked required>
+      <label>MX</label> <input type="radio" name="market" value="MX" checked required>
+      <label> 
+      <i>This parameter is important because some tracks might not be playable depending on the country.</i></p>
     </p>
     <input type="hidden" name="bardo-id" value="{{bardo_id}}">
     <input type="hidden" name="token" value="{{token}}">

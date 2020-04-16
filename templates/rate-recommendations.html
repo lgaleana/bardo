@@ -11,34 +11,21 @@
   </style>
 </head>
 <body>
-  <script>
-    window.onload = function() {
-      var form = document.getElementById("form");
-      if (form) {
-        form.onsubmit = function() {
-          var feedback = Array.from(document.getElementsByClassName("feedback"));
-          feedback = feedback.filter(f => f.checked);
-          if (feedback.length == 0) {
-            var moveOn = confirm("Feedback is empty");
-            return moveOn;
-          }
-          return true;
-        }
-      }
-    }
-  </script>
   <h1>Bardo Feedback</h1>
   <p>Help us understand if we're doing a good job. From the previous tracks that we recommended to you...</p>
   {% if needs_rating|length > 0: %}
-  <h3>Which recommendations did you really like and which ones you didn't?</h3>
+  <h3>How much did you like them?</h3>
     <form id="form" action="{{save_url}}" method="POST">
       <ul>
       {% for id, name in needs_rating.items(): %}
       <li>
         <p><b>{{name}}</b></p>
         <p>
-          <label>Really liked</label> <input class="feedback" type="radio" name="feedback-{{id}}" value="like">
-          <label>Didn't like</label> <input class="feedback" type="radio" name="feedback-{{id}}" value="no-like">
+          <label>Hated</label> <input type="radio" name="feedback-{{id}}" value="1" required> 
+          <label>Didn't like</label> <input type="radio" name="feedback-{{id}}" value="2" required> 
+          <label>Neutral</label> <input type="radio" name="feedback-{{id}}" value="3" required> 
+          <label>Liked</label> <input type="radio" name="feedback-{{id}}" value="4" required> 
+          <label>Loved</label> <input type="radio" name="feedback-{{id}}" value="5" required> 
         </p>
       </li>
       <p>

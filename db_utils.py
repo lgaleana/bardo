@@ -78,35 +78,22 @@ def load_tracks_to_rate(bardo_id):
   else:
     return {}
 
-def process_plst_feedback(token, fav_url, no_fav_url):
+def process_plst_feedback(token, url, stars):
   split = 'https://open.spotify.com/playlist/'
-  fav_tracks = []
-  no_fav_tracks = []
+  tracks = []
   try:
-    fav_parts = fav_url.split(split)
-    fav_plst = fav_parts[1].split('?')[0]
-    fav_tracks = su.get_playlist(token, fav_plst, 'fav')
-  except:
-    pass
-  try:
-    no_fav_parts = no_fav_url.split(split)
-    no_fav_plst = no_fav_parts[1].split('?')[0]
-    no_fav_tracks = su.get_playlist(token, no_fav_plst, 'no fav')
+    parts = url.split(split)
+    plst = parts[1].split('?')[0]
+    tracks = su.get_playlist(token, plst, f'{stars} feedback')
   except:
     pass
 
   feedback = []
-  for track in fav_tracks:
+  for track in tracks:
     feedback.append({
       'id': track['id'],
       'name': track['name'],
-      'stars': 5,
-    })
-  for track in no_fav_tracks:
-    feedback.append({
-      'id': track['id'],
-      'name': track['name'],
-      'stars': 2,
+      'stars': int(stars),
     })
 
   return feedback
@@ -114,12 +101,7 @@ def process_plst_feedback(token, fav_url, no_fav_url):
 def process_feedback_input(needs_rating, form):
   feedback = []
   for track, name in needs_rating.items():
-    stars = 4
-    fval = form.get(f'feedback-{track}')
-    if fval == 'like':
-      stars = 5
-    elif fval == 'no-like':
-      stars = 2
+    stars = int(form.get(f'feedback-{track}'))
     feedback.append({
       'id': track,
       'name': name,

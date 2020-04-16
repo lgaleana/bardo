@@ -133,18 +133,18 @@ def tracks(bardo_id, label):
 @app.route('/save-playlists/<bardo_id>', methods=['POST'])
 def save_playlists(bardo_id):
   token = request.args.get('token')
-  favorite_url = request.form.get('favorite')
-  not_favorite_url = request.form.get('no-favorite')
+  url = request.form.get('url')
+  stars = request.form.get("feedback")
 
-  if token and (favorite_url or not_favorite_url):
+  if token and url and stars:
     feedback = db.process_plst_feedback(
       token,
-      favorite_url,
-      not_favorite_url,
+      url,
+      stars,
     )
     if len(feedback) > 0:
       now = datetime.now().strftime("%d-%m-%Y")
-      db.save_feedback(bardo_id, feedback, 'profile', now)
+      db.save_feedback(bardo_id, feedback, 'profile', f'{stars}_{now}')
       return 'Tracks saved.'
     else:
       return 'No tracks saved.'
