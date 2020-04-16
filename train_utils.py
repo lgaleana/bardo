@@ -78,8 +78,7 @@ class TrainUtil:
     print(f'Finding best params for {self.name}')
     model = deepcopy(self.base_model)
     data = deepcopy(self.base_data).gen(self.test_size)
-    pipe, metrics = self.setup_cv_(model)
-    metrics['f05'] = m.make_scorer(f05)
+    pipe = self.build_pipeline_(model)
 
     # Set up params for pipeline
     params = []
@@ -94,8 +93,7 @@ class TrainUtil:
     gs = GridSearchCV(
       pipe,
       params,
-      scoring=metrics,
-      refit= 'f05',
+      scoring=m.make_scorer(f05),
       cv=self.k,
       return_train_score=True,
       n_jobs=4,
@@ -122,29 +120,59 @@ class TrainUtil:
 
     train_acc = m.accuracy_score(self.data.y_train, train_pred)
     test_acc = m.accuracy_score(self.data.y_test, test_pred)
-    train_pr = m.precision_score(
+    train_pr_1 = m.precision_score(
       self.data.y_train,
       train_pred,
       labels=[1],
       average='macro',
       zero_division=0,
     )
-    test_pr = m.precision_score(
+    test_pr_1 = m.precision_score(
       self.data.y_test,
       test_pred,
       labels=[1],
       average='macro',
       zero_division=0,
     )
-    test_rec = m.recall_score(
+    test_rec_1 = m.recall_score(
       self.data.y_test,
       test_pred,
       labels=[1],
+      average='macro',
+      zero_division=0,
+    )
+    train_pr_0 = m.precision_score(
+      self.data.y_train,
+      train_pred,
+      labels=[0],
+      average='macro',
+      zero_division=0,
+    )
+    test_pr_0 = m.precision_score(
+      self.data.y_test,
+      test_pred,
+      labels=[0],
+      average='macro',
+      zero_division=0,
+    )
+    test_rec_0 = m.recall_score(
+      self.data.y_test,
+      test_pred,
+      labels=[0],
       average='macro',
       zero_division=0,
     )
 
-    return train_acc, test_acc, train_pr, test_pr, test_rec
+    return {
+      'train_acc': train_acc,
+      'test_acc': test_acc,
+      'train_pr_1': train_pr_1,
+      'test_pr_1': test_pr_1,
+      'test_rec_1': test_rec_1,
+      'train_pr_0': train_pr_0,
+      'test_pr_0': test_pr_0,
+      'test_rec_0': test_rec_0,
+    }
 
   def get_cv_metrics(self):
     print(f'CV for {self.name}')
@@ -155,7 +183,36 @@ class TrainUtil:
 
     # Doing CV on all data
     data = deepcopy(self.base_data).gen(0.0)
-    pipe, metrics = self.setup_cv_(model)
+    pipe = self.build_pipeline_(model)
+
+    # Cv metrics
+    metrics = {
+      'acc': 'accuracy',
+      'pr_1': m.make_scorer(
+        m.precision_score,
+        labels=[1],
+        average='macro',
+        zero_division=0,
+      ),
+      'rec_1': m.make_scorer(
+        m.recall_score,
+        labels=[1],
+        average='macro',
+        zero_division=0,
+      ),
+      'pr_0': m.make_scorer(
+        m.precision_score,
+        labels=[0],
+        average='macro',
+        zero_division=0,
+      ),
+      'rec_0': m.make_scorer(
+        m.recall_score,
+        labels=[0],
+        average='macro',
+        zero_division=0,
+      ),
+    }
 
     results = cross_validate(
       pipe,
@@ -167,12 +224,19 @@ class TrainUtil:
       n_jobs=4,
     )
 
-    return np.mean(results['train_acc']), np.mean(results['test_acc']), \
-      np.mean(results['train_pr']), np.mean(results['test_pr']), \
-      np.mean(results['test_rec'])
+    return {
+      'train_acc': np.mean(results['train_acc']),
+      'test_acc': np.mean(results['test_acc']),
+      'train_pr_1': np.mean(results['train_pr_1']),
+      'test_pr_1': np.mean(results['test_pr_1']),
+      'test_rec_1': np.mean(results['test_rec_1']),
+      'train_pr_0': np.mean(results['train_pr_0']),
+      'test_pr_0': np.mean(results['test_pr_0']),
+      'test_rec_0': np.mean(results['test_rec_0']),
+    }
 
-  def setup_cv_(self, model):
-  # Build model pipeline
+  def build_pipeline_(self, model):
+    # Build model pipeline for CV
     steps = []
     if self.standardize:
       steps.append(('scaler', StandardScaler()))
@@ -180,24 +244,7 @@ class TrainUtil:
     steps.append(('model', model))
     pipe = Pipeline(steps)
 
-    # Define cv metrics
-    metrics = {
-      'acc': 'accuracy',
-      'pr': m.make_scorer(
-        m.precision_score,
-        labels=[1],
-        average='macro',
-        zero_division=0,
-      ),
-      'rec': m.make_scorer(
-        m.recall_score,
-        labels=[1],
-        average='macro',
-        zero_division=0,
-      ),
-    }
-
-    return pipe, metrics
+    return pipe
 
   def get_name(self):
     return self.name

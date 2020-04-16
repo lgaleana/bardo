@@ -88,9 +88,9 @@ now = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
 log_file = None
 if LOG_TO_FILE:
   log_file = open(f'reports/{now}.txt', 'w+')
-  header = ',Train Acc,TestAcc,,Train Pr,Test Pr,Test Rec'
+  header = ',Train Acc,TestAcc,,Test Pr 1,Test Rec 1'
   if DO_TEST:
-    header += ',T:,TestAcc,,Test Pr,Test Rec\n'
+    header += ',T:,TestAcc,,Test Pr 1,Test Rec 1,,Test Pr 0,Test Rec 0\n'
   log_file.write(header)
 
 for generator in generators:
@@ -113,17 +113,16 @@ for generator in generators:
         params=mode['params'],
       )
 
-      train_acc, test_acc, train_pr, test_pr, test_rec = tu.get_cv_metrics()
+      cv = tu.get_cv_metrics()
       if DO_TEST:
         tu.train()
-        train_acc_t, test_acc_t, train_pr_t, test_pr_t, test_rec_t = \
-          tu.get_test_metrics()
+        tm = tu.get_test_metrics()
 
       if LOG_TO_FILE:
         print('---Writting metrics---')
-        metrics = f'{tu.get_name()},{train_acc},{test_acc},,{train_pr},{test_pr},{test_rec}'
+        metrics = f'{tu.get_name()},{cv["train_acc"]},{cv["test_acc"]},,{cv["test_pr_1"]},{cv["test_rec_1"]}'
         if DO_TEST:
-          metrics += f',,{test_acc_t},,{test_pr_t},{test_rec_t}\n'
+          metrics += f',,{tm["test_acc"]},,{tm["test_pr_1"]},{tm["test_rec_1"]},,{tm["test_pr_0"]},{tm["test_rec_0"]}\n'
         log_file.write(metrics)
       else:
         print(f'Train Acc Test Acc | Train Pr Test Pr Test Rec')
