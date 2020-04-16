@@ -80,7 +80,7 @@ def make_playlist(bardo_id):
   market = request.json.get('market')
 
   if token and source and genre:
-    playlists = pu.gen_recs(
+    clf_plsts, final_plst = pu.gen_recs(
       token,
       genre.split(','),
       source.split(','),
@@ -89,9 +89,10 @@ def make_playlist(bardo_id):
       TIME_LIMIT,
     )
     now = datetime.now().strftime("%d-%m-%Y_%H-%M")
-    db.save_playlists(bardo_id, playlists, now)
+    db.save_playlists(bardo_id, final_plst, 'playlists', now)
+    for clf, plst in clf_plsts.items():
+      db.save_playlists(bardo_id, plst, 'predictions', f'{now}_{clf}')
 
-    final_plst = playlists['final']
     if len(final_plst) > 0:
       playlist = su.create_playlist(token, f'Bardo {now}')
       su.populate_playlist(token, playlist, final_plst['ids'])

@@ -151,6 +151,5 @@ def gen_recs(token, sgenres, exp_config,  market, slimit, tlimit):
       if track not in final_playlist['ids']:
         final_playlist['ids'].append(track)
         final_playlist['names'].append(plst['names'][i])
-  playlists['final'] = final_playlist
 
-  return playlists
+  return playlists, final_playlist
