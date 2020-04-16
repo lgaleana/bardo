@@ -1,10 +1,10 @@
 from flask import Flask, request, redirect, url_for, render_template
-import production_utils as pu
-import db_utils as db
-import spotify_utils as su
+import bardo.utils.production_utils as pu
+import bardo.utils.db_utils as db
+import bardo.utils.spotify_utils as su
 from datetime import datetime
 
-app = Flask(__name__)
+app = Flask(__name__, instance_relative_config=True)
 
 CLIENT_ID = '8de267b03c464274a3546bfe84496696'
 EXP_CONFIG = ['gbdt_bottom_high', 'random']

@@ -1,9 +1,9 @@
 from sklearn.svm import LinearSVC, SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import GradientBoostingClassifier
-import train_utils as t
-import sample_generators as s
-import spotify_utils as su
+import ml.train_utils as t
+import ml.sample_generators as s
+import bardo.utils.spotify_utils as su
 from random import shuffle
 from time import time
 
