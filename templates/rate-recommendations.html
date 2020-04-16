@@ -15,23 +15,25 @@
   <p>Help Bardo understand if it's doing a good job. From your previous recommendations...</p>
   {% if needs_rating|length > 0: %}
   <h3>How much did you like these tracks?</h3>
+  <i>Forgotten tracks won't be saved.</i>
     <form id="form" action="{{save_url}}" method="POST">
       <ul>
       {% for id, name in needs_rating.items(): %}
       <li>
         <p><b>{{name}}</b></p>
         <p>
-          <label>Hated</label> <input type="radio" name="feedback-{{id}}" value="1" required> 
-          <label>Didn't like</label> <input type="radio" name="feedback-{{id}}" value="2" required> 
-          <label>Neutral</label> <input type="radio" name="feedback-{{id}}" value="3" required> 
-          <label>Liked</label> <input type="radio" name="feedback-{{id}}" value="4" required> 
-          <label>Loved</label> <input type="radio" name="feedback-{{id}}" value="5" required> 
+          <input type="radio" name="feedback-{{id}}" value="1">  <label>Hated</label>
+          <input type="radio" name="feedback-{{id}}" value="2">  <label>Didn't like</label>
+          <input type="radio" name="feedback-{{id}}" value="3">  <label>Neutral</label>
+          <input type="radio" name="feedback-{{id}}" value="4">  <label>Liked</label>
+          <input type="radio" name="feedback-{{id}}" value="5">  <label>Loved</label>
+          <input type="radio" name="feedback-{{id}}" value="0"> <label>Forgot</label>
         </p>
       </li>
       <p>
       {% endfor %}
       </ul>
-      <p><input type="submit" value="Submit"></p>
+      <p><input type="submit" value="Save"></p>
     </form>
   {% else: %}
     <h3>No tracks to rate</h3>

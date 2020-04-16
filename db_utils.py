@@ -15,7 +15,7 @@ def save_playlist(bardo_id, playlist, directory, plst_name):
   f = open(f'{plst_dir}/{plst_name}.txt', 'w+')
   for i, track in enumerate(plst['ids']):
     f.write(f'{track}\t{plst["names"][i]}\n')
-  f.close(
+  f.close()
 
 def load_profile(bardo_id):
   idn = bardo_id.replace('@', '-').replace('.', '_')
@@ -57,12 +57,8 @@ def load_profile(bardo_id):
 
 def load_tracks_to_rate(bardo_id):
   idn = bardo_id.replace('@', '-').replace('.', '_')
-  id_dir = f'datasets/{idn}'
-  plst_dir = f'{id_dir}/playlists'
-  rated_dir = f'{id_dir}/feedback'
-
-  if not os.path.isdir(id_dir):
-    os.mkdir(id_dir)
+  plst_dir = f'datasets/{idn}/playlists'
+  rated_dir = f'datasets/{idn}/feedback'
 
   if os.path.isdir(plst_dir):
     plst_tracks = {}
@@ -116,12 +112,14 @@ def process_plst_feedback(token, url, stars):
 def process_feedback_input(needs_rating, form):
   feedback = []
   for track, name in needs_rating.items():
-    stars = int(form.get(f'feedback-{track}'))
-    feedback.append({
-      'id': track,
-      'name': name,
-      'stars': stars,
-    })
+    stars = form.get(f'feedback-{track}')
+    if stars:
+      stars = int(stars)
+      feedback.append({
+        'id': track,
+        'name': name,
+        'stars': stars,
+      })
 
   return feedback
 
@@ -139,4 +137,3 @@ def save_feedback(bardo_id, feedback, directory, name):
   for track in feedback:
     f.write(f'{track["id"]}\t{track["name"]}\t{track["stars"]}\n')
   f.close()
-) 

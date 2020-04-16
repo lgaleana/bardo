@@ -80,25 +80,29 @@ def make_playlist(bardo_id):
   market = request.json.get('market')
 
   if token and source and genre:
-    clf_plsts, final_plst = pu.gen_recs(
-      token,
-      genre.split(','),
-      source.split(','),
-      'MX',
-      PLAYLIST_LIMIT,
-      TIME_LIMIT,
-    )
-    now = datetime.now().strftime("%d-%m-%Y_%H-%M")
-    db.save_playlists(bardo_id, final_plst, 'playlists', now)
-    for clf, plst in clf_plsts.items():
-      db.save_playlists(bardo_id, plst, 'predictions', f'{now}_{clf}')
+    needs_rating = db.load_tracks_to_rate(bardo_id)
+    if len(needs_rating) == 0:
+      clf_plsts, final_plst = pu.gen_recs(
+        token,
+        genre.split(','),
+        source.split(','),
+        'MX',
+        PLAYLIST_LIMIT,
+        TIME_LIMIT,
+      )
+      now = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+      db.save_playlists(bardo_id, final_plst, 'playlists', now)
+      for clf, plst in clf_plsts.items():
+        db.save_playlists(bardo_id, plst, 'predictions', f'{now}_{clf}')
 
-    if len(final_plst) > 0:
-      playlist = su.create_playlist(token, f'Bardo {now}')
-      su.populate_playlist(token, playlist, final_plst['ids'])
-      return f'Playlist <b>{playlist["name"]}</b> has been created in your spotify account.'
+      if len(final_plst) > 0:
+        playlist = su.create_playlist(token, f'Bardo {now}')
+        su.populate_playlist(token, playlist, final_plst['ids'])
+        return f'Playlist <b>{playlist["name"]}</b> has been created in your spotify account.'
+      else:
+        return 'No tracks were generated. Please try again.'
     else:
-      return 'No tracks were generated. Please try again.'
+      return 'Please first rate previous recommendations.'
   else:
     return 'Invalid request.'
 
