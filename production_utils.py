@@ -74,11 +74,11 @@ def gen_recs(token, sgenres, exp_config,  market, slimit, tlimit):
   # We want tracks from every classifier
   playlists = {}
   for name in classifiers:
-#    if name in exp_config:
-    playlists[name] = {
-      'ids': [],
-      'names': [],
-    }
+    if name in exp_config:
+      playlists[name] = {
+        'ids': [],
+        'names': [],
+      }
   if 'random' in exp_config:
     playlists['random'] = {
       'ids': [],
@@ -88,12 +88,12 @@ def gen_recs(token, sgenres, exp_config,  market, slimit, tlimit):
 
   go_on = True
   start_time = time()
-  nlabel = 0
+  use_random = False
   while go_on and time() - start_time < tlimit:
     # Add seed tracks
-    if nlabel <= 5 and len(pos_tracks) > 0:
+    if not use_random and len(pos_tracks) > 0:
       seeds['tracks'] = [pos_tracks.pop(0)]
-      rlimit = 20
+      rlimit = 10
     else:
       seeds['tracks'] = []
       rlimit = 100
@@ -112,14 +112,15 @@ def gen_recs(token, sgenres, exp_config,  market, slimit, tlimit):
         analysis = su.get_track_analysis(token, recommendation)
         # Get predictions from all classifiers
         for name, clf in classifiers.items():
-          prediction = clf.predict_prod(features + analysis)
-          print(f'  {name} prediction: {prediction}')
-          if prediction == 1 and recommendation['name'] not in playlists[name]['names'] and len(playlists[name]['ids']) < slimit:
-            playlists[name]['ids'].append(recommendation['id'])
-            playlists[name]['names'].append(recommendation['name'])
-            if recommendation['id'] not in pos_tracks:
-              pos_tracks.append(recommendation['id'])
-          print(f'  size: {len(playlists[name]["ids"])}')
+          if name in exp_config:
+            prediction = clf.predict_prod(features + analysis)
+            print(f'  {name} prediction: {prediction}')
+            if prediction == 1 and recommendation['name'] not in playlists[name]['names'] and len(playlists[name]['ids']) < slimit:
+              playlists[name]['ids'].append(recommendation['id'])
+              playlists[name]['names'].append(recommendation['name'])
+              if recommendation['id'] not in pos_tracks:
+                pos_tracks.append(recommendation['id'])
+            print(f'  size: {len(playlists[name]["ids"])}')
 
         if 'random' in playlists and recommendation['name'] not in playlists['random']['names'] and len(playlists['random']['ids']) < slimit:
           print(f'  random prediction: 1.0')
@@ -135,6 +136,7 @@ def gen_recs(token, sgenres, exp_config,  market, slimit, tlimit):
           break
       if not go_on:
         break
+    use_random = not use_random
     t.print_line()
     print(f'{(time() - start_time) / 60} mins elapsed')
     print(f'{nlabel} new track labeled')
