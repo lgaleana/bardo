@@ -1,6 +1,0 @@
-flask
-sklearn
-numpy
-requests
-gunicorn
-matplotlib
