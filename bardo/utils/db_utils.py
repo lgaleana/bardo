@@ -51,7 +51,8 @@ def load_profile(bardo_id):
         'name': track_info[1],
         'stars': int(track_info[2]),
       }
-      profile[track['id']] = track
+      if track['stars'] > 0 and track['stars'] <= 5:
+        profile[track['id']] = track
     f.close()
 
   return profile.values()

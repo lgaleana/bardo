@@ -6,7 +6,11 @@
   <meta name="description" content="Using AI to discover new music">
   <meta name="viewport" content="width=device-width">
   <style>
-    input[type="text"], input[type="submit"] {
+    input[type="text"] {
+      font-size: 16px;
+      width: 200px;
+    }
+    input[type="submit"] {
       font-size: 16px;
     }
   </style>
@@ -26,7 +30,10 @@
   <p>Help Bardo understand your music preferences. Do you have Spotify playlists that you want to share?</p>
   <form action="{{url_for('save_playlists', bardo_id=bardo_id)}}?token={{token}}" method="POST">
     <p><b>Playlist</b></p>
-    <p><input type="text" name="url"> <label><i>Copy/paste a Spotify playlist URL.</i></p>
+    <p>
+      <input type="text" name="url"><br>
+      <label><i>Copy/paste a Spotify playlist URL.</i>
+    </p>
     <p><b>How much do you like the tracks in this playlist?</b></p>
     <p>
       <input type="radio" name="feedback" value="1" required>  <label>Hate</label><br>
