@@ -28,6 +28,6 @@
     };
     xhr.send('{{data | tojson | safe}}'); 
   </script>
-  <h1>Bardo Recommendations</h1>
+  <h1><a href="{{url_for('main')}}">Bardo</a> Recommendations</h1>
   <p id="message">The playlist is being generated... <img id="loading" src="{{url_for('static', filename='loading.gif')}}"> This could take up to 5 minutes.</p>
 </html>

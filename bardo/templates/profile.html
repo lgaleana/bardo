@@ -12,7 +12,7 @@
   </style>
 </head>
 <body>
-  <h1>Bardo Profile</h1>
+  <h1><a href="{{url_for('main')}}">Bardo</a> Profile</h1>
   <p>This is the data that Bardo uses to generate music recommendations.</p>
   <p><a href="{{url_for('tracks', bardo_id=bardo_id, stars='5')}}">Loved tracks</a></p>
   <p><a href="{{url_for('tracks', bardo_id=bardo_id, stars='4')}}">Liked tracks</a></p>
