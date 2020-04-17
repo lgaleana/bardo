@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Bardo: AI music curator</title>
+  <meta name="description" content="Using AI to discover new music">
+</head>
+<body>
+  <h1>How <a href="{{url_for('main')}}">Bardo</a> works</h1>
+  <p>Bardo's mission is to help groups of friends find new music that they all enjoy.</p>
+  <p>Bardo has 2 main components: the Spotify API (<u>that requires a premium subscription</u>) and the Bardo AI:</p>
+  <ul>
+    <li>Bardo uses the Spotify API to create music playlists, <u>based on a combination of music similar to the group's preferences and random music from given genres</u>.</li><br>
+    <li><u>The Bardo AI learns from the music preferences that members of a group share with Bardo</u>, and <u>hand-picks</u> the actual music to recommend, from the Spotify playlists. As more music is shared with Bardo, Bardo makes better recommendations.</li>
+  </ul>
+  <p>Below is a visual description of how Bardo works:</p>
+  <p><img src="{{url_for('static', filename='bardo-1.png')}}"></p>
+</body>
+</html>

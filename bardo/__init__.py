@@ -161,6 +161,10 @@ def save_playlists(bardo_id):
   else:
     return '<meta name="viewport" content="width=device-width">Invalid request.'
 
+@app.route('/how-it-works')
+def how_it_works():
+  return render_template('how-it-works.html')
+
 @app.route('/identify')
 def identify():
   redirect_uri = request.args.get('redirect-uri')
