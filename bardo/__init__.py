@@ -70,7 +70,7 @@ def generate_playlist():
         f'{iurl}?token={token}&genre={genre}&source={source}&redirect-uri=generate_playlist'
       )
   else:
-    return 'Invalid request.'
+    return '<meta name="viewport" content="width=device-width">Invalid request.'
 
 @app.route('/make-playlist/<bardo_id>', methods=['POST'])
 def make_playlist(bardo_id):
@@ -82,11 +82,13 @@ def make_playlist(bardo_id):
   if token and source and genre:
     needs_rating = db.load_tracks_to_rate(bardo_id)
     if len(needs_rating) == 0:
+      profile = db.load_profile(bardo_id)
       clf_plsts, final_plst = pu.gen_recs(
         token,
         genre.split(','),
         source.split(','),
         'MX',
+        profile,
         PLAYLIST_LIMIT,
         TIME_LIMIT,
       )
@@ -153,11 +155,11 @@ def save_playlists(bardo_id):
     if len(feedback) > 0:
       now = datetime.now().strftime("%d-%m-%Y")
       db.save_feedback(bardo_id, feedback, 'profile', f'{stars}_{now}')
-      return 'Tracks saved.'
+      return '<meta name="viewport" content="width=device-width">Tracks saved.'
     else:
-      return 'No tracks saved.'
+      return '<meta name="viewport" content="width=device-width">No tracks saved.'
   else:
-    return 'Invalid request.'
+    return '<meta name="viewport" content="width=device-width">Invalid request.'
 
 @app.route('/identify')
 def identify():
@@ -204,7 +206,7 @@ def save_ratings(bardo_id):
     redirect_url += '?' + get_request_params(request.args, 'redirect-uri')
     return redirect(f'{redirect_url}')
   else:
-    return 'Tracks saved.'
+    return '<meta name="viewport" content="width=device-width">Tracks saved.'
 
 @app.route('/spotify-auth')
 def spotify_auth():
@@ -221,7 +223,7 @@ def spotify_auth():
       redirect_url=url_for(post_auth),
     )
   else:
-    return 'Invalid request'
+    return '<meta name="viewport" content="width=device-width">Invalid request'
 
 def get_request_params(request, exclude=''):
   params = ''
@@ -229,6 +231,3 @@ def get_request_params(request, exclude=''):
     if name != exclude:
       params += f'{name}={param}&'
   return params
-
-if __name__ == '__main__':
-  app.run(host='0.0.0.0', port=80)

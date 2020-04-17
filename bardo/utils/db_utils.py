@@ -41,19 +41,20 @@ def load_profile(bardo_id):
     ))
   profile_files.sort()
 
-  profile = []
+  profile = {}
   for path in profile_files:
     f = open(f'{path}', 'r')
     for line in f:
       track_info = line.strip().split('\t')
-      profile.append({
+      track = {
         'id': track_info[0],
         'name': track_info[1],
         'stars': int(track_info[2]),
-      })
+      }
+      profile[track['id']] = track
     f.close()
 
-  return profile
+  return profile.values()
 
 def load_tracks_to_rate(bardo_id):
   idn = bardo_id.replace('@', '-').replace('.', '_')

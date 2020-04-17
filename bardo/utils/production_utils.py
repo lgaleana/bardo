@@ -41,20 +41,7 @@ train_configs = [
 
 ### Train production classifiers
 classifiers = {}
-tracks = []
-pos_tracks = []
 def load_prod_classifiers():
-  # Load tracks that have already been labeled, so that we don't recommend them
-  print('Loading tracks DB')
-  pos = []
-  with open('datasets/tracks.txt') as f:
-    for line in f:
-      info = line.strip().split('\t')
-      tracks.append(info[1])
-      if float(info[len(info) - 1]) == 6:
-        pos_tracks.append(info[0])
-  shuffle(pos_tracks)
-
   # Classifiers
   for config in train_configs:
     tu = t.TrainUtil(
@@ -70,7 +57,14 @@ def load_prod_classifiers():
   print('Finished training')
 
 ### Get recommendatons from seed tracks or genres
-def gen_recs(token, sgenres, exp_config,  market, slimit, tlimit):
+def gen_recs(token, genres, exp_config,  market, profile, slimit, tlimit):
+  # Use profile as seed
+  pos_tracks = list(map(
+    lambda track: track['id'],
+    filter(lambda track: track['stars'] >= 4, profile),
+  ))
+  profile = list(map(lambda track: track['name'], profile))
+
   # We want tracks from every classifier
   playlists = {}
   for name in classifiers:
@@ -84,7 +78,7 @@ def gen_recs(token, sgenres, exp_config,  market, slimit, tlimit):
       'ids': [],
       'names': [],
     }
-  seeds = {'genres': sgenres}
+  seeds = {'genres': genres}
 
   go_on = True
   start_time = time()
@@ -105,9 +99,9 @@ def gen_recs(token, sgenres, exp_config,  market, slimit, tlimit):
     for recommendation in recommendations:
       go_on = False
       # Check if track is playable of if it's been labeled
-      if recommendation['is_playable'] and recommendation['name'] not in tracks:
+      if recommendation['is_playable'] and recommendation['name'] not in profile:
         nlabel += 1
-        tracks.append(recommendation['name'])
+        profile.append(recommendation['name'])
         features = su.get_tracks_features(token, [recommendation])[0]
         analysis = su.get_track_analysis(token, recommendation)
         # Get predictions from all classifiers
