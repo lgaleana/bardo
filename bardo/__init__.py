@@ -91,9 +91,9 @@ def make_playlist(bardo_id):
         TIME_LIMIT,
       )
       now = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-      db.save_playlists(bardo_id, final_plst, 'playlists', now)
+      db.save_playlist(bardo_id, final_plst, 'playlists', now)
       for clf, plst in clf_plsts.items():
-        db.save_playlists(bardo_id, plst, 'predictions', f'{now}_{clf}')
+        db.save_playlist(bardo_id, plst, 'predictions', f'{now}_{clf}')
 
       if len(final_plst) > 0:
         playlist = su.create_playlist(token, f'Bardo {now}')

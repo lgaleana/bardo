@@ -8,3 +8,4 @@ transform_datasets.py
 venv
 dist
 build
+deploy.sh
