@@ -17,9 +17,10 @@
   <form action="{{url_for('generate_playlist')}}" method="GET">
     <p><b>Source</b></p>
     <p>
-      <input type="radio" name="source" value="gbdt_bottom_high" required checked> <label>Bardo AI</label>
-      <input type="radio" name="source" value="random" required> <label>Spotify random</label>
-      <input type="radio" name="source" value="{{exp_clfs}}" required> <label>A/B</label> <i>(A/B will include a random mix of Bardo AI and a new experimental source.)</i>
+    <input type="radio" name="source" value="gbdt_bottom_high" required checked> <label>Bardo AI</label><br>
+    <input type="radio" name="source" value="random" required> <label>Spotify random</label><br>
+    <input type="radio" name="source" value="{{exp_clfs}}" required> <label>A/B</label><br>
+      <i>(A/B will include a random mix of Bardo AI and a new experimental source.)</i>
     </p>
     <p><b>Genres</b></p>
     <p>
@@ -27,9 +28,9 @@
     </p>
     <p><b>Country</b></p>
     <p>
-      <input type="radio" name="market" value="US" required> <label>US</label>
-      <input type="radio" name="market" value="MX" required> <label>MX</label> 
-      <label><i>This parameter is important because some tracks might not be playable depending on the country.</i></label>
+      <input type="radio" name="market" value="US" required> <label>US</label><br>
+      <input type="radio" name="market" value="MX" required> <label>MX</label><br> 
+      <i>This parameter is important because some tracks might not be playable depending on the country.</i>
     </p>
     <input type="hidden" name="bardo-id" value="{{bardo_id}}">
     <input type="hidden" name="token" value="{{token}}">
