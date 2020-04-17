@@ -3,7 +3,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 import ml.train_utils as t
 import ml.sample_generators as s
-import app.utils.spotify_utils as su
+import bardo.utils.spotify_utils as su
 from random import shuffle
 from time import time
 

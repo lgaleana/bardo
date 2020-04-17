@@ -1,7 +1,7 @@
 from flask import Flask, request, redirect, url_for, render_template
-import app.utils.production_utils as pu
-import app.utils.db_utils as db
-import app.utils.spotify_utils as su
+import bardo.utils.production_utils as pu
+import bardo.utils.db_utils as db
+import bardo.utils.spotify_utils as su
 from datetime import datetime
 
 app = Flask(__name__, instance_relative_config=True)
