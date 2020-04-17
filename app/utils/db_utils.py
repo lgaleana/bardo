@@ -1,5 +1,5 @@
-import bardo.utils.spotify_utils as su
-import bardo.utils.production_utils as pu
+import app.utils.spotify_utils as su
+import app.utils.production_utils as pu
 import os
 
 def save_playlist(bardo_id, playlist, directory, plst_name):

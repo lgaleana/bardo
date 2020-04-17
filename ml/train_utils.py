@@ -1,4 +1,4 @@
-import bardo_ml.sample_generators as s
+import ml.sample_generators as s
 from sklearn.model_selection import GridSearchCV, cross_validate, learning_curve
 from sklearn.preprocessing import StandardScaler
 import sklearn.metrics as m

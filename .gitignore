@@ -4,7 +4,7 @@ generate_dataset.py
 datasets
 .DS_Store
 transform_datasets.py
-bardo.egg-info
+*.egg-info
 venv
 dist
 build
