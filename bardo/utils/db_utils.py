@@ -13,8 +13,8 @@ def save_playlist(bardo_id, playlist, directory, plst_name):
     os.mkdir(plst_dir)
 
   f = open(f'{plst_dir}/{plst_name}.txt', 'w+')
-  for i, track in enumerate(plst['ids']):
-    f.write(f'{track}\t{plst["names"][i]}\n')
+  for i, track in enumerate(playlist['ids']):
+    f.write(f'{track}\t{playlist["names"][i]}\n')
   f.close()
 
 def load_profile(bardo_id):
