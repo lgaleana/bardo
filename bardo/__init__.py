@@ -3,8 +3,8 @@ import bardo.utils.production_utils as pu
 import bardo.utils.db_utils as db
 import bardo.utils.spotify_utils as su
 from datetime import datetime
-
-app = Flask(__name__, instance_relative_config=True)
+import logging
+from werkzeug.exceptions import InternalServerError
 
 CLIENT_ID = '8de267b03c464274a3546bfe84496696'
 EXP_CONFIG = ['gbdt_bottom_high', 'random']
@@ -13,6 +13,8 @@ TIME_LIMIT = 300
 post_auth = 'main'
 
 
+app = Flask(__name__, instance_relative_config=True)
+logging.basicConfig(filename='log.log', level=logging.ERROR)
 pu.load_prod_classifiers()
 
 @app.route('/')
@@ -198,6 +200,10 @@ def spotify_auth():
     )
   else:
     return '<meta name="viewport" content="width=device-width">Invalid request'
+
+@app.errorhandler(InternalServerError)
+def handle_500(e):
+  app.logger.error(e)
 
 def get_request_params(request, exclude=''):
   params = ''

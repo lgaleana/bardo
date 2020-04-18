@@ -1,11 +1,12 @@
-__pycache__
-reports
 generate_dataset.py
 datasets
+reports
+__pycache__
 .DS_Store
+venv
 transform_datasets.py
 *.egg-info
-venv
 dist
 build
 deploy.sh
+*.log
