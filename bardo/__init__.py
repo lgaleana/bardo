@@ -14,7 +14,7 @@ post_auth = 'main'
 
 
 app = Flask(__name__, instance_relative_config=True)
-logging.basicConfig(filename='log.log', level=logging.ERROR)
+logging.basicConfig(filename='error.log', level=logging.ERROR)
 pu.load_prod_classifiers()
 
 @app.route('/')
@@ -199,11 +199,12 @@ def spotify_auth():
       redirect_url=url_for(post_auth),
     )
   else:
-    return '<meta name="viewport" content="width=device-width">Invalid request'
+    return '<meta name="viewport" content="width=device-width">Invalid request.'
 
 @app.errorhandler(InternalServerError)
 def handle_500(e):
   app.logger.error(e)
+  return '<meta name="viewport" content="width=device-width">There was an error with the application.'
 
 def get_request_params(request, exclude=''):
   params = ''
