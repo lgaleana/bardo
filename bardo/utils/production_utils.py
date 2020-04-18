@@ -63,6 +63,7 @@ def gen_recs(token, genres, exp_config,  market, profile, slimit, tlimit):
     lambda track: track['id'],
     filter(lambda track: track['stars'] >= 4, profile),
   ))
+  shuffle(pos_tracks)
   profile = list(map(lambda track: track['name'], profile))
 
   # We want tracks from every classifier
