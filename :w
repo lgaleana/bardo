@@ -21,14 +21,14 @@
         radio.onchange = () => {
           var ps = Array.from(document.querySelectorAll("p.feedback"));
           var allChecked = ps.reduce((pChecked, p) => {
-            var pRad = Array.from(p.querySelectorAll("input[type='radio']"));
-            var isChecked = pRad.reduce((checked, r) => {
+            var pRadios = Array.from(p.querySelector("input[type='radio']"));
+            console.log(pRadios);
+            return pChecked || pRadios.reduce((checked, r) => {
               return checked || r.checked;
             }, false);
-            return pChecked && isChecked;
-          }, true);
+          }, false);
 
-          var submit = document.getElementById("submit");
+          var submit = document.querySelectorAll("#submit");
           if (allChecked) {
             submit.value = "Submit";
           } else {
