@@ -7,20 +7,9 @@
   <meta name="viewport" content="width=device-width">
 </head>
 <body>
-  <script>
-    window.onload = function() {
-      if (localStorage.bardoId !== undefined) {
-        var genPlst = document.getElementById("generatePlst");
-        genPlst.href += "?bardo-id=" + localStorage.bardoId;
-        var profile = document.getElementById("profile");
-        profile.href += "?bardo-id=" + localStorage.bardoId;
-      }
-    }
-  </script>
-
   <h1><a href="{{url_for('main')}}">Bardo:</a> AI music curator</h1>
-  <p><a id="generatePlst" href="{{url_for('playlist_selection')}}">Get music recommendations</a></p>
-  <p><a id="profile" href="{{url_for('profile')}}">My music preferences</a></p>
+  <p><a href="{{url_for('playlist_selection')}}">Get music recommendations</a></p>
+  <p><a href="{{url_for('profile')}}">My music preferences</a></p>
   <hr>
   <p><a href="{{url_for('how_it_works')}}">How it works</a></p>
 </body>

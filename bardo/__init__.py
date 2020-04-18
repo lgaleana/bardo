@@ -21,23 +21,20 @@ def main():
 
 @app.route('/playlist-selection')
 def playlist_selection():
-  bardo_id = request.args.get('bardo-id')
   token = request.args.get('token')
   if token:
     return render_template(
       'playlist-selection.html',
-      bardo_id=bardo_id if bardo_id else '',
       token=token,
       exp_clfs=','.join(EXP_CONFIG),
     )
   else:
     global post_auth
     post_auth = 'playlist_selection'
-    return redirect(f'https://accounts.spotify.com/authorize?client_id={CLIENT_ID}&response_type=code&redirect_uri={url_for("spotify_auth", _external=True)}&scope=playlist-modify-public playlist-modify-private')
+    return redirect(f'https://accounts.spotify.com/authorize?client_id={CLIENT_ID}&response_type=code&redirect_uri={url_for("spotify_auth", _external=True)}&scope=playlist-modify-public playlist-modify-private user-read-private user-read-email')
 
 @app.route('/generate-playlist')
 def generate_playlist():
-  bardo_id = request.args.get('bardo-id')
   token = request.args.get('token')
   genre = request.args.get('genre')
   source = request.args.get('source')
@@ -51,35 +48,31 @@ def generate_playlist():
     market = 'US'
 
   if token:
-    if bardo_id:
-      needs_rating = db.load_tracks_to_rate(bardo_id)
-      if len(needs_rating) == 0:
-        return render_template(
-          'generate-playlist.html',
-          bardo_id=bardo_id,
-          data={'token': token, 'genre': genre, 'source': source},
-        )
-      else:
-        rurl = url_for('rate_recommendations')
-        return redirect(
-          f'{rurl}?bardo-id={bardo_id}&token={token}&genre={genre}&source={source}&redirect-uri=generate_playlist'
-        )
+    _, bardo_id = su.get_user_data(token)
+    needs_rating = db.load_tracks_to_rate(bardo_id)
+    if len(needs_rating) == 0:
+      return render_template(
+        'generate-playlist.html',
+        bardo_id=bardo_id,
+        data={'token': token, 'genre': genre, 'source': source},
+      )
     else:
-      iurl = url_for('identify')
+      rurl = url_for('rate_recommendations', bardo_id=bardo_id)
       return redirect(
-        f'{iurl}?token={token}&genre={genre}&source={source}&redirect-uri=generate_playlist'
+        f'{rurl}?token={token}&genre={genre}&source={source}&redirect-uri=generate_playlist'
       )
   else:
     return '<meta name="viewport" content="width=device-width">Invalid request.'
 
-@app.route('/make-playlist/<bardo_id>', methods=['POST'])
-def make_playlist(bardo_id):
+@app.route('/make-playlist', methods=['POST'])
+def make_playlist():
   token = request.json.get('token')
   genre = request.json.get('genre')
   source = request.json.get('source')
   market = request.json.get('market')
 
   if token and source and genre:
+    sid, bardo_id = su.get_user_data(token)
     needs_rating = db.load_tracks_to_rate(bardo_id)
     if len(needs_rating) == 0:
       profile = db.load_profile(bardo_id)
@@ -98,7 +91,7 @@ def make_playlist(bardo_id):
         db.save_playlist(bardo_id, plst, 'predictions', f'{now}_{clf}')
 
       if len(final_plst) > 0:
-        playlist = su.create_playlist(token, f'Bardo {now}')
+        playlist = su.create_playlist(token, sid, f'Bardo {now}')
         su.populate_playlist(token, playlist, final_plst['ids'])
         return f'Playlist <b>{playlist["name"]}</b> has been created in your spotify account.'
       else:
@@ -110,27 +103,23 @@ def make_playlist(bardo_id):
 
 @app.route('/profile')
 def profile():
-  bardo_id = request.args.get('bardo-id')
-  if bardo_id:
+  token = request.args.get('token')
+  if token:
+    _, bardo_id = su.get_user_data(token)
     needs_rating = db.load_tracks_to_rate(bardo_id)
     if len(needs_rating) == 0:
-      token = request.args.get('token')
-      if token:
-        return render_template(
-          'profile.html',
-          bardo_id=bardo_id,
-          token=token,
-        )
-      else:
-        global post_auth
-        post_auth = 'profile'
-        return redirect(f'https://accounts.spotify.com/authorize?client_id={CLIENT_ID}&response_type=code&redirect_uri={url_for("spotify_auth", _external=True)}&scope=playlist-modify-public playlist-modify-private')
+      return render_template(
+        'profile.html',
+        bardo_id=bardo_id,
+        token=token,
+      )
     else:
-      rurl = url_for('rate_recommendations')
-      return redirect(f'{rurl}?bardo-id={bardo_id}&redirect-uri=profile')
+      rurl = url_for('rate_recommendations', bardo_id=bardo_id)
+      return redirect(f'{rurl}?redirect-uri=profile')
   else:
-    iurl =url_for('identify') 
-    return redirect(f'{iurl}?redirect-uri=profile')
+    global post_auth
+    post_auth = 'profile'
+    return redirect(f'https://accounts.spotify.com/authorize?client_id={CLIENT_ID}&response_type=code&redirect_uri={url_for("spotify_auth", _external=True)}&scope=playlist-modify-public playlist-modify-private user-read-private user-read-email')
 
 @app.route('/tracks/<bardo_id>/<stars>')
 def tracks(bardo_id, stars):
@@ -165,35 +154,16 @@ def save_playlists(bardo_id):
 def how_it_works():
   return render_template('how-it-works.html')
 
-@app.route('/identify')
-def identify():
-  redirect_uri = request.args.get('redirect-uri')
-  if not redirect_uri:
-    redirect_uri = 'main'
-  args = filter(lambda arg: arg[0] != 'redirect-uri', request.args.items())
+@app.route('/rate-recommendations/<bardo_id>')
+def rate_recommendations(bardo_id):
+  needs_rating = db.load_tracks_to_rate(bardo_id)
+  save_url = url_for('save_ratings', bardo_id=bardo_id)
+  save_url += '?' + get_request_params(request.args)
   return render_template(
-    'identify.html',
-    redirect_url=redirect_uri,
-    args=args,
+    'rate-recommendations.html',
+    needs_rating=needs_rating,
+    save_url=f'{save_url}',
   )
-
-@app.route('/rate-recommendations')
-def rate_recommendations():
-  bardo_id = request.args.get('bardo-id')
-  if bardo_id:
-    needs_rating = db.load_tracks_to_rate(bardo_id)
-    save_url = url_for('save_ratings', bardo_id=bardo_id)
-    save_url += '?' + get_request_params(request.args)
-    return render_template(
-      'rate-recommendations.html',
-      needs_rating=needs_rating,
-      save_url=f'{save_url}',
-    )
-  else:
-    iurl = url_for('identify')
-    return redirect(
-      f'{iurl}?redirect-uri=rate_recommendations'
-    )
 
 @app.route('/save-ratings/<bardo_id>', methods=['POST'])
 def save_ratings(bardo_id):
