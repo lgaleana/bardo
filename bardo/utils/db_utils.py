@@ -135,7 +135,7 @@ def save_feedback(bardo_id, feedback, directory, name):
   if not os.path.isdir(feedback_dir):
     os.mkdir(feedback_dir)
 
-  f = open(f'{feedback_dir}/{name}.txt', 'w+')
+  f = open(f'{feedback_dir}/{name}.txt', 'a+')
   for track in feedback:
     f.write(f'{track["id"]}\t{track["name"]}\t{track["stars"]}\n')
   f.close()

@@ -171,7 +171,7 @@ def rate_recommendations(bardo_id):
 def save_ratings(bardo_id):
   redirect_uri = request.args.get('redirect-uri')
 
-  now = datetime.now().strftime("%d-%m-%Y_%H-%M")
+  now = datetime.now().strftime("%d-%m-%Y")
   db.save_feedback(bardo_id, db.process_feedback_input(
     db.load_tracks_to_rate(bardo_id),
     request.form,

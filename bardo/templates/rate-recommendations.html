@@ -32,7 +32,7 @@
           if (allChecked) {
             submit.value = "Submit";
           } else {
-            submit.value = "Save for later";
+            submit.value = "Save";
           }
         };
       });
@@ -42,7 +42,7 @@
   <p>Help Bardo understand if it's doing a good job. From your previous recommendations...</p>
   {% if needs_rating|length > 0: %}
   <h3>How much did you like these tracks?</h3>
-  <i>Forgotten tracks won't be saved.</i>
+  <i>You can save and resume at any time. Forgotten tracks won't be saved.</i>
     <form id="form" action="{{save_url}}" method="POST">
       <ul>
       {% for id, name in needs_rating.items(): %}
@@ -60,7 +60,7 @@
       <p>
       {% endfor %}
       </ul>
-      <p><input id="submit" type="submit" value="Save for later"></p>
+      <p><input id="submit" type="submit" value="Save"></p>
     </form>
   {% else: %}
     <h3>No tracks to rate</h3>
