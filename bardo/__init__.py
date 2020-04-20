@@ -29,7 +29,12 @@ def playlist_selection():
       token=token,
       exp_clfs=','.join(EXP_CONFIG),
     )
-  return validate_response(response, request, 'playlist_selection')
+  return validate_response(
+    response,
+    request,
+    'playlist_selection',
+    check_recs=False,
+  )
 
 @app.route('/generate-playlist')
 def generate_playlist():
@@ -61,7 +66,9 @@ def generate_playlist():
     response,
     request,
     'generate_playlist',
-    **{'genre': genre, 'source': source, 'market': market},
+    genre=genre,
+    source=source,
+    market=market,
   )
 
 @app.route('/make-playlist', methods=['POST'])
@@ -109,7 +116,7 @@ def profile():
       token=token,
       bardo_id=bardo_id,
     )
-  return validate_response(response, request, 'profile')
+  return validate_response(response, request, 'profile', check_recs=False)
 
 @app.route('/tracks/<bardo_id>/<stars>')
 def tracks(bardo_id, stars):
@@ -200,6 +207,7 @@ def validate_response(
   response,
   request,
   redirect_uri,
+  check_recs=True,
   **kwargs,
 ):
   token = request.args.get('token')
@@ -210,8 +218,7 @@ def validate_response(
 
   _, bardo_id = su.get_user_data(token)
   needs_rating = db.load_tracks_to_rate(bardo_id)
-  print(needs_rating)
-  if len(needs_rating) > 0:
+  if check_recs and len(needs_rating) > 0:
     rate_url = url_for('rate_recommendations', bardo_id=bardo_id)
     params = get_request_params(request.args)
     return redirect(f'{rate_url}?{params}&redirect-uri={redirect_uri}')
