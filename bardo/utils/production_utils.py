@@ -6,6 +6,7 @@ import ml.sample_generators as s
 import bardo.utils.spotify_utils as su
 from random import shuffle
 from time import time
+from copy import deepcopy
 
 ### Train configs
 # Classifiers initial configs
@@ -141,10 +142,16 @@ def gen_recs(token, genres, exp_config,  market, profile, slimit, tlimit):
     'ids': [],
     'names': [],
   }
-  for name, plst in playlists.items():
-    for i, track in enumerate(plst['ids']):
+  plst_copy = deepcopy(playlists)
+  while len(final_playlist['ids']) < slimit:
+    for plst in plst_copy.values():
+      track = plst['ids'].pop(0)
+      name = plst['names'].pop(0)
       if track not in final_playlist['ids']:
         final_playlist['ids'].append(track)
-        final_playlist['names'].append(plst['names'][i])
+        final_playlist['names'].append(name)
+  cont = list(zip(final_playlist['ids'], final_playlist['names']))
+  shuffle(cont)
+  final_playlist['ids'], final_playlist['names'] = zip(*cont)
 
   return playlists, final_playlist
