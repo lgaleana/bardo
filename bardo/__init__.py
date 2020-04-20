@@ -39,7 +39,6 @@ def playlist_selection():
 
 @app.route('/generate-playlist')
 def generate_playlist():
-  token = request.args.get('token')
   genre = request.args.get('genre')
   source = request.args.get('source')
   market = request.args.get('market')

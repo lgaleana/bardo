@@ -143,13 +143,17 @@ def gen_recs(token, genres, exp_config,  market, profile, slimit, tlimit):
     'names': [],
   }
   plst_copy = deepcopy(playlists)
-  while len(final_playlist['ids']) < slimit:
+  go_on = True
+  while len(final_playlist['ids']) < slimit and go_on:
+    go_on = False
     for plst in plst_copy.values():
-      track = plst['ids'].pop(0)
-      name = plst['names'].pop(0)
-      if track not in final_playlist['ids']:
-        final_playlist['ids'].append(track)
-        final_playlist['names'].append(name)
+      if len(plst['ids']) > 0:
+        go_on = True
+        track = plst['ids'].pop(0)
+        name = plst['names'].pop(0)
+        if track not in final_playlist['ids']:
+          final_playlist['ids'].append(track)
+          final_playlist['names'].append(name)
   cont = list(zip(final_playlist['ids'], final_playlist['names']))
   shuffle(cont)
   final_playlist['ids'], final_playlist['names'] = zip(*cont)
