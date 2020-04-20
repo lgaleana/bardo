@@ -91,7 +91,7 @@ def make_playlist():
     token,
     genre.split(','),
     source.split(','),
-    'MX',
+    market,
     db.load_profile(bardo_id),
     PLAYLIST_LIMIT,
     TIME_LIMIT,
