@@ -23,17 +23,13 @@ def main():
 
 @app.route('/playlist-selection')
 def playlist_selection():
-  token = request.args.get('token')
-  if token:
+  def response(token, bardo_id):
     return render_template(
       'playlist-selection.html',
       token=token,
       exp_clfs=','.join(EXP_CONFIG),
     )
-  else:
-    global post_auth
-    post_auth = 'playlist_selection'
-    return redirect(f'https://accounts.spotify.com/authorize?client_id={CLIENT_ID}&response_type=code&redirect_uri={url_for("spotify_auth", _external=True)}&scope=playlist-modify-public playlist-modify-private user-read-private user-read-email')
+  return validate_response(response, request, 'playlist_selection')
 
 @app.route('/generate-playlist')
 def generate_playlist():
@@ -49,22 +45,24 @@ def generate_playlist():
   if not market:
     market = 'US'
 
-  if token:
-    _, bardo_id = su.get_user_data(token)
-    needs_rating = db.load_tracks_to_rate(bardo_id)
-    if len(needs_rating) == 0:
-      return render_template(
-        'generate-playlist.html',
-        bardo_id=bardo_id,
-        data={'token': token, 'genre': genre, 'source': source},
-      )
-    else:
-      rurl = url_for('rate_recommendations', bardo_id=bardo_id)
-      return redirect(
-        f'{rurl}?token={token}&genre={genre}&source={source}&redirect-uri=generate_playlist'
-      )
-  else:
-    return '<meta name="viewport" content="width=device-width">Invalid request.'
+  def response(token, bardo_id, genre, source, market):
+    return render_template(
+      'generate-playlist.html',
+      bardo_id=bardo_id,
+      data={
+        'token': token,
+        'genre': genre,
+        'source': source,
+        'market': market,
+      },
+    )
+
+  return validate_response(
+    response,
+    request,
+    'generate_playlist',
+    **{'genre': genre, 'source': source, 'market': market},
+  )
 
 @app.route('/make-playlist', methods=['POST'])
 def make_playlist():
@@ -73,55 +71,45 @@ def make_playlist():
   source = request.json.get('source')
   market = request.json.get('market')
 
-  if token and source and genre:
-    sid, bardo_id = su.get_user_data(token)
-    needs_rating = db.load_tracks_to_rate(bardo_id)
-    if len(needs_rating) == 0:
-      profile = db.load_profile(bardo_id)
-      clf_plsts, final_plst = pu.gen_recs(
-        token,
-        genre.split(','),
-        source.split(','),
-        'MX',
-        profile,
-        PLAYLIST_LIMIT,
-        TIME_LIMIT,
-      )
-      now = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-      db.save_playlist(bardo_id, final_plst, 'playlists', now)
-      for clf, plst in clf_plsts.items():
-        db.save_playlist(bardo_id, plst, 'predictions', f'{now}_{clf}')
-
-      if len(final_plst) > 0:
-        playlist = su.create_playlist(token, sid, f'Bardo {now}')
-        su.populate_playlist(token, playlist, final_plst['ids'])
-        return f'Playlist <b>{playlist["name"]}</b> has been created in your spotify account.'
-      else:
-        return 'No tracks were generated. Please try again.'
-    else:
-      return 'Please first rate previous recommendations.'
-  else:
+  if not token and not genre and not source and not market:
     return 'Invalid request.'
+
+  sid, bardo_id = su.get_user_data(token)
+  needs_rating = db.load_tracks_to_rate(bardo_id)
+  if len(needs_rating) > 0:
+    return 'Please first rate previous recommendations.'
+
+  clf_plsts, final_plst = pu.gen_recs(
+    token,
+    genre.split(','),
+    source.split(','),
+    'MX',
+    db.load_profile(bardo_id),
+    PLAYLIST_LIMIT,
+    TIME_LIMIT,
+  )
+
+  now = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+  db.save_playlist(bardo_id, final_plst, 'playlists', now)
+  for clf, plst in clf_plsts.items():
+    db.save_playlist(bardo_id, plst, 'predictions', f'{now}_{clf}')
+
+  if len(final_plst) > 0:
+    playlist = su.create_playlist(token, sid, f'Bardo {now}')
+    su.populate_playlist(token, playlist, final_plst['ids'])
+    return f'Playlist <b>{playlist["name"]}</b> has been created in your spotify account.'
+  else:
+    return 'No tracks were generated. Please try again.'
 
 @app.route('/profile')
 def profile():
-  token = request.args.get('token')
-  if token:
-    _, bardo_id = su.get_user_data(token)
-    needs_rating = db.load_tracks_to_rate(bardo_id)
-    if len(needs_rating) == 0:
-      return render_template(
-        'profile.html',
-        bardo_id=bardo_id,
-        token=token,
-      )
-    else:
-      rurl = url_for('rate_recommendations', bardo_id=bardo_id)
-      return redirect(f'{rurl}?redirect-uri=profile')
-  else:
-    global post_auth
-    post_auth = 'profile'
-    return redirect(f'https://accounts.spotify.com/authorize?client_id={CLIENT_ID}&response_type=code&redirect_uri={url_for("spotify_auth", _external=True)}&scope=playlist-modify-public playlist-modify-private user-read-private user-read-email')
+  def response(token, bardo_id):
+    return render_template(
+      'profile.html',
+      token=token,
+      bardo_id=bardo_id,
+    )
+  return validate_response(response, request, 'profile')
 
 @app.route('/tracks/<bardo_id>/<stars>')
 def tracks(bardo_id, stars):
@@ -137,20 +125,20 @@ def save_playlists(bardo_id):
   url = request.form.get('url')
   stars = request.form.get("feedback")
 
-  if token and url and stars:
-    feedback = db.process_plst_feedback(
-      token,
-      url,
-      stars,
-    )
-    if len(feedback) > 0:
-      now = datetime.now().strftime("%d-%m-%Y")
-      db.save_feedback(bardo_id, feedback, 'profile', f'{stars}_{now}')
-      return '<meta name="viewport" content="width=device-width">Tracks saved.'
-    else:
-      return '<meta name="viewport" content="width=device-width">No tracks saved.'
-  else:
+  if not token and not url and not stars:
     return '<meta name="viewport" content="width=device-width">Invalid request.'
+
+  feedback = db.process_plst_feedback(
+    token,
+    url,
+    stars,
+  )
+  if len(feedback) > 0:
+    now = datetime.now().strftime("%d-%m-%Y")
+    db.save_feedback(bardo_id, feedback, 'profile', f'{stars}_{now}')
+    return '<meta name="viewport" content="width=device-width">Tracks saved.'
+  else:
+    return '<meta name="viewport" content="width=device-width">No tracks saved.'
 
 @app.route('/how-it-works')
 def how_it_works():
@@ -187,24 +175,48 @@ def save_ratings(bardo_id):
 @app.route('/spotify-auth')
 def spotify_auth():
   code = request.args.get('code')
-  if code:
-    token = su.request_token(
-      'authorization_code',
-      code,
-      url_for("spotify_auth", _external=True),
-    )
-    return render_template(
-      'spotify-auth.html',
-      token=token,
-      redirect_url=url_for(post_auth),
-    )
-  else:
+
+  if not code:
     return '<meta name="viewport" content="width=device-width">Invalid request.'
+
+  token = su.request_token(
+    'authorization_code',
+    code,
+    url_for("spotify_auth", _external=True),
+  )
+  return render_template(
+    'spotify-auth.html',
+    token=token,
+    redirect_url=url_for(post_auth),
+  )
 
 @app.errorhandler(InternalServerError)
 def handle_500(e):
   app.logger.error(e)
   return '<meta name="viewport" content="width=device-width">There was an error with the application.'
+
+
+def validate_response(
+  response,
+  request,
+  redirect_uri,
+  **kwargs,
+):
+  token = request.args.get('token')
+  if not token:
+    global post_auth
+    post_auth = redirect_uri
+    return redirect(f'https://accounts.spotify.com/authorize?client_id={CLIENT_ID}&response_type=code&redirect_uri={url_for("spotify_auth", _external=True)}&scope=playlist-modify-public playlist-modify-private user-read-private user-read-email')
+
+  _, bardo_id = su.get_user_data(token)
+  needs_rating = db.load_tracks_to_rate(bardo_id)
+  print(needs_rating)
+  if len(needs_rating) > 0:
+    rate_url = url_for('rate_recommendations', bardo_id=bardo_id)
+    params = get_request_params(request.args)
+    return redirect(f'{rate_url}?{params}&redirect-uri={redirect_uri}')
+
+  return response(token=token, bardo_id=bardo_id, **kwargs)
 
 def get_request_params(request, exclude=''):
   params = ''
