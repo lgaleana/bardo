@@ -10,6 +10,7 @@ CLIENT_ID = '8de267b03c464274a3546bfe84496696'
 EXP_CONFIG = ['gbdt_bottom_high', 'random']
 PLAYLIST_LIMIT = 10
 TIME_LIMIT = 300
+INVALID_REQUEST = '<meta name="viewport" content="width=device-width">Invalid request.'
 post_auth = 'main'
 
 
@@ -79,7 +80,7 @@ def make_playlist():
   market = request.json.get('market')
 
   if not token and not genre and not source and not market:
-    return 'Invalid request.'
+    return INVALID_REQUEST
 
   sid, bardo_id = su.get_user_data(token)
   needs_rating = db.load_tracks_to_rate(bardo_id)
@@ -133,7 +134,7 @@ def save_playlists(bardo_id):
   stars = request.form.get("feedback")
 
   if not token and not url and not stars:
-    return '<meta name="viewport" content="width=device-width">Invalid request.'
+    return INVALID_REQUEST
 
   feedback = db.process_plst_feedback(
     token,
@@ -151,16 +152,28 @@ def save_playlists(bardo_id):
 def how_it_works():
   return render_template('how-it-works.html')
 
-@app.route('/rate-recommendations/<bardo_id>')
-def rate_recommendations(bardo_id):
-  needs_rating = db.load_tracks_to_rate(bardo_id)
-  save_url = url_for('save_ratings', bardo_id=bardo_id)
-  save_url += '?' + get_request_params(request.args)
-  return render_template(
-    'rate-recommendations.html',
-    needs_rating=needs_rating,
-    save_url=f'{save_url}',
-  )
+@app.route('/rate-recommendations')
+def rate_recommendations():
+  def response(token, bardo_id):
+    needs_rating = db.load_tracks_to_rate(bardo_id)
+    save_url = url_for('save_ratings', bardo_id=bardo_id)
+    save_url += '?' + get_request_params(request.args)
+    return render_template(
+      'rate-recommendations.html',
+      needs_rating=needs_rating,
+      save_url=f'{save_url}',
+    )
+
+  bardo_id = request.args.get('bardo-id')
+  if bardo_id:
+    return response(None, bardo_id)
+  else:
+    return validate_response(
+      response,
+      request,
+      'rate_recommendations',
+      check_recs=False,
+    )
 
 @app.route('/save-ratings/<bardo_id>', methods=['POST'])
 def save_ratings(bardo_id):
@@ -184,7 +197,7 @@ def spotify_auth():
   code = request.args.get('code')
 
   if not code:
-    return '<meta name="viewport" content="width=device-width">Invalid request.'
+    return INVALID_REQUEST
 
   token = su.request_token(
     'authorization_code',
@@ -219,9 +232,9 @@ def validate_response(
   _, bardo_id = su.get_user_data(token)
   needs_rating = db.load_tracks_to_rate(bardo_id)
   if check_recs and len(needs_rating) > 0:
-    rate_url = url_for('rate_recommendations', bardo_id=bardo_id)
+    rate_url = url_for('rate_recommendations')
     params = get_request_params(request.args)
-    return redirect(f'{rate_url}?{params}&redirect-uri={redirect_uri}')
+    return redirect(f'{rate_url}?bardo-id={bardo_id}&{params}&redirect-uri={redirect_uri}')
 
   return response(token=token, bardo_id=bardo_id, **kwargs)
 
