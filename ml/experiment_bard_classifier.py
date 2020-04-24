@@ -1,8 +1,8 @@
 from sklearn.svm import LinearSVC, SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import GradientBoostingClassifier
-import sample_generators as s
-import train_utils as t
+import ml.sample_generators as s
+import ml.train_utils as t
 from datetime import datetime
 from copy import deepcopy
 
@@ -87,7 +87,7 @@ exp_configs = [
 now = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
 log_file = None
 if LOG_TO_FILE:
-  log_file = open(f'reports/{now}.txt', 'w+')
+  log_file = open(f'datasets/reports/{now}.txt', 'w+')
   header = ',Train Acc,TestAcc,,Test Pr 1,Test Rec 1'
   if DO_TEST:
     header += ',T:,TestAcc,,Test Pr 1,Test Rec 1,,Test Pr 0,Test Rec 0\n'

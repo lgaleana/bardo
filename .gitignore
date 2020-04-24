@@ -4,7 +4,6 @@ reports
 __pycache__
 .DS_Store
 venv
-transform_datasets.py
 *.egg-info
 dist
 build
