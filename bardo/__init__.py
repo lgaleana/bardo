@@ -177,6 +177,8 @@ def rate_recommendations():
 @app.route('/save-ratings/<bardo_id>', methods=['POST'])
 def save_ratings(bardo_id):
   redirect_uri = request.args.get('redirect-uri')
+  if not redirect_uri:
+    redirect_uri = 'rate_recommendations'
 
   now = datetime.now().strftime("%d-%m-%Y")
   db.save_feedback(bardo_id, db.process_feedback_input(
@@ -184,12 +186,9 @@ def save_ratings(bardo_id):
     request.form,
   ), 'feedback', now)
 
-  if redirect_uri:
-    redirect_url = url_for(redirect_uri)
-    redirect_url += '?' + get_request_params(request.args, 'redirect-uri')
-    return redirect(f'{redirect_url}')
-  else:
-    return '<meta name="viewport" content="width=device-width">Tracks saved.'
+  redirect_url = url_for(redirect_uri)
+  redirect_url += '?' + get_request_params(request.args, 'redirect-uri')
+  return redirect(f'{redirect_url}')
 
 @app.route('/spotify-auth')
 def spotify_auth():
