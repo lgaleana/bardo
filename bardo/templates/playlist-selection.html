@@ -17,10 +17,10 @@
   <form action="{{url_for('generate_playlist')}}" method="GET">
     <p><b>Source</b></p>
     <p>
-    <input type="radio" name="source" value="gbdt_bottom_high" required> <label>Bardo AI</label><br>
+    <!-- <input type="radio" name="source" value="gbdt_bottom_high" required> <label>Bardo AI</label><br> -->
     <input type="radio" name="source" value="random" required> <label>Spotify random</label><br>
     <input type="radio" name="source" value="{{exp_clfs}}" required> <label>A/B</label><br>
-      <i>(A/B will include a random mix of Bardo AI and a new experimental source.)</i>
+      <i>A/B will include a random mix of Bardo AI and a new experimental source.</i>
     </p>
     <p><b>Genres</b></p>
     <p>

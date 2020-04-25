@@ -6,7 +6,7 @@ import ml.train_utils as t
 
 ### Learn configs
 # Curve params
-PLOT = True
+PLOT = False
 SCORER = 'f1'
 POINTS = 20
 # Configs
@@ -16,22 +16,22 @@ TEST_SIZE = 0.25
 learn_configs = [
   {
     'name': 'svc_high',
-    'model': SVC(random_state=0),
+    'model': SVC(C=0.91, random_state=0),
     'generator': s.BinaryTestGen(DATASET, 3, 4, False, True),
     'standardize': True,
   },
-#  {
-#    'name': 'svc_very_high',
-#    'model': SVC(random_state=0),
-#    'generator': s.VeryBinaryTestGen(DATASET, 3, 4, False, True),
-#    'standardize': True,
-#  },
-#  {
-#    'name': 'svc_very_balanced',
-#    'model': SVC(random_state=0),
-#    'generator': s.BinaryTestGen(DATASET, 3, 4, True, True),
-#    'standardize': True,
-#  },
+  {
+    'name': 'svc_very_high',
+    'model': SVC(C=0.94, random_state=0),
+    'generator': s.VeryBinaryTestGen(DATASET, 3, 4, False, True),
+    'standardize': True,
+  },
+  {
+    'name': 'svc_very_balanced',
+    'model': SVC(C=0.85, random_state=0),
+    'generator': s.BinaryTestGen(DATASET, 3, 4, True, True),
+    'standardize': True,
+  },
 ]
 
 
@@ -48,7 +48,9 @@ for config in learn_configs:
   )
   tu.train()
   tm = tu.get_test_metrics()
-  print(f'{tm["test_acc"]} {tm["test_pr_1"]} {tm["test_rec_1"]} {tm["test_pr_0"]} {tm["test_rec_0"]}')
-  tu.plot_learning_curve(SCORER, POINTS)
+  print(f'Train Acc Test Acc | Test Pr1 Test Rec1 Test Pr0 Test Rec0')
+  print(f'  {tm["train_acc"]:.2f}      {tm["test_acc"]:.2f}       {tm["test_pr_1"]:.2f}      {tm["test_rec_1"]:.2f}      {tm["test_pr_0"]:.2f}      {tm["test_rec_0"]:.2f}')
+  if PLOT:
+    tu.plot_learning_curve(SCORER, POINTS)
 t.print_line()
 print('Finished plotting')

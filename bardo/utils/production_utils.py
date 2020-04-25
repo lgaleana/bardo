@@ -20,21 +20,15 @@ DATASET = 'datasets/dataset_all.txt'
 K = 5
 train_configs = [
   {
-    'name': 'svc_bottom_high',
-    'model': SVC(C=0.95, random_state=0),
-    'generator': s.VeryBinaryTestGen(DATASET, 3, 4, False, True, -1),
+    'name': 'svc_high',
+    'model': SVC(C=0.91, random_state=0),
+    'generator': s.BinaryTestGen(DATASET, 3, 4, False, True),
     'standardize': True,
   },
   {
-    'name': 'svc_very',
-    'model': SVC(random_state=0),
-    'generator': s.VeryBinaryTestGen(DATASET, 3, 4),
-    'standardize': True,
-  },
-  {
-    'name': 'gbdt_bottom_high',
-    'model': GradientBoostingClassifier(learning_rate=0.095, random_state=0),
-    'generator': s.VeryBinaryTestGen(DATASET, 3, 4, False, True, -1),
+    'name': 'svc_very_balanced',
+    'model': SVC(C=0.85, random_state=0),
+    'generator': s.BinaryTestGen(DATASET, 3, 4, True, True),
     'standardize': True,
   },
 ]
