@@ -11,3 +11,4 @@ deploy.sh
 *.log
 print_best_params.py
 spotify_utils.py
+*.swp

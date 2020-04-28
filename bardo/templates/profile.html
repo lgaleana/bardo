@@ -25,7 +25,7 @@
   <p><a href="{{url_for('tracks', bardo_id=bardo_id, stars='1')}}">Hated tracks</a></p>
   <hr>
   <p>Help Bardo understand if it's doing a good job. From your previous recommendations...</p>
-  <p><a href="{{url_for('rate_recommendations')}}?bardo-id={{bardo_id}}">Rate Bardo recommendations</a></p>
+  <p><a href="{{url_for('rate_recommendations')}}?bardo-id={{bardo_id}}&redirect-uri=profile">Rate Bardo recommendations</a></p>
   <hr>
   <p>Help Bardo understand your music preferences. Do you have Spotify playlists that you want to share?</p>
   <form action="{{url_for('save_playlists', bardo_id=bardo_id)}}?token={{token}}" method="POST">

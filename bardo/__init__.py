@@ -178,7 +178,7 @@ def rate_recommendations():
 def save_ratings(bardo_id):
   redirect_uri = request.args.get('redirect-uri')
   if not redirect_uri:
-    redirect_uri = 'rate_recommendations'
+    redirect_uri = 'main'
 
   now = datetime.now().strftime("%d-%m-%Y")
   db.save_feedback(bardo_id, db.process_feedback_input(
