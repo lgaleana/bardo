@@ -16,7 +16,7 @@ knn = KNeighborsClassifier()
 gbdt = GradientBoostingClassifier(random_state=0)
 # Configs
 # These classifiers were picked through experimentation
-DATASET = 'datasets/dataset_all.txt'
+DATASET = 'datasets/dataset.txt'
 K = 5
 train_configs = [
   {

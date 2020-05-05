@@ -10,7 +10,7 @@ PLOT = False
 SCORER = 'f1'
 POINTS = 20
 # Configs
-DATASET = 'datasets/dataset_all.txt'
+DATASET = 'datasets/dataset.txt'
 K = 5
 TEST_SIZE = 0.25
 learn_configs = [

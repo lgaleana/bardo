@@ -169,7 +169,7 @@ class VeryBinaryTestGen(BinaryTestGen):
 
     return self
 #
-#DATASET = 'datasets/dataset_all.txt'
+#DATASET = 'datasets/dataset.txt'
 #TEST_SIZE = 0.25
 #BinaryTestGen(DATASET, 3, 4).gen(TEST_SIZE),
 #VeryBinaryTestGen(DATASET, 3, 4).gen(TEST_SIZE),

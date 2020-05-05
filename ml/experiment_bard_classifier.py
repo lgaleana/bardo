@@ -13,7 +13,7 @@ DO_TEST = True
 ### Experimentation configs
 # Generators generate different training samples
 # We want to test many
-DATASET = 'datasets/dataset_all.txt'
+DATASET = 'datasets/dataset.txt'
 TEST_SIZE = 0.25
 K = 5
 generators = [
