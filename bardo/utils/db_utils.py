@@ -157,10 +157,10 @@ def load_users_data(dstart):
       for pf in os.listdir(predict_dir):
         splits = pf.replace('.txt', '').split('_')
         idx = list(map(lambda split: split.isalpha(), splits)).index(True)
+        clf = '_'.join(splits[idx:])
         try:
           pdate = datetime.strptime('_'.join(splits[:idx]), '%d-%m-%Y_%H-%M-%S')
-          if pdate >= date:
-            clf = '_'.join(splits[idx:])
+          if clf == 'random' or pdate >= date:
             predictions = clf_predictions.get(clf, [])
             clf_predictions[clf] = predictions + load_tracks(
               os.path.join(predict_dir, pf),
