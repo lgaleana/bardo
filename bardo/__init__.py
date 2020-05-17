@@ -8,7 +8,7 @@ import logging
 from werkzeug.exceptions import InternalServerError
 
 CLIENT_ID = '8de267b03c464274a3546bfe84496696'
-EXP_CONFIG = ['svc_high', 'svc_very_balanced']
+EXP_CONFIG = ['svc_high', 'random']
 PLAYLIST_LIMIT = 10
 TIME_LIMIT = 300
 INVALID_REQUEST = '<meta name="viewport" content="width=device-width">Invalid request.'
