@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Bardo: AI music curator</title>
+  <meta name="description" content="Using AI to discover new music">
+  <meta name="viewport" content="width=device-width">
+  <style>
+    th {
+      text-align: left;
+      padding-right: 10px;
+      font-weight: normal;
+      font-style: italic;
+    }
+    .metric {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1><a href="{{url_for('main')}}">Bardo</a> Metrics</h1>
+  <div>
+    {% for user, clf_metrics in metrics.items(): %}
+      <p><b>{{user}}</b></p>
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>Samples</th>
+            <th>Avg stars</th>
+            <th>>2 stars</th>
+            <th>>3 stars</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for clf, metrics in clf_metrics.items(): %}
+            <tr>
+              <td>{{clf}}</td>
+              <td class="metric">{{metrics[0]}}</td>
+              <td class="metric">{{metrics[1]|round(2, 'ceil')}}</td>
+              <td class="metric">{{metrics[2]|round(2, 'ceil')}}</td>
+              <td class="metric">{{metrics[3]|round(2, 'ceil')}}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endfor %}
+  </div>
+</body>
+</html>

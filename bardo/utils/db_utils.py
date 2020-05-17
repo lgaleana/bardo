@@ -1,10 +1,13 @@
 import bardo.utils.spotify_utils as su
 import bardo.utils.production_utils as pu
 import os
+from datetime import datetime
+
+ROOT = 'datasets'
 
 def save_playlist(bardo_id, playlist, directory, plst_name):
   idn = bardo_id.replace('@', '-').replace('.', '_')
-  id_dir = f'datasets/{idn}'
+  id_dir = f'{ROOT}/{idn}'
   plst_dir = f'{id_dir}/{directory}'
 
   if not os.path.isdir(id_dir):
@@ -19,8 +22,8 @@ def save_playlist(bardo_id, playlist, directory, plst_name):
 
 def load_profile(bardo_id):
   idn = bardo_id.replace('@', '-').replace('.', '_')
-  rated_dir = f'datasets/{idn}/feedback'
-  profile_dir = f'datasets/{idn}/profile'
+  rated_dir = f'{ROOT}/{idn}/feedback'
+  profile_dir = f'{ROOT}/{idn}/profile'
 
   profile_files = []
   if os.path.isdir(rated_dir):
@@ -43,24 +46,30 @@ def load_profile(bardo_id):
 
   profile = {}
   for path in profile_files:
-    f = open(f'{path}', 'r')
-    for line in f:
-      track_info = line.strip().split('\t')
-      track = {
-        'id': track_info[0],
-        'name': track_info[1],
-        'stars': int(track_info[2]),
-      }
+    for track in load_tracks(path): 
       if track['stars'] > 0 and track['stars'] <= 5:
         profile[track['id']] = track
-    f.close()
 
-  return profile.values()
+  return profile
+
+def load_tracks(fname):
+  tracks = []
+  f = open(fname, 'r')
+  for line in f:
+    track_info = line.strip().split('\t')
+    track = {
+      'id': track_info[0],
+      'name': track_info[1],
+      'stars': int(track_info[2]) if len(track_info) > 2 else -1,
+    }
+    tracks.append(track)
+  f.close()
+  return tracks
 
 def load_tracks_to_rate(bardo_id):
   idn = bardo_id.replace('@', '-').replace('.', '_')
-  plst_dir = f'datasets/{idn}/playlists'
-  rated_dir = f'datasets/{idn}/feedback'
+  plst_dir = f'{ROOT}/{idn}/playlists'
+  rated_dir = f'{ROOT}/{idn}/feedback'
 
   if os.path.isdir(plst_dir):
     plst_tracks = {}
@@ -68,20 +77,14 @@ def load_tracks_to_rate(bardo_id):
 
     for filename in os.listdir(plst_dir): 
       if filename.endswith('.txt'):
-        f = open(f'{plst_dir}/{filename}', 'r')
-        for line in f:
-          track_info = line.strip().split('\t')
-          plst_tracks[track_info[0]] = track_info[1]
-        f.close()
+        for track in load_tracks(os.path.join(plst_dir, filename)):
+          plst_tracks[track['id']] = track['name']
 
     if os.path.isdir(rated_dir):
       for filename in os.listdir(rated_dir): 
         if filename.endswith('.txt'):
-          f = open(f'{rated_dir}/{filename}', 'r')
-          for line in f:
-            track_info = line.strip().split('\t')
-            rated_tracks[track_info[0]] = track_info[1]
-          f.close()
+          for track in load_tracks(os.path.join(rated_dir, filename)):
+            rated_tracks[track['id']] = track['name']
 
     needs_rating = {}
     for track, name in plst_tracks.items():
@@ -127,7 +130,7 @@ def process_feedback_input(needs_rating, form):
 
 def save_feedback(bardo_id, feedback, directory, name):
   idn = bardo_id.replace('@', '-').replace('.', '_')
-  id_dir = f'datasets/{idn}'
+  id_dir = f'{ROOT}/{idn}'
   feedback_dir = f'{id_dir}/{directory}'
 
   if not os.path.isdir(id_dir):
@@ -139,3 +142,32 @@ def save_feedback(bardo_id, feedback, directory, name):
   for track in feedback:
     f.write(f'{track["id"]}\t{track["name"]}\t{track["stars"]}\n')
   f.close()
+
+def load_users_data(dstart):
+  date = datetime.strptime(dstart, '%Y-%m-%d')
+
+  users_data = {}
+  _r, subdirs, _f = next(os.walk(ROOT))
+  for subdir in subdirs:
+    if subdir.endswith('_com'):
+      bardo_id = subdir.replace('-', '@').replace('_', '.')
+
+      clf_predictions = {}
+      predict_dir = os.path.join(ROOT, subdir, 'predictions')
+      for pf in os.listdir(predict_dir):
+        splits = pf.replace('.txt', '').split('_')
+        idx = list(map(lambda split: split.isalpha(), splits)).index(True)
+        try:
+          pdate = datetime.strptime('_'.join(splits[:idx]), '%d-%m-%Y_%H-%M-%S')
+          if pdate >= date:
+            clf = '_'.join(splits[idx:])
+            predictions = clf_predictions.get(clf, [])
+            clf_predictions[clf] = predictions + load_tracks(
+              os.path.join(predict_dir, pf),
+            )
+        except:
+          pass
+
+      users_data[bardo_id] = (load_profile(bardo_id), clf_predictions)
+
+  return users_data

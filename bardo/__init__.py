@@ -2,6 +2,7 @@ from flask import Flask, request, redirect, url_for, render_template
 import bardo.utils.production_utils as pu
 import bardo.utils.db_utils as db
 import bardo.utils.spotify_utils as su
+import ml.metrics as m
 from datetime import datetime
 import logging
 from werkzeug.exceptions import InternalServerError
@@ -91,12 +92,12 @@ def make_playlist():
     genre.split(','),
     source.split(','),
     market,
-    db.load_profile(bardo_id),
+    db.load_profile(bardo_id).values(),
     PLAYLIST_LIMIT,
     TIME_LIMIT,
   )
 
-  now = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+  now = datetime.now().strftime('%d-%m-%Y_%H-%M-%S')
   db.save_playlist(bardo_id, final_plst, 'playlists', now)
   for clf, plst in clf_plsts.items():
     db.save_playlist(bardo_id, plst, 'predictions', f'{now}_{clf}')
@@ -121,7 +122,7 @@ def profile():
 @app.route('/tracks/<bardo_id>/<stars>')
 def tracks(bardo_id, stars):
   stars = int(stars)
-  profile = db.load_profile(bardo_id)
+  profile = db.load_profile(bardo_id).values()
   profile = filter(lambda track: track['stars'] == stars, profile)
 
   return render_template('tracks.html', tracks=profile)
@@ -208,10 +209,17 @@ def spotify_auth():
     redirect_url=url_for(post_auth),
   )
 
+@app.route('/metrics')
+def metrics():
+  users_data = db.load_users_data('2020-04-25')
+  metrics = m.calculate_metrics(users_data)
+  return render_template('metrics.html', metrics=metrics)
+
+
 @app.errorhandler(InternalServerError)
 def handle_500(e):
   app.logger.error(e)
-  return '<meta name="viewport" content="width=device-width">There was an error with the application.'
+  return INVALID_REQUEST
 
 
 def validate_response(
