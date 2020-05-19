@@ -13,18 +13,18 @@ DO_TEST = True
 ### Experimentation configs
 # Generators generate different training samples
 # We want to test many
-DATASET = 'datasets/dataset.txt'
+DATASET = 'datasets/dataset_test.txt'
 TEST_SIZE = 0.25
 K = 5
 generators = [
-  s.BinaryTestGen(DATASET, 3, 4),
-  s.VeryBinaryTestGen(DATASET, 3, 4),
-  s.BinaryTestGen(DATASET, 3, 4, False, True),
-  s.VeryBinaryTestGen(DATASET, 3, 4, False, True, -1),
-  s.VeryBinaryTestGen(DATASET, 3, 4, False, True),
-  s.BinaryTestGen(DATASET, 3, 4, True, True),
-  s.VeryBinaryTestGen(DATASET, 3, 4, True, True, 1),
-  s.VeryBinaryTestGen(DATASET, 3, 4, True, True),
+  s.BinaryTestGen(DATASET),
+  s.VeryBinaryTestGen(DATASET),
+  s.BinaryTestGen(DATASET, 3, 3, False, True),
+  s.VeryBinaryTestGen(DATASET, 3, 3, False, True, -1),
+  s.VeryBinaryTestGen(DATASET, 3, 3, False, True),
+  s.BinaryTestGen(DATASET, 3, 3, True, True),
+  s.VeryBinaryTestGen(DATASET, 3, 3, True, True, 1),
+  s.VeryBinaryTestGen(DATASET, 3, 3, True, True),
 ]
 
 # CV parameters
