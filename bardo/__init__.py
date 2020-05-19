@@ -219,7 +219,7 @@ def metrics():
 @app.errorhandler(InternalServerError)
 def handle_500(e):
   app.logger.error(e)
-  return INVALID_REQUEST
+  return '<meta name="viewport" content="width=device-width">There was an error with the application.'
 
 
 def validate_response(
