@@ -97,7 +97,7 @@ def make_playlist():
     TIME_LIMIT,
   )
 
-  now = datetime.now().strftime('%d-%m-%Y_%H-%M-%S')
+  now = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
   db.save_playlist(bardo_id, final_plst, 'playlists', now)
   for clf, plst in clf_plsts.items():
     db.save_playlist(bardo_id, plst, 'predictions', f'{now}_{clf}')
@@ -142,7 +142,7 @@ def save_playlists(bardo_id):
     stars,
   )
   if len(feedback) > 0:
-    now = datetime.now().strftime("%d-%m-%Y")
+    now = datetime.now().strftime("%Y-%m-%d")
     db.save_feedback(bardo_id, feedback, 'profile', f'{stars}_{now}')
     return '<meta name="viewport" content="width=device-width">Tracks saved.'
   else:
@@ -181,7 +181,7 @@ def save_ratings(bardo_id):
   if not redirect_uri:
     redirect_uri = 'main'
 
-  now = datetime.now().strftime("%d-%m-%Y")
+  now = datetime.now().strftime("%Y-%m-%d")
   db.save_feedback(bardo_id, db.process_feedback_input(
     db.load_tracks_to_rate(bardo_id),
     request.form,

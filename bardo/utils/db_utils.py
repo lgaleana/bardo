@@ -159,7 +159,7 @@ def load_users_data(dstart):
         idx = list(map(lambda split: split.isalpha(), splits)).index(True)
         clf = '_'.join(splits[idx:])
         try:
-          pdate = datetime.strptime('_'.join(splits[:idx]), '%d-%m-%Y_%H-%M-%S')
+          pdate = datetime.strptime('_'.join(splits[:idx]), '%Y-%m-%d_%H-%M-%S')
           if clf == 'random' or pdate >= date:
             predictions = clf_predictions.get(clf, [])
             clf_predictions[clf] = predictions + load_tracks(
