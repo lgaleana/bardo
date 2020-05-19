@@ -3,6 +3,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 import ml.train_utils as t
 import ml.sample_generators as s
+import ml.feature_generator as fg
 import bardo.utils.spotify_utils as su
 from random import shuffle
 from time import time
@@ -98,8 +99,8 @@ def gen_recs(token, genres, exp_config,  market, profile, slimit, tlimit):
       if recommendation['is_playable'] and recommendation['name'] not in profile:
         nlabel += 1
         profile.append(recommendation['name'])
-        features = su.get_tracks_features(token, [recommendation])[0]
-        analysis = su.get_track_analysis(token, recommendation)
+        features = fg.get_audio_features(token, [recommendation])[0]
+        analysis = fg.get_analysis_features(token, recommendation)
         # Get predictions from all classifiers
         for name, clf in classifiers.items():
           if name in exp_config:
