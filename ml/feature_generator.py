@@ -144,3 +144,22 @@ def get_analysis_features(token, track):
   ]
 
   return useful_features
+
+def get_group_features(bardo_id, track, data):
+  others_count = 0
+  others_stars = 0
+  others_nrates = 0
+  for other_id, other_tracks in data.items():
+    if bardo_id != other_id:
+      for other_track in other_tracks:
+        if track['id'] == other_track['id'] or (track['name'] == other_track['name'] and track['artists'] == other_track['artists']):
+          others_count += 1
+          others_stars += other_track['stars']
+          others_nrates += other_track['nrates']
+          break
+
+  return [
+    others_count,
+    others_stars,
+    others_nrates,
+  ]
