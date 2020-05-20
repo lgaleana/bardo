@@ -44,11 +44,18 @@ def load_profile(bardo_id):
     ))
   profile_files.sort()
 
-  profile = {}
+  profile = []
   for path in profile_files:
     for track in load_tracks(path): 
-      if track['stars'] > 0 and track['stars'] <= 5:
-        profile[track['id']] = track
+      profile.append(track)
+
+  return profile
+
+def load_profile_deduped(bardo_id):
+  profile = {}
+  for track in load_profile(bardo_id): 
+    if track['stars'] > 0 and track['stars'] <= 5:
+      profile[track['id']] = track
 
   return profile
 
@@ -143,31 +150,36 @@ def save_feedback(bardo_id, feedback, directory, name):
     f.write(f'{track["id"]}\t{track["name"]}\t{track["stars"]}\n')
   f.close()
 
+def load_ids():
+  bardo_ids = []
+  _r, subdirs, _f = next(os.walk(ROOT))
+  for subdir in subdirs:
+    if subdir.endswith('_com'):
+      bardo_ids.append(subdir.replace('-', '@').replace('_', '.'))
+  return bardo_ids
+
 def load_users_data(dstart):
   date = datetime.strptime(dstart, '%Y-%m-%d')
 
   users_data = {}
-  _r, subdirs, _f = next(os.walk(ROOT))
-  for subdir in subdirs:
-    if subdir.endswith('_com'):
-      bardo_id = subdir.replace('-', '@').replace('_', '.')
+  for bardo_id in load_ids():
+    clf_predictions = {}
+    id_dir = bardo_id.replace('@', '-').replace('.', '_')
+    predict_dir = os.path.join(ROOT, id_dir, 'predictions')
+    for pf in os.listdir(predict_dir):
+      splits = pf.replace('.txt', '').split('_')
+      idx = list(map(lambda split: split.isalpha(), splits)).index(True)
+      clf = '_'.join(splits[idx:])
+      try:
+        pdate = datetime.strptime('_'.join(splits[:idx]), '%Y-%m-%d_%H-%M-%S')
+        if clf == 'random' or pdate >= date:
+          predictions = clf_predictions.get(clf, [])
+          clf_predictions[clf] = predictions + load_tracks(
+            os.path.join(predict_dir, pf),
+          )
+      except:
+        pass
 
-      clf_predictions = {}
-      predict_dir = os.path.join(ROOT, subdir, 'predictions')
-      for pf in os.listdir(predict_dir):
-        splits = pf.replace('.txt', '').split('_')
-        idx = list(map(lambda split: split.isalpha(), splits)).index(True)
-        clf = '_'.join(splits[idx:])
-        try:
-          pdate = datetime.strptime('_'.join(splits[:idx]), '%Y-%m-%d_%H-%M-%S')
-          if clf == 'random' or pdate >= date:
-            predictions = clf_predictions.get(clf, [])
-            clf_predictions[clf] = predictions + load_tracks(
-              os.path.join(predict_dir, pf),
-            )
-        except:
-          pass
-
-      users_data[bardo_id] = (load_profile(bardo_id), clf_predictions)
+    users_data[bardo_id] = (load_profile_deduped(bardo_id), clf_predictions)
 
   return users_data

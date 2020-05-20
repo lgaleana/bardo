@@ -92,7 +92,7 @@ def make_playlist():
     genre.split(','),
     source.split(','),
     market,
-    db.load_profile(bardo_id).values(),
+    db.load_profile_deduped(bardo_id).values(),
     PLAYLIST_LIMIT,
     TIME_LIMIT,
   )
@@ -122,7 +122,7 @@ def profile():
 @app.route('/tracks/<bardo_id>/<stars>')
 def tracks(bardo_id, stars):
   stars = int(stars)
-  profile = db.load_profile(bardo_id).values()
+  profile = db.load_profile_deduped(bardo_id).values()
   profile = filter(lambda track: track['stars'] == stars, profile)
 
   return render_template('tracks.html', tracks=profile)
