@@ -17,19 +17,19 @@ knn = KNeighborsClassifier()
 gbdt = GradientBoostingClassifier(random_state=0)
 # Configs
 # These classifiers were picked through experimentation
-DATASET = 'datasets/dataset.txt'
+DATASET = 'datasets/dataset_base.txt'
 K = 5
 train_configs = [
   {
-    'name': 'svc_high',
-    'model': SVC(C=0.91, random_state=0),
-    'generator': s.BinaryTestGen(DATASET, 3, 4, False, True),
+    'name': 'svc_mixed_no3',
+    'model': SVC(random_state=0),
+    'generator': s.BinaryTestGen('datasets/dataset_test7.txt'),
     'standardize': True,
   },
   {
-    'name': 'svc_very_balanced',
-    'model': SVC(C=0.85, random_state=0),
-    'generator': s.BinaryTestGen(DATASET, 3, 4, True, True),
+    'name': 'svc_top_mixed_no3',
+    'model': SVC(random_state=0),
+    'generator': s.VeryBinaryTestGen('datasets/dataset_test7.txt'),
     'standardize': True,
   },
 ]
@@ -44,7 +44,7 @@ def load_prod_classifiers():
       name=config['name'],
       model=config['model'],
       data=config['generator'],
-      test_size=0.0,
+      test_size=0.25,
       standardize=config['standardize'],
       k=K,
     )
@@ -53,7 +53,9 @@ def load_prod_classifiers():
   print('Finished training')
 
 ### Get recommendatons from seed tracks or genres
-def gen_recs(token, genres, exp_config,  market, profile, slimit, tlimit):
+def gen_recs(token, genres, exp_config,  market, slimit, tlimit, bardo_id, data):
+  profile = data[bardo_id]
+
   # Use profile as seed
   pos_tracks = list(map(
     lambda track: track['id'],
@@ -101,10 +103,12 @@ def gen_recs(token, genres, exp_config,  market, profile, slimit, tlimit):
         profile.append(recommendation['name'])
         features = fg.get_audio_features(token, [recommendation])[0]
         analysis = fg.get_analysis_features(token, recommendation)
+        group = fg.get_group_features(bardo_id, recommendation, data)
+        user = fg.get_user_features(bardo_id, data)
         # Get predictions from all classifiers
         for name, clf in classifiers.items():
           if name in exp_config:
-            prediction = clf.predict_prod(features + analysis)
+            prediction = clf.predict_prod(features + analysis + group + user)
             print(f'  {name} prediction: {prediction}')
             if prediction == 1 and recommendation['name'] not in playlists[name]['names'] and len(playlists[name]['ids']) < slimit:
               playlists[name]['ids'].append(recommendation['id'])

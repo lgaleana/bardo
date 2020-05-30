@@ -13,18 +13,12 @@ DO_TEST = True
 ### Experimentation configs
 # Generators generate different training samples
 # We want to test many
-DATASET = 'datasets/dataset_test.txt'
+DATASET = 'datasets/dataset_test8.txt'
 TEST_SIZE = 0.25
 K = 5
 generators = [
   s.BinaryTestGen(DATASET),
   s.VeryBinaryTestGen(DATASET),
-  s.BinaryTestGen(DATASET, 3, 3, False, True),
-  s.VeryBinaryTestGen(DATASET, 3, 3, False, True, -1),
-  s.VeryBinaryTestGen(DATASET, 3, 3, False, True),
-  s.BinaryTestGen(DATASET, 3, 3, True, True),
-  s.VeryBinaryTestGen(DATASET, 3, 3, True, True, 1),
-  s.VeryBinaryTestGen(DATASET, 3, 3, True, True),
 ]
 
 # CV parameters
@@ -54,7 +48,6 @@ exp_configs = [
     'model': LinearSVC(dual=False), 
     'modes': [
       {'standardize': True, 'params': None},
-      {'standardize': True, 'params': lsp},
     ],
   },
   {
@@ -62,7 +55,6 @@ exp_configs = [
     'model': SVC(random_state=0), 
     'modes': [
       {'standardize': True, 'params': None},
-      {'standardize': True, 'params': sp},
     ],
   },
   {
@@ -76,7 +68,6 @@ exp_configs = [
     'model': GradientBoostingClassifier(random_state=0), 
     'modes': [
       {'standardize': True, 'params': None},
-      {'standardize': True, 'params': gp},
     ],
   },
 ]

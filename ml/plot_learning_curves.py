@@ -10,26 +10,20 @@ PLOT = False
 SCORER = 'f1'
 POINTS = 20
 # Configs
-DATASET = 'datasets/dataset.txt'
+DATASET = 'datasets/dataset_test2.txt'
 K = 5
 TEST_SIZE = 0.25
 learn_configs = [
   {
-    'name': 'svc_high',
-    'model': SVC(C=0.91, random_state=0),
-    'generator': s.BinaryTestGen(DATASET, 3, 4, False, True),
+    'name': 'svc_mixed',
+    'model': SVC(C=1.22, random_state=0),
+    'generator': s.BinaryTestGen('datasets/dataset_test.txt'),
     'standardize': True,
   },
   {
-    'name': 'svc_very_high',
-    'model': SVC(C=0.94, random_state=0),
-    'generator': s.VeryBinaryTestGen(DATASET, 3, 4, False, True),
-    'standardize': True,
-  },
-  {
-    'name': 'svc_very_balanced',
-    'model': SVC(C=0.85, random_state=0),
-    'generator': s.BinaryTestGen(DATASET, 3, 4, True, True),
+    'name': 'svc_top_mixed',
+    'model': SVC(C=1.58, random_state=0),
+    'generator': s.VeryBinaryTestGen('datasets/dataset_test.txt'),
     'standardize': True,
   },
 ]

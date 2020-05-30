@@ -8,7 +8,8 @@ import logging
 from werkzeug.exceptions import InternalServerError
 
 CLIENT_ID = '8de267b03c464274a3546bfe84496696'
-EXP_CONFIG = ['svc_high', 'random']
+PROD = 'svc_top_mixed'
+EXP_CONFIG = ['svc_top_mixed_no3', 'svc_mixed_no3']
 PLAYLIST_LIMIT = 10
 TIME_LIMIT = 300
 INVALID_REQUEST = '<meta name="viewport" content="width=device-width">Invalid request.'
@@ -29,6 +30,7 @@ def playlist_selection():
     return render_template(
       'playlist-selection.html',
       token=token,
+      prod=PROD,
       exp_clfs=','.join(EXP_CONFIG),
     )
   return validate_response(
@@ -87,14 +89,35 @@ def make_playlist():
   if len(needs_rating) > 0:
     return 'Please first rate previous recommendations.'
 
+  ###
+  all_data = db.load_users_data('0001-01-01')
+  users_data = {}
+  for bid, data in all_data.items():
+    more_tracks = list(data[0].values())
+
+    tracks = []
+    offset = 0
+    while offset < len(more_tracks):
+      tracks_set = more_tracks[offset:offset + 50]
+      profile_tracks = su.get_tracks(token, tracks_set)
+      for i, track_ in enumerate(tracks_set):
+        track = profile_tracks[i]
+        track['stars'] = track_['stars']
+        tracks.append(track)
+      offset += 50
+
+    users_data[bid] = tracks
+  ###
+
   clf_plsts, final_plst = pu.gen_recs(
     token,
     genre.split(','),
     source.split(','),
     market,
-    db.load_profile_deduped(bardo_id).values(),
     PLAYLIST_LIMIT,
     TIME_LIMIT,
+    bardo_id,
+    users_data,
   )
 
   now = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')

@@ -168,7 +168,10 @@ def load_users_data(dstart):
     predict_dir = os.path.join(ROOT, id_dir, 'predictions')
     for pf in os.listdir(predict_dir):
       splits = pf.replace('.txt', '').split('_')
-      idx = list(map(lambda split: split.isalpha(), splits)).index(True)
+      idx = list(map(
+        lambda split: any(c.isalpha() for c in split), 
+        splits,
+      )).index(True)
       clf = '_'.join(splits[idx:])
       try:
         pdate = datetime.strptime('_'.join(splits[:idx]), '%Y-%m-%d_%H-%M-%S')
