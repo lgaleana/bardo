@@ -5,6 +5,7 @@ import ml.train_utils as t
 import ml.sample_generators as s
 import ml.feature_generator as fg
 import bardo.utils.spotify_utils as su
+import bardo.utils.db_utils as db
 from random import shuffle
 from time import time
 from copy import deepcopy
@@ -53,10 +54,16 @@ def load_prod_classifiers():
   print('Finished training')
 
 ### Get recommendatons from seed tracks or genres
-def gen_recs(token, genres, exp_config,  market, slimit, tlimit, bardo_id, data):
-  profile = data[bardo_id]
+def gen_recs(token, genres, exp_config,  market, slimit, tlimit, bardo_id):
+  start_time = time()
+
+  # Load all users data
+  users_data = {}
+  for bid in db.load_ids():
+    users_data[bid] = db.load_profile_sp_tracks(token, bid)
 
   # Use profile as seed
+  profile = users_data[bardo_id]
   pos_tracks = list(map(
     lambda track: track['id'],
     filter(lambda track: track['stars'] >= 4, profile),
@@ -80,7 +87,6 @@ def gen_recs(token, genres, exp_config,  market, slimit, tlimit, bardo_id, data)
   seeds = {'genres': genres}
 
   go_on = True
-  start_time = time()
   use_random = False
   while go_on and time() - start_time < tlimit:
     # Add seed tracks
@@ -103,8 +109,8 @@ def gen_recs(token, genres, exp_config,  market, slimit, tlimit, bardo_id, data)
         profile.append(recommendation['name'])
         features = fg.get_audio_features(token, [recommendation])[0]
         analysis = fg.get_analysis_features(token, recommendation)
-        group = fg.get_group_features(bardo_id, recommendation, data)
-        user = fg.get_user_features(bardo_id, data)
+        group = fg.get_group_features(bardo_id, recommendation, users_data)
+        user = fg.get_user_features(bardo_id, users_data)
         # Get predictions from all classifiers
         for name, clf in classifiers.items():
           if name in exp_config:

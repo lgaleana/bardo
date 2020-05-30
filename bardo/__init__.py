@@ -89,26 +89,6 @@ def make_playlist():
   if len(needs_rating) > 0:
     return 'Please first rate previous recommendations.'
 
-  ###
-  all_data = db.load_users_data('0001-01-01')
-  users_data = {}
-  for bid, data in all_data.items():
-    more_tracks = list(data[0].values())
-
-    tracks = []
-    offset = 0
-    while offset < len(more_tracks):
-      tracks_set = more_tracks[offset:offset + 50]
-      profile_tracks = su.get_tracks(token, tracks_set)
-      for i, track_ in enumerate(tracks_set):
-        track = profile_tracks[i]
-        track['stars'] = track_['stars']
-        tracks.append(track)
-      offset += 50
-
-    users_data[bid] = tracks
-  ###
-
   clf_plsts, final_plst = pu.gen_recs(
     token,
     genre.split(','),
@@ -117,7 +97,6 @@ def make_playlist():
     PLAYLIST_LIMIT,
     TIME_LIMIT,
     bardo_id,
-    users_data,
   )
 
   now = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')

@@ -5,20 +5,6 @@ from datetime import datetime
 
 ROOT = 'datasets'
 
-def save_playlist(bardo_id, playlist, directory, plst_name):
-  idn = bardo_id.replace('@', '-').replace('.', '_')
-  id_dir = f'{ROOT}/{idn}'
-  plst_dir = f'{id_dir}/{directory}'
-
-  if not os.path.isdir(id_dir):
-    os.mkdir(id_dir)
-  if not os.path.isdir(plst_dir):
-    os.mkdir(plst_dir)
-
-  f = open(f'{plst_dir}/{plst_name}.txt', 'w+')
-  for i, track in enumerate(playlist['ids']):
-    f.write(f'{track}\t{playlist["names"][i]}\n')
-  f.close()
 
 def load_profile(bardo_id):
   idn = bardo_id.replace('@', '-').replace('.', '_')
@@ -58,6 +44,22 @@ def load_profile_deduped(bardo_id):
       profile[track['id']] = track
 
   return profile
+
+def load_profile_sp_tracks(token, bardo_id):
+  tracks = list(load_profile_deduped(bardo_id).values())
+
+  sp_tracks = []
+  offset = 0
+  while offset < len(tracks):
+    tracks_set = tracks[offset:offset + 50]
+    profile_tracks = su.get_tracks(token, tracks_set)
+    for i, track_ in enumerate(tracks_set):
+      track = profile_tracks[i]
+      track['stars'] = track_['stars']
+      sp_tracks.append(track)
+    offset += 50
+
+  return sp_tracks
 
 def load_tracks(fname):
   tracks = []
@@ -100,6 +102,21 @@ def load_tracks_to_rate(bardo_id):
     return needs_rating
   else:
     return {}
+
+def save_playlist(bardo_id, playlist, directory, plst_name):
+  idn = bardo_id.replace('@', '-').replace('.', '_')
+  id_dir = f'{ROOT}/{idn}'
+  plst_dir = f'{id_dir}/{directory}'
+
+  if not os.path.isdir(id_dir):
+    os.mkdir(id_dir)
+  if not os.path.isdir(plst_dir):
+    os.mkdir(plst_dir)
+
+  f = open(f'{plst_dir}/{plst_name}.txt', 'w+')
+  for i, track in enumerate(playlist['ids']):
+    f.write(f'{track}\t{playlist["names"][i]}\n')
+  f.close()
 
 def process_plst_feedback(token, url, stars):
   split = 'https://open.spotify.com/playlist/'
