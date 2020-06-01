@@ -18,19 +18,19 @@ knn = KNeighborsClassifier()
 gbdt = GradientBoostingClassifier(random_state=0)
 # Configs
 # These classifiers were picked through experimentation
-DATASET = 'datasets/dataset_base.txt'
+DATASET = 'datasets/dataset_test3.txt'
 K = 5
 train_configs = [
   {
     'name': 'svc_top_mixed_no3_fixed',
     'model': SVC(random_state=0),
-    'generator': s.VeryBinaryTestGen('datasets/dataset_test3.txt'),
+    'generator': s.VeryBinaryTestGen(DATASET),
     'standardize': True,
   },
   {
-    'name': 'svc_top_mixed_no34_fixed',
+    'name': 'svc_mixed_no3_fixed',
     'model': SVC(random_state=0),
-    'generator': s.VeryBinaryTestGen('datasets/dataset_test4.txt'),
+    'generator': s.BinaryTestGen(DATASET),
     'standardize': True,
   },
 ]
