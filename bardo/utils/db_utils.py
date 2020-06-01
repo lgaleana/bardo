@@ -6,7 +6,7 @@ from datetime import datetime
 ROOT = 'datasets'
 
 
-def load_profile(bardo_id):
+def load_profile(bardo_id, load_profile=True):
   idn = bardo_id.replace('@', '-').replace('.', '_')
   rated_dir = f'{ROOT}/{idn}/feedback'
   profile_dir = f'{ROOT}/{idn}/profile'
@@ -20,7 +20,7 @@ def load_profile(bardo_id):
         os.listdir(rated_dir),
       ),
     ))
-  if os.path.isdir(profile_dir):
+  if load_profile and os.path.isdir(profile_dir):
     profile_files = profile_files + list(map(
       lambda filename: f'{profile_dir}/{filename}',
       filter(
@@ -45,21 +45,25 @@ def load_profile_deduped(bardo_id):
 
   return profile
 
-def load_profile_sp_tracks(token, bardo_id):
-  tracks = list(load_profile_deduped(bardo_id).values())
+def load_users_tracks(token):
+  users_data = {}
+  for bardo_id in load_ids():
+    tracks = list(load_profile_deduped(bardo_id).values())
 
-  sp_tracks = []
-  offset = 0
-  while offset < len(tracks):
-    tracks_set = tracks[offset:offset + 50]
-    profile_tracks = su.get_tracks(token, tracks_set)
-    for i, track_ in enumerate(tracks_set):
-      track = profile_tracks[i]
-      track['stars'] = track_['stars']
-      sp_tracks.append(track)
-    offset += 50
+    sp_tracks = []
+    offset = 0
+    while offset < len(tracks):
+      tracks_set = tracks[offset:offset + 50]
+      profile_tracks = su.get_tracks(token, tracks_set)
+      for i, track_ in enumerate(tracks_set):
+        track = profile_tracks[i]
+        track['stars'] = track_['stars']
+        sp_tracks.append(track)
+      offset += 50
 
-  return sp_tracks
+    users_data[bardo_id] = sp_tracks
+
+  return users_data
 
 def load_tracks(fname):
   tracks = []
@@ -202,4 +206,10 @@ def load_users_data(dstart):
 
     users_data[bardo_id] = (load_profile_deduped(bardo_id), clf_predictions)
 
+  return users_data
+
+def load_user_profiles():
+  users_data = {}
+  for bardo_id in load_ids():
+    users_data[bardo_id] = load_profile_deduped(bardo_id).values()
   return users_data

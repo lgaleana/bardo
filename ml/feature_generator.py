@@ -151,7 +151,7 @@ def get_group_features(bardo_id, track, data):
   for other_id, other_tracks in data.items():
     if bardo_id != other_id:
       for other_track in other_tracks:
-        if track['id'] == other_track['id'] or (track['name'] == other_track['name'] and track['artists'] == other_track['artists']):
+        if track['id'] == other_track['id']:
           others_count += 1
           others_stars += other_track['stars']
           break
@@ -161,12 +161,44 @@ def get_group_features(bardo_id, track, data):
     others_stars,
   ]
 
-def get_user_features(bardo_id, data):
+def get_user_features(
+  #bardo_id,
+  data,
+):
+  #users = {'lsgaleana@gmail.com': 1, 'sheaney@gmail.com': 2}
   return [
-    len(data[bardo_id]),
-    #len(list(filter(lambda track: track['stars'] == 1, data[bardo_id]))),
-    #len(list(filter(lambda track: track['stars'] == 2, data[bardo_id]))),
-    #len(list(filter(lambda track: track['stars'] == 3, data[bardo_id]))),
-    #len(list(filter(lambda track: track['stars'] == 4, data[bardo_id]))),
-    #len(list(filter(lambda track: track['stars'] == 5, data[bardo_id]))),
+    #users.get(bardo_id, 3),
+    len(data),
+    len(list(filter(lambda track: track['stars'] == 1, data))),
+    len(list(filter(lambda track: track['stars'] == 2, data))),
+    len(list(filter(lambda track: track['stars'] == 3, data))),
+    len(list(filter(lambda track: track['stars'] == 4, data))),
+    len(list(filter(lambda track: track['stars'] == 5, data))),
   ]
+
+def get_user_track_features(vectors, analysis):
+  return [
+    np.square(np.linalg.norm(vectors[0] - analysis)),
+    np.square(np.linalg.norm(vectors[1] - analysis)),
+    np.square(np.dot(vectors[0], analysis) / (np.linalg.norm(vectors[0]) * np.linalg.norm(analysis))),
+    np.square(np.dot(vectors[1], analysis) / (np.linalg.norm(vectors[1]) * np.linalg.norm(analysis))),
+  ]
+
+def load_user_vectors(token, data):
+  print('Generating user vectors')
+  very_pos = filter(lambda track: track['stars'] == 5, data)
+  pos = filter(lambda track: track['stars'] == 4, data)
+
+  tracks = {}
+  very_features = []
+  for track in very_pos:
+    analysis = get_analysis_features(token, track)
+    tracks[track['id']] = analysis
+    very_features.append(analysis)
+  pos_features = []
+  for track in pos:
+    analysis = get_analysis_features(token, track)
+    tracks[track['id']] = analysis
+    pos_features.append(analysis)
+
+  return (np.mean(very_features, axis=0), np.mean(pos_features, axis=0), tracks)

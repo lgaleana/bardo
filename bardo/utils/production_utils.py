@@ -22,15 +22,15 @@ DATASET = 'datasets/dataset_base.txt'
 K = 5
 train_configs = [
   {
-    'name': 'svc_mixed_no3',
+    'name': 'svc_top_mixed_no3_fixed',
     'model': SVC(random_state=0),
-    'generator': s.BinaryTestGen('datasets/dataset_test7.txt'),
+    'generator': s.VeryBinaryTestGen('datasets/dataset_test3.txt'),
     'standardize': True,
   },
   {
-    'name': 'svc_top_mixed_no3',
+    'name': 'svc_top_mixed_no34_fixed',
     'model': SVC(random_state=0),
-    'generator': s.VeryBinaryTestGen('datasets/dataset_test7.txt'),
+    'generator': s.VeryBinaryTestGen('datasets/dataset_test4.txt'),
     'standardize': True,
   },
 ]
@@ -55,12 +55,7 @@ def load_prod_classifiers():
 
 ### Get recommendatons from seed tracks or genres
 def gen_recs(token, genres, exp_config,  market, slimit, tlimit, bardo_id):
-  start_time = time()
-
-  # Load all users data
-  users_data = {}
-  for bid in db.load_ids():
-    users_data[bid] = db.load_profile_sp_tracks(token, bid)
+  users_data = db.load_user_profiles()
 
   # Use profile as seed
   profile = users_data[bardo_id]
@@ -86,6 +81,7 @@ def gen_recs(token, genres, exp_config,  market, slimit, tlimit, bardo_id):
     }
   seeds = {'genres': genres}
 
+  start_time = time()
   go_on = True
   use_random = False
   while go_on and time() - start_time < tlimit:
@@ -110,7 +106,7 @@ def gen_recs(token, genres, exp_config,  market, slimit, tlimit, bardo_id):
         features = fg.get_audio_features(token, [recommendation])[0]
         analysis = fg.get_analysis_features(token, recommendation)
         group = fg.get_group_features(bardo_id, recommendation, users_data)
-        user = fg.get_user_features(bardo_id, users_data)
+        user = fg.get_user_features(users_data[bardo_id])
         # Get predictions from all classifiers
         for name, clf in classifiers.items():
           if name in exp_config:

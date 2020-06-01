@@ -19,6 +19,14 @@ K = 5
 generators = [
   s.BinaryTestGen(DATASET),
   s.VeryBinaryTestGen(DATASET),
+  s.BinaryTestGen(DATASET, 3, -1),
+  s.BinaryTestGen(DATASET, 3, 1),
+  s.VeryBinaryTestGen(DATASET, 3, -1, 1),
+  s.VeryBinaryTestGen(DATASET, 3, 1, -1),
+  s.VeryBinaryTestGen(DATASET, 3, 1, 1),
+  s.VeryBinaryTestGen(DATASET, 3, -1, -1),
+  s.VeryBinaryTestGen(DATASET, 3, 1),
+  s.VeryBinaryTestGen(DATASET, 3, -1),
 ]
 
 # CV parameters
