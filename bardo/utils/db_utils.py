@@ -6,7 +6,7 @@ ROOT = 'datasets'
 
 
 def load_profile(bardo_id, load_profile=True):
-  idn = bardo_id.replace('@', '-').replace('.', '_')
+  idn = escape_bardo_id(bardo_id)
   rated_dir = f'{ROOT}/{idn}/feedback'
   profile_dir = f'{ROOT}/{idn}/profile'
 
@@ -79,7 +79,7 @@ def load_tracks(fname):
   return tracks
 
 def load_tracks_to_rate(bardo_id):
-  idn = bardo_id.replace('@', '-').replace('.', '_')
+  idn = escape_bardo_id(bardo_id)
   plst_dir = f'{ROOT}/{idn}/playlists'
   rated_dir = f'{ROOT}/{idn}/feedback'
 
@@ -107,7 +107,7 @@ def load_tracks_to_rate(bardo_id):
     return {}
 
 def save_playlist(bardo_id, playlist, directory, plst_name):
-  idn = bardo_id.replace('@', '-').replace('.', '_')
+  idn = escape_bardo_id(bardo_id)
   id_dir = f'{ROOT}/{idn}'
   plst_dir = f'{id_dir}/{directory}'
 
@@ -156,7 +156,7 @@ def process_feedback_input(needs_rating, form):
   return feedback
 
 def save_feedback(bardo_id, feedback, directory, name):
-  idn = bardo_id.replace('@', '-').replace('.', '_')
+  idn = escape_bardo_id(bardo_id)
   id_dir = f'{ROOT}/{idn}'
   feedback_dir = f'{id_dir}/{directory}'
 
@@ -184,7 +184,7 @@ def load_users_data(dstart):
   users_data = {}
   for bardo_id in load_ids():
     clf_predictions = {}
-    id_dir = bardo_id.replace('@', '-').replace('.', '_')
+    id_dir = escape_bardo_id(bardo_id)
     predict_dir = os.path.join(ROOT, id_dir, 'predictions')
     for pf in os.listdir(predict_dir):
       splits = pf.replace('.txt', '').split('_')
@@ -212,3 +212,6 @@ def load_user_profiles():
   for bardo_id in load_ids():
     users_data[bardo_id] = load_profile_deduped(bardo_id).values()
   return users_data
+
+def escape_bardo_id(bardo_id: str) -> str:
+  return bardo_id.replace('@', '-').replace('.', '_')

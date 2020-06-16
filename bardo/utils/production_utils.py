@@ -24,13 +24,13 @@ train_configs = [
   {
     'name': 'svc_top_mixed_no3_fixed',
     'model': SVC(random_state=0),
-    'generator': s.VeryBinaryTestGen(DATASET),
+    'generator': s.VeryBinaryTestGen(DATASET, pos_train={4, 5, 6}),
     'standardize': True,
   },
   {
     'name': 'svc_mixed_no3_fixed',
     'model': SVC(random_state=0),
-    'generator': s.BinaryTestGen(DATASET),
+    'generator': s.BinaryTestGen(DATASET, pos_train={4, 5, 6}),
     'standardize': True,
   },
 ]

@@ -18,20 +18,21 @@ class SampleGenerator:
       random_state=RANDOM_STATE,
     )
 
+# Generate dataset with labels 0 and 1
 class BinaryTestGen(SampleGenerator):
   def __init__(
     self,
     dataset,
-    pivot=3,
-    balance=0,
+    pos_train={4, 5},
+    neg_train={1, 2},
   ):
     super().__init__(dataset)
-    self.pivot = pivot
-    self.balance = balance
+    self.pos_train = pos_train
+    self.neg_train = neg_train
 
+  # Split into train and test if possible
   def gen_split_(self, test_size):
     if test_size > 0:
-      # Split into train and test sets
       self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
         self.X,
         self.y,
@@ -39,39 +40,32 @@ class BinaryTestGen(SampleGenerator):
         random_state=RANDOM_STATE,
         stratify=self.y,
       )
-      # Remove pivot from test
-      self.X_test = self.X_test[self.y_test!=self.pivot]
-      self.y_test = self.y_test[self.y_test!=self.pivot]
     else:
-      # Use all data for training
       self.X_train, self.y_train = self.X, self.y
 
-  def balance_(self):
-    # Make pivot negative
-    if self.balance < 0:
-      self.y_train[self.y_train==self.pivot] = self.pivot - 1
-    # Make pivot positive
-    elif self.balance > 0:
-      self.y_train[self.y_train==self.pivot] = self.pivot + 1
-    # Remove pivot
-    else:
-      self.X_train = self.X_train[self.y_train!=self.pivot]
-      self.y_train = self.y_train[self.y_train!=self.pivot]
+  # Labels are transformed to 0 or 1, or excluded
+  def transform_binary_(self):
+    labels = np.unique(self.y_train)
+    pos_test = {4, 5}
+    neg_test = {1, 2}
 
-  def transform_binary_(self, test_size):
-    # Labels below pivot become negative; above pivot, positive
-    self.y_train[self.y_train<self.pivot] = 0
-    self.y_train[self.y_train>self.pivot] = 1
-    if test_size > 0:
-      self.y_test[self.y_test<self.pivot] = 0
-      self.y_test[self.y_test>self.pivot] = 1
+    for label in labels:
+      if label in self.pos_train or label in self.neg_train:
+        self.y_train[self.y_train==label] = int(label in self.pos_train)
+      else:
+        self.X_train = self.X_train[self.y_train!=label]
+        self.y_train = self.y_train[self.y_train!=label]
+
+      if label in pos_test or label in neg_test:
+        self.y_test[self.y_test==label] = int(label in pos_test)
+      else:
+        self.X_test = self.X_test[self.y_test!=label]
+        self.y_test = self.y_test[self.y_test!=label]
+
 
   def get_name(self):
     name = f'{self.__class__.__name__}'
-    if self.balance < 0:
-      name += f' balanced to low'
-    elif self.balance > 0:
-      name += f' balanced to high'
+    name += f' {self.neg_train}+{self.pos_train}'
     return name
 
   def print_binary_size_(self, test_size):
@@ -89,8 +83,7 @@ class BinaryTestGen(SampleGenerator):
   def gen(self, test_size):
 #    print(self.get_name())
     self.gen_split_(test_size)
-    self.balance_()
-    self.transform_binary_(test_size)
+    self.transform_binary_()
 #    self.print_binary_size_(test_size)
 
     return self
@@ -99,20 +92,20 @@ class VeryBinaryTestGen(BinaryTestGen):
   def __init__(
     self,
     dataset,
-    pivot=3,
-    balance=0,
+    pos_train={4, 5},
+    neg_train={1, 2},
     very=0,
   ):
-    BinaryTestGen.__init__(
-      self,
+    super().__init__(
       dataset,
-      pivot,
-      balance,
+      pos_train,
+      neg_train,
     )
     self.very = very
 
+  # Duplicates very positive and negative samples
   def make_very_(self):
-    labels = np.sort(np.unique(self.y_train))
+    labels = np.unique(self.y_train)
     # Duplicate bottom (very negative) labels
     if self.very <= 0:
       self.X_train = np.concatenate((
@@ -152,17 +145,12 @@ class VeryBinaryTestGen(BinaryTestGen):
 #    print(self.get_name())
     self.gen_split_(test_size)
     self.make_very_()
-    self.balance_()
-    self.transform_binary_(test_size)
+    self.transform_binary_()
 #    self.print_binary_size_(test_size)
 
     return self
 #
-#DATASET = 'datasets/dataset_test6.txt'
+#DATASET = 'datasets/dataset_test3.txt'
 #TEST_SIZE = 0.25
-#BinaryTestGen(DATASET).gen(TEST_SIZE),
-#VeryBinaryTestGen(DATASET).gen(TEST_SIZE),
-#BinaryTestGen(DATASET, 3, -1).gen(TEST_SIZE),
-#VeryBinaryTestGen(DATASET, 3, 0, 1).gen(TEST_SIZE),
-#VeryBinaryTestGen(DATASET, 3, -1, 1).gen(TEST_SIZE),
-#VeryBinaryTestGen(DATASET, 3, -1).gen(TEST_SIZE),
+#BinaryTestGen(DATASET, pos_train={4, 5}).gen(TEST_SIZE)
+#VeryBinaryTestGen(DATASET, pos_train={4, 5}).gen(TEST_SIZE)
