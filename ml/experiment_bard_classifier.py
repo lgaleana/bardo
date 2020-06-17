@@ -17,7 +17,7 @@ DO_TEST = True
 TEST_SIZE = 0.25
 K = 5
 ROOT = 'data/datasets'
-datasets = [f'{ROOT}/lsgaleana-gmail_com_test.txt', f'{ROOT}/sheaney-gmail_com_test.txt']
+datasets = [f'{ROOT}/lsgaleana-gmail_com_test2.txt', f'{ROOT}/sheaney-gmail_com_test2.txt']
 generators = [
   s.BinaryTestGen(),
   s.BinaryTestGen(pos_train={4, 5, 7}),
