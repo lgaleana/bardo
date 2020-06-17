@@ -5,8 +5,15 @@ from sklearn.utils import shuffle
 RANDOM_STATE = 0
 
 class SampleGenerator:
-  def __init__(self, dataset):
-    self.data = np.loadtxt(dataset, delimiter='\t')
+  def set(self, dataset):
+    self.dataset = dataset
+    return self
+
+  def get_dataset_name(self):
+    return self.dataset
+
+  def gen(self):
+    self.data = np.loadtxt(self.dataset, delimiter=',')
   
     m = len(self.data[1])
     self.X = self.data[:,:m-1]
@@ -22,16 +29,14 @@ class SampleGenerator:
 class BinaryTestGen(SampleGenerator):
   def __init__(
     self,
-    dataset,
     pos_train={4, 5},
     neg_train={1, 2},
   ):
-    super().__init__(dataset)
     self.pos_train = pos_train
     self.neg_train = neg_train
 
   # Split into train and test if possible
-  def gen_split_(self, test_size):
+  def _gen_split(self, test_size):
     if test_size > 0:
       self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
         self.X,
@@ -44,7 +49,7 @@ class BinaryTestGen(SampleGenerator):
       self.X_train, self.y_train = self.X, self.y
 
   # Labels are transformed to 0 or 1, or excluded
-  def transform_binary_(self):
+  def _transform_binary(self, test_size):
     labels = np.unique(self.y_train)
     pos_test = {4, 5}
     neg_test = {1, 2}
@@ -56,19 +61,23 @@ class BinaryTestGen(SampleGenerator):
         self.X_train = self.X_train[self.y_train!=label]
         self.y_train = self.y_train[self.y_train!=label]
 
+      if test_size == 0:
+        continue
+
       if label in pos_test or label in neg_test:
         self.y_test[self.y_test==label] = int(label in pos_test)
       else:
         self.X_test = self.X_test[self.y_test!=label]
         self.y_test = self.y_test[self.y_test!=label]
 
-
   def get_name(self):
     name = f'{self.__class__.__name__}'
-    name += f' {self.neg_train}+{self.pos_train}'
+    negstr = '|'.join([str(i) for i in sorted(list(self.neg_train))])
+    posstr = '|'.join([str(i) for i in sorted(list(self.pos_train))])
+    name += f' {negstr}+{posstr}'
     return name
 
-  def print_binary_size_(self, test_size):
+  def print_size(self, test_size):
     # Print # of positive and negative samples
     print(f'Positives train: {len(self.y_train[self.y_train==1])}')
     print(f'Negatives train: {len(self.y_train[self.y_train==0])}')
@@ -82,29 +91,28 @@ class BinaryTestGen(SampleGenerator):
 
   def gen(self, test_size):
 #    print(self.get_name())
-    self.gen_split_(test_size)
-    self.transform_binary_()
-#    self.print_binary_size_(test_size)
+    super().gen()
+    self._gen_split(test_size)
+    self._transform_binary(test_size)
+#    self.print_size(test_size)
 
     return self
 
 class VeryBinaryTestGen(BinaryTestGen):
   def __init__(
     self,
-    dataset,
     pos_train={4, 5},
     neg_train={1, 2},
     very=0,
   ):
     super().__init__(
-      dataset,
       pos_train,
       neg_train,
     )
     self.very = very
 
   # Duplicates very positive and negative samples
-  def make_very_(self):
+  def _make_very(self):
     labels = np.unique(self.y_train)
     # Duplicate bottom (very negative) labels
     if self.very <= 0:
@@ -143,14 +151,18 @@ class VeryBinaryTestGen(BinaryTestGen):
 
   def gen(self, test_size):
 #    print(self.get_name())
-    self.gen_split_(test_size)
-    self.make_very_()
-    self.transform_binary_()
-#    self.print_binary_size_(test_size)
+    SampleGenerator.gen(self)
+    self._gen_split(test_size)
+    self._make_very()
+    self._transform_binary(test_size)
+#    self.print_size(test_size)
 
     return self
 #
-#DATASET = 'datasets/dataset_test3.txt'
+#DATASET = 'data/datasets/lsgaleana-gmail_com_test.txt'
 #TEST_SIZE = 0.25
-#BinaryTestGen(DATASET, pos_train={4, 5}).gen(TEST_SIZE)
-#VeryBinaryTestGen(DATASET, pos_train={4, 5}).gen(TEST_SIZE)
+#BinaryTestGen().set(DATASET).gen(TEST_SIZE)
+#BinaryTestGen({4, 5, 7}, {1, 2}).set(DATASET).gen(TEST_SIZE)
+#BinaryTestGen({4, 5}, {1, 2, 6}).set(DATASET).gen(TEST_SIZE)
+#BinaryTestGen({4, 5, 7}, {1, 2, 6}).set(DATASET).gen(TEST_SIZE)
+#VeryBinaryTestGen(pos_train={4, 5}).set(DATASET).gen(TEST_SIZE)

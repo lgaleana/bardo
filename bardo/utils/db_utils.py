@@ -2,7 +2,7 @@ import bardo.utils.spotify_utils as su
 import os
 from datetime import datetime
 
-ROOT = 'datasets'
+ROOT = 'data'
 
 
 def load_profile(bardo_id, load_profile=True):

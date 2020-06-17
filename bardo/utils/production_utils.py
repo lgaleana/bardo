@@ -18,39 +18,57 @@ knn = KNeighborsClassifier()
 gbdt = GradientBoostingClassifier(random_state=0)
 # Configs
 # These classifiers were picked through experimentation
-DATASET = 'datasets/dataset_test3.txt'
 K = 5
-train_configs = [
-  {
-    'name': 'svc_top_mixed_no3_fixed',
-    'model': SVC(random_state=0),
-    'generator': s.VeryBinaryTestGen(DATASET, pos_train={4, 5, 6}),
-    'standardize': True,
-  },
-  {
-    'name': 'svc_mixed_no3_fixed',
-    'model': SVC(random_state=0),
-    'generator': s.BinaryTestGen(DATASET, pos_train={4, 5, 6}),
-    'standardize': True,
-  },
-]
-
+ROOT = 'data/datasets'
+train_configs = [{
+  'name': 'gbdt_34_all',
+  'model': GradientBoostingClassifier(random_state=0),
+  'datasets': [
+    s.BinaryTestGen({4, 5, 7}, {1, 2, 6}).set(
+      f'{ROOT}/lsgaleana-gmail_com_test.txt'),
+    s.BinaryTestGen().set(f'{ROOT}/sheaney-gmail_com_test.txt')],
+  'standardize': True,
+},
+{
+  'name': 'knn_jini',
+  'model': KNeighborsClassifier(),
+  'datasets': [s.BinaryTestGen().set(f'{ROOT}/sheaney-gmail_com_test.txt')],
+  'standardize': True,
+},
+{
+  'name': 'knn_all',
+  'model': KNeighborsClassifier(),
+  'datasets': [s.BinaryTestGen().set(f'{ROOT}/lsgaleana-gmail_com_test.txt'),
+    s.BinaryTestGen().set(f'{ROOT}/sheaney-gmail_com_test.txt')],
+  'standardize': True,
+}]
+user_configs = {
+  'lsgaleana@gmail.com': ['gbdt_34_all'],
+  'sheaney@gmail.com': ['knn_jini', 'knn_all'],
+  'default': ['gbdt_34_all', 'knn_all'],
+}
 
 ### Train production classifiers
 classifiers = {}
 def load_prod_classifiers():
   # Classifiers
+  clfs = {}
   for config in train_configs:
     tu = t.TrainUtil(
       name=config['name'],
       model=config['model'],
-      data=config['generator'],
-      test_size=0.25,
+      datasets=config['datasets'],
+      test_size=0.0,
       standardize=config['standardize'],
       k=K,
     )
     tu.train()
-    classifiers[config['name']] = tu
+    clfs[config['name']] = tu
+
+  # Assign to users
+  for bardo_id, clf_config in user_configs.items():
+    classifiers[bardo_id] = {clf: clfs[clf] for clf in clf_config}
+
   print('Finished training')
 
 ### Get recommendatons from seed tracks or genres
@@ -67,8 +85,9 @@ def gen_recs(token, genres, exp_config,  market, slimit, tlimit, bardo_id):
   profile = list(map(lambda track: track['name'], profile))
 
   # We want tracks from every classifier
+  clfs = classifiers[bardo_id] if bardo_id in classifiers else classifiers['default']
   playlists = {}
-  for name in classifiers:
+  for name in clfs:
     if name in exp_config:
       playlists[name] = {
         'ids': [],
@@ -108,7 +127,7 @@ def gen_recs(token, genres, exp_config,  market, slimit, tlimit, bardo_id):
         group = fg.get_group_features(bardo_id, recommendation, users_data)
         user = fg.get_user_features(users_data[bardo_id])
         # Get predictions from all classifiers
-        for name, clf in classifiers.items():
+        for name, clf in clfs.items():
           if name in exp_config:
             prediction = clf.predict_prod(features + analysis + group + user)
             print(f'  {name} prediction: {prediction}')

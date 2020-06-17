@@ -11,12 +11,14 @@ from sklearn.exceptions import ConvergenceWarning
 warnings.simplefilter("ignore", ConvergenceWarning)
 from copy import deepcopy
 
+N_JOBS = 5
+
 class TrainUtil:
   def __init__(
     self,
     name,
     model,
-    data,
+    datasets,
     test_size,
     standardize=False,
     var_threshold=1e-4,
@@ -28,10 +30,9 @@ class TrainUtil:
     self.base_model = model
     # Actual model that was trained
     self.model = None 
-    # Base data to be generated
-    self.base_data = data
-    # The actual data that was used to fit the model
-    self.data = None
+    # Dataset generators
+    self.data = {
+      generator.get_dataset_name(): generator for generator in datasets}
     self.test_size = test_size
     self.standardize = standardize
     # Variance threshold for feature selection
@@ -47,38 +48,50 @@ class TrainUtil:
     if self.params is not None:
       self.name = f'CV {self.name}'
 
+  # Generate an instance of training data
+  def _gen_train_data(self, test_size):
+    generators = list(deepcopy(self.data).values())
+    # Generate sampled datasets
+    for generator in generators:
+      generator.gen(test_size)
+    # Generate training data
+    X_train, y_train = generators[0].X_train, generators[0].y_train
+    for i in range(1, len(generators)):
+      X_train = np.concatenate((X_train, generators[i].X_train))
+      y_train = np.concatenate((y_train, generators[i].y_train))
+
+    return X_train, y_train
+
   def train(self):
     print(f'Training {self.name}')
     model = deepcopy(self.base_model)
     if self.params is None:
-      self.train_base_(model)
+      self._train_base(model)
     else:
-      self.find_best_params_()
+      self._find_best_params()
       # Use best params to train the model
       model.set_params(**self.best_params)
-      self.train_base_(model)
+      self._train_base(model)
 
-  def train_base_(self, model):
-    # Assign the data that will be used for future prediction
-    self.data = deepcopy(self.base_data).gen(self.test_size)
+  def _train_base(self, model):
     # Transform the features
-    X_train = self.data.X_train
+    X_train, y_train = self._gen_train_data(self.test_size)
     if self.standardize:
       self.scaler = StandardScaler().fit(X_train)
       X_train = self.scaler.transform(X_train)
     self.selector = VarianceThreshold(self.var_threshold).fit(X_train)
     X_train = self.selector.transform(X_train)
     # Assign the model that wil be used for future prediction
-    self.model = model.fit(X_train, self.data.y_train)
+    self.model = model.fit(X_train, y_train)
 
-  def find_best_params_(self):
+  def _find_best_params(self):
     if self.best_params is not None:
       return
 
     print(f'Finding best params for {self.name}')
     model = deepcopy(self.base_model)
-    data = deepcopy(self.base_data).gen(self.test_size)
     pipe = self.build_pipeline_(model)
+    X_train, y_train = self._gen_train_data(self.test_size)
 
     # Set up params for pipeline
     params = []
@@ -96,9 +109,9 @@ class TrainUtil:
       scoring=m.make_scorer(f05),
       cv=self.k,
       return_train_score=True,
-      n_jobs=4,
+      n_jobs=N_JOBS,
     )
-    gs.fit(data.X_train, data.y_train)
+    gs.fit(X_train, y_train)
 
     if not self.standardize:
       self.best_params = gs.best_estimator_.steps[1][1].get_params()
@@ -114,49 +127,51 @@ class TrainUtil:
   def predict_prod(self, features):
     return self.predict([features])[0]
 
-  def get_test_metrics(self):
-    train_pred = self.predict(self.data.X_train)
-    test_pred = self.predict(self.data.X_test)
+  def get_test_metrics(self, dataset):
+    data = deepcopy(self.data[dataset]).gen(self.test_size)
 
-    train_acc = m.accuracy_score(self.data.y_train, train_pred)
-    test_acc = m.accuracy_score(self.data.y_test, test_pred)
+    train_pred = self.predict(data.X_train)
+    test_pred = self.predict(data.X_test)
+
+    train_acc = m.accuracy_score(data.y_train, train_pred)
+    test_acc = m.accuracy_score(data.y_test, test_pred)
     train_pr_1 = m.precision_score(
-      self.data.y_train,
+      data.y_train,
       train_pred,
       labels=[1],
       average='macro',
       zero_division=0,
     )
     test_pr_1 = m.precision_score(
-      self.data.y_test,
+      data.y_test,
       test_pred,
       labels=[1],
       average='macro',
       zero_division=0,
     )
     test_rec_1 = m.recall_score(
-      self.data.y_test,
+      data.y_test,
       test_pred,
       labels=[1],
       average='macro',
       zero_division=0,
     )
     train_pr_0 = m.precision_score(
-      self.data.y_train,
+      data.y_train,
       train_pred,
       labels=[0],
       average='macro',
       zero_division=0,
     )
     test_pr_0 = m.precision_score(
-      self.data.y_test,
+      data.y_test,
       test_pred,
       labels=[0],
       average='macro',
       zero_division=0,
     )
     test_rec_0 = m.recall_score(
-      self.data.y_test,
+      data.y_test,
       test_pred,
       labels=[0],
       average='macro',
@@ -178,12 +193,10 @@ class TrainUtil:
     print(f'CV for {self.name}')
     model = deepcopy(self.base_model)
     if self.params is not None:
-      self.find_best_params_()
+      self._find_best_params()
       model.set_params(**self.best_params)
-
-    # Doing CV on all data
-    data = deepcopy(self.base_data).gen(0.0)
     pipe = self.build_pipeline_(model)
+    X_train, y_train = self._gen_train_data(0.0)
 
     # Cv metrics
     metrics = {
@@ -216,12 +229,12 @@ class TrainUtil:
 
     results = cross_validate(
       pipe,
-      data.X_train,
-      data.y_train,
+      X_train,
+      y_train,
       scoring=metrics,
       cv=self.k,
       return_train_score=True,
-      n_jobs=4,
+      n_jobs=N_JOBS,
     )
 
     return {
@@ -249,6 +262,9 @@ class TrainUtil:
   def get_name(self):
     return self.name
 
+  def get_datasets(self):
+    return self.data.values()
+
   def get_params(self):
     return self.model.get_params()
 
@@ -256,12 +272,10 @@ class TrainUtil:
     print('Plotting learning curve')
     model = deepcopy(self.base_model)
     if self.params is not None:
-      self.find_best_params_()
+      self._find_best_params()
       model.set_params(**self.best_params)
-    # Doing CV on all data
-    data = deepcopy(self.base_data).gen(0.0)
 
-    X = data.X_train
+    X, y = self._gen_train_data(0.0)
     if self.standardize:
       X = StandardScaler().fit_transform(X)
     X = VarianceThreshold(self.var_threshold).fit_transform(X)
@@ -269,11 +283,11 @@ class TrainUtil:
     train_sizes, train_scores, test_scores = learning_curve(
       model,
       X,
-      data.y_train,
+      y,
       cv=self.k,
       train_sizes=np.linspace(0.1, 1.0, points),
       scoring=scorer,
-      n_jobs=4,
+      n_jobs=N_JOBS,
     )
 
     plt.plot(

@@ -5,6 +5,7 @@ import ml.sample_generators as s
 import ml.train_utils as t
 from datetime import datetime
 from copy import deepcopy
+import numpy as np
 
 
 LOG_TO_FILE = True
@@ -13,20 +14,15 @@ DO_TEST = True
 ### Experimentation configs
 # Generators generate different training samples
 # We want to test many
-DATASET = 'datasets/dataset_test8.txt'
 TEST_SIZE = 0.25
 K = 5
+ROOT = 'data/datasets'
+datasets = [f'{ROOT}/lsgaleana-gmail_com_test.txt', f'{ROOT}/sheaney-gmail_com_test.txt']
 generators = [
-  s.BinaryTestGen(DATASET),
-  s.VeryBinaryTestGen(DATASET),
-  s.BinaryTestGen(DATASET, 3, -1),
-  s.BinaryTestGen(DATASET, 3, 1),
-  s.VeryBinaryTestGen(DATASET, 3, -1, 1),
-  s.VeryBinaryTestGen(DATASET, 3, 1, -1),
-  s.VeryBinaryTestGen(DATASET, 3, 1, 1),
-  s.VeryBinaryTestGen(DATASET, 3, -1, -1),
-  s.VeryBinaryTestGen(DATASET, 3, 1),
-  s.VeryBinaryTestGen(DATASET, 3, -1),
+  s.BinaryTestGen(),
+  s.BinaryTestGen(pos_train={4, 5, 7}),
+  s.BinaryTestGen(neg_train={1, 2, 6}),
+  s.BinaryTestGen(pos_train={4, 5, 7}, neg_train={1, 2, 6}),
 ]
 
 # CV parameters
@@ -69,6 +65,7 @@ exp_configs = [
     'name': 'KNN',
     'model': KNeighborsClassifier(),
     'modes': [
+      {'standardize': True, 'params': None},
     ],
   },
   {
@@ -83,14 +80,11 @@ exp_configs = [
 
 ### Run experiments
 # Whether to log the data to a file
-now = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+now = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 log_file = None
 if LOG_TO_FILE:
-  log_file = open(f'datasets/reports/{now}.txt', 'w+')
-  header = ',Train Acc,TestAcc,,Test Pr 1,Test Rec 1'
-  if DO_TEST:
-    header += ',T:,TestAcc,,Test Pr 1,Test Rec 1,,Test Pr 0,Test Rec 0\n'
-  log_file.write(header)
+  log_file = open(f'data/reports/{now}.txt', 'w+')
+  log_file.write(',,Train Acc,TestAcc,Test 1 Pr,Test 1 Rec,Test 0 Pr,Test 0 Rec\n')
 
 for generator in generators:
   print(generator.get_name())
@@ -99,36 +93,57 @@ for generator in generators:
   if LOG_TO_FILE:
     log_file.write(f'{generator.get_name()}\n') 
 
-  # Training of all configs
-  for config in exp_configs:
-    for mode in config['modes']:
-      tu = t.TrainUtil(
-        name=config['name'],
-        model=deepcopy(config['model']),
-        data=deepcopy(generator),
-        test_size=TEST_SIZE,
-        standardize=mode['standardize'],
-        k=K,
-        params=mode['params'],
-      )
+    # Training of all configs
+    for config in exp_configs:
+      for mode in config['modes']:
+        tus = []
+        all_generators = []
+        for dataset in datasets:
+          user_generator = generator.set(dataset)
+          tus.append(t.TrainUtil(
+            name=config['name'],
+            model=deepcopy(config['model']),
+            datasets=[deepcopy(user_generator)],
+            test_size=TEST_SIZE,
+            standardize=mode['standardize'],
+            k=K,
+            params=mode['params'],
+          ))
+          all_generators.append(deepcopy(user_generator))
+        tus.append(t.TrainUtil(
+          name=config['name'],
+          model=deepcopy(config['model']),
+          datasets=all_generators,
+          test_size=TEST_SIZE,
+          standardize=mode['standardize'],
+          k=K,
+          params=mode['params'],
+        ))
 
-      cv = tu.get_cv_metrics()
-      if DO_TEST:
-        tu.train()
-        tm = tu.get_test_metrics()
+        for tu in tus:
+          cv = tu.get_cv_metrics()
+          if DO_TEST:
+            tu.train()
+            test_metrics = {}
+            for user_generator in tu.get_datasets():
+              dataset = user_generator.get_dataset_name()
+              test_metrics[dataset] = tu.get_test_metrics(dataset)
 
-      if LOG_TO_FILE:
-        print('---Writting metrics---')
-        metrics = f'{tu.get_name()},{cv["train_acc"]},{cv["test_acc"]},,{cv["test_pr_1"]},{cv["test_rec_1"]}'
-        if DO_TEST:
-          metrics += f',,{tm["test_acc"]},,{tm["test_pr_1"]},{tm["test_rec_1"]},,{tm["test_pr_0"]},{tm["test_rec_0"]}\n'
-        log_file.write(metrics)
-      else:
-        print(f'Train Acc Test Acc | Train Pr Test Pr Test Rec')
-        print(f'   {train_acc:.2f}      {test_acc:.2f}      {train_pr:.2f}     {test_pr:.2f}    {test_rec:.2f}')
-        if DO_TEST:
-          print(f'TEST-')
-          print(f'           {test_acc_t:.2f}           {test_pr_t:.2f}  {test_rec_t:.2f}')
+          if LOG_TO_FILE:
+            print('---Writting metrics---')
+            log_file.write(f'{tu.get_name()}')
+            log_file.write(f',CV,{cv["train_acc"]},{cv["test_acc"]},{cv["test_pr_1"]},{cv["test_rec_1"]},{cv["test_pr_0"]},{cv["test_rec_0"]}\n')
+            if DO_TEST:
+              metrics = []
+              for dataset, tm in test_metrics.items():
+                chunks = dataset.split('/')
+                user = chunks[len(chunks) - 1]
+                cm = [tm['train_acc'],tm['test_acc'],tm['test_pr_1'],tm['test_rec_1'],tm['test_pr_0'],tm['test_rec_0']]
+                mstr = ','.join([str(m) for m in cm])
+                log_file.write(f',{user},{mstr}\n')
+                metrics.append(cm)
+              mstr = ','.join([str(m) for m in np.mean(metrics, axis=0)])
+              #log_file.write(f',AVG,{mstr}\n')
 
   t.print_line()
 if LOG_TO_FILE:

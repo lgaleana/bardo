@@ -8,8 +8,11 @@ import logging
 from werkzeug.exceptions import InternalServerError
 
 CLIENT_ID = '8de267b03c464274a3546bfe84496696'
-PROD = 'svc_top_mixed_no3_fixed'
-EXP_CONFIG = ['svc_top_mixed_no3_fixed', 'random']
+EXP_CONFIG = {
+  'lsgaleana@gmail.com': ['gbdt_34_all', 'random'],
+  'sheaney@gmail.com': ['knn_jini', 'knn_all', 'random'],
+  'default': ['gbdt_34_all', 'knn_all', 'random'],
+}
 PLAYLIST_LIMIT = 10
 TIME_LIMIT = 300
 INVALID_REQUEST = '<meta name="viewport" content="width=device-width">Invalid request.'
@@ -27,11 +30,16 @@ def main():
 @app.route('/playlist-selection')
 def playlist_selection():
   def response(token, bardo_id):
+    config = []
+    if bardo_id in EXP_CONFIG:
+      config = EXP_CONFIG[bardo_id]
+    else:
+      config = EXP_CONFIG['default']
     return render_template(
       'playlist-selection.html',
       token=token,
-      prod=PROD,
-      exp_clfs=','.join(EXP_CONFIG),
+      prod=','.join(config[0:len(config) - 1]),
+      exp_clfs=','.join(config),
     )
   return validate_response(
     response,
