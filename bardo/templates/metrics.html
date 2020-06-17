@@ -20,6 +20,7 @@
 <body>
   <h1><a href="{{url_for('main')}}">Bardo</a> Metrics</h1>
   <div>
+    <p><a href='https://docs.google.com/spreadsheets/d/1XrHfZZQSSBZ-nMKLVrQIQXhnW3u9dfMDspzzkcQ-LSk/edit?usp=sharing'>Offline evaluation</a>
     {% for user, clf_metrics in metrics.items(): %}
       <p><b>{{user}}</b></p>
       <table>
