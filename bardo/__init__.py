@@ -193,7 +193,7 @@ def save_ratings(bardo_id):
 
   now = datetime.now().strftime("%Y-%m-%d")
   db.save_feedback(bardo_id, db.process_feedback_input(
-    db.load_tracks_to_rate(bardo_id),
+    bardo_id,
     request.form,
   ), 'feedback', now)
 

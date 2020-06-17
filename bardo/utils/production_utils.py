@@ -125,7 +125,7 @@ def gen_recs(token, genres, exp_config,  market, slimit, tlimit, bardo_id):
         features = fg.get_audio_features(token, [recommendation])[0]
         analysis = fg.get_analysis_features(token, recommendation)
         group = fg.get_group_features(bardo_id, recommendation, users_data)
-        user = fg.get_user_features(users_data[bardo_id])
+        user = fg.get_user_features(bardo_id, users_data)
         # Get predictions from all classifiers
         for name, clf in clfs.items():
           if name in exp_config:

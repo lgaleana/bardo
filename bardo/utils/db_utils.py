@@ -1,6 +1,7 @@
 import bardo.utils.spotify_utils as su
 import os
 from datetime import datetime
+import json
 
 ROOT = 'data'
 
@@ -141,7 +142,10 @@ def process_plst_feedback(token, url, stars):
 
   return feedback
 
-def process_feedback_input(needs_rating, form):
+def process_feedback_input(bardo_id, form):
+  needs_rating = load_tracks_to_rate(bardo_id)
+  profile = list(load_profile_deduped(bardo_id).values())
+
   feedback = []
   for track, name in needs_rating.items():
     stars = form.get(f'feedback-{track}')
@@ -151,6 +155,14 @@ def process_feedback_input(needs_rating, form):
         'id': track,
         'name': name,
         'stars': stars,
+        'extra': json.dumps({
+          'size': len(profile),
+          '1': len(list(filter(lambda track: track['stars'] == 1, profile))),
+          '2': len(list(filter(lambda track: track['stars'] == 2, profile))),
+          '3': len(list(filter(lambda track: track['stars'] == 3, profile))),
+          '4': len(list(filter(lambda track: track['stars'] == 4, profile))),
+          '5': len(list(filter(lambda track: track['stars'] == 5, profile))),
+        })
       })
 
   return feedback
@@ -167,7 +179,7 @@ def save_feedback(bardo_id, feedback, directory, name):
 
   f = open(f'{feedback_dir}/{name}.txt', 'a+')
   for track in feedback:
-    f.write(f'{track["id"]}\t{track["name"]}\t{track["stars"]}\n')
+    f.write(f'{track["id"]}\t{track["name"]}\t{track["stars"]}\t{track["extra"]}\n')
   f.close()
 
 def load_ids():

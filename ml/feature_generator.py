@@ -162,18 +162,19 @@ def get_group_features(bardo_id, track, data):
   ]
 
 def get_user_features(
-  #bardo_id,
-  data,
+  bardo_id,
+  users_data,
 ):
-  #users = {'lsgaleana@gmail.com': 1, 'sheaney@gmail.com': 2}
+  data = users_data[bardo_id]
+  users = {'lsgaleana@gmail.com': 1, 'sheaney@gmail.com': 2}
   return [
-    #users.get(bardo_id, 3),
-    len(data),
-    len(list(filter(lambda track: track['stars'] == 1, data))),
-    len(list(filter(lambda track: track['stars'] == 2, data))),
-    len(list(filter(lambda track: track['stars'] == 3, data))),
-    len(list(filter(lambda track: track['stars'] == 4, data))),
-    len(list(filter(lambda track: track['stars'] == 5, data))),
+    users.get(bardo_id, 3),
+    #len(data),
+    #len(list(filter(lambda track: track['stars'] == 1, data))),
+    #len(list(filter(lambda track: track['stars'] == 2, data))),
+    #len(list(filter(lambda track: track['stars'] == 3, data))),
+    #len(list(filter(lambda track: track['stars'] == 4, data))),
+    #len(list(filter(lambda track: track['stars'] == 5, data))),
   ]
 
 def get_user_track_features(vectors, analysis):
