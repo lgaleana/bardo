@@ -31,8 +31,7 @@ class TrainUtil:
     # Actual model that was trained
     self.model = None 
     # Dataset generators
-    self.data = {
-      generator.get_dataset_name(): generator for generator in datasets}
+    self.datasets = datasets
     self.test_size = test_size
     self.standardize = standardize
     # Variance threshold for feature selection
@@ -50,7 +49,7 @@ class TrainUtil:
 
   # Generate an instance of training data
   def _gen_train_data(self, test_size):
-    generators = list(deepcopy(self.data).values())
+    generators = list(deepcopy(self.datasets))
     # Generate sampled datasets
     for generator in generators:
       generator.gen(test_size)
@@ -65,13 +64,13 @@ class TrainUtil:
   def train(self):
     print(f'Training {self.name}')
     model = deepcopy(self.base_model)
-    if self.params is None:
-      self._train_base(model)
-    else:
+    if self.params is not None:
       self._find_best_params()
       # Use best params to train the model
       model.set_params(**self.best_params)
-      self._train_base(model)
+    self._train_base(model)
+
+    return self
 
   def _train_base(self, model):
     # Transform the features
@@ -127,8 +126,8 @@ class TrainUtil:
   def predict_prod(self, features):
     return self.predict([features])[0]
 
-  def get_test_metrics(self, dataset):
-    data = deepcopy(self.data[dataset]).gen(self.test_size)
+  def get_test_metrics(self, generator):
+    data = generator.gen(self.test_size)
 
     train_pred = self.predict(data.X_train)
     test_pred = self.predict(data.X_test)
@@ -261,9 +260,6 @@ class TrainUtil:
 
   def get_name(self):
     return self.name
-
-  def get_datasets(self):
-    return self.data.values()
 
   def get_params(self):
     return self.model.get_params()

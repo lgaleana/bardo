@@ -76,7 +76,7 @@ def gen_recs(token, genres, exp_config,  market, slimit, tlimit, bardo_id):
   users_data = db.load_user_profiles()
 
   # Use profile as seed
-  profile = users_data[bardo_id]
+  profile = users_data.get(bardo_id, [])
   pos_tracks = list(map(
     lambda track: track['id'],
     filter(lambda track: track['stars'] >= 4, profile),
@@ -85,7 +85,7 @@ def gen_recs(token, genres, exp_config,  market, slimit, tlimit, bardo_id):
   profile = list(map(lambda track: track['name'], profile))
 
   # We want tracks from every classifier
-  clfs = classifiers[bardo_id] if bardo_id in classifiers else classifiers['default']
+  clfs = classifiers.get(bardo_id, classifiers['default'])
   playlists = {}
   for name in clfs:
     if name in exp_config:

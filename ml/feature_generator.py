@@ -165,7 +165,7 @@ def get_user_features(
   bardo_id,
   users_data,
 ):
-  data = users_data[bardo_id]
+  data = users_data.get(bardo_id, [])
   users = {'lsgaleana@gmail.com': 1, 'sheaney@gmail.com': 2}
   return [
     #users.get(bardo_id, 3),
