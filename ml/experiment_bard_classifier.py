@@ -16,28 +16,39 @@ K = 5
 ROOT = 'data/datasets'
 SUFFIX = 'test'
 datasets = [
-  (['sheaney@gmail.com'], [
+  (['lsgaleana@gmail.com'], [
+    'lsgaleana@gmail.com',
+  ]),
+  ([
+    'lsgaleana@gmail.com',
     'sheaney@gmail.com',
-    'others'
+    'others',
+  ], [
+    'lsgaleana@gmail.com',
   ]),
 ]
 # Generators sample the data
 generators = [
-  s.BinaryTestGen(),
-  s.BinaryTestGen({3, 4, 5}),
-  s.BinaryTestGen(neg_train={1, 2, 3}),
-
-  s.VeryBinaryTestGen(),
-  s.VeryBinaryTestGen(very=-1),
-  s.VeryBinaryTestGen(very=1),
-
-  s.VeryBinaryTestGen({3, 4, 5}),
-  s.VeryBinaryTestGen({3, 4, 5}, very=-1),
-  s.VeryBinaryTestGen({3, 4, 5}, very=1),
-
-  s.VeryBinaryTestGen(neg_train={1, 2, 3}),
-  s.VeryBinaryTestGen(neg_train={1, 2, 3}, very=-1),
-  s.VeryBinaryTestGen(neg_train={1, 2, 3}, very=1),
+  s.TernaryTestGen(),
+  s.TernaryTestGen({4, 5, 7}),
+  s.TernaryTestGen(neg_train={1, 2, 6}),
+  s.TernaryTestGen({4, 5, 7}, {1, 2, 6}),
+#
+#  s.VeryBinaryTestGen(),
+#  s.VeryBinaryTestGen(very=1),
+#  s.VeryBinaryTestGen(very=-1),
+#
+#  s.VeryBinaryTestGen({4, 5, 7}),
+#  s.VeryBinaryTestGen({4, 5, 7}, very=1),
+#  s.VeryBinaryTestGen({4, 5, 7}, very=-1),
+#
+#  s.VeryBinaryTestGen(neg_train={1, 2, 6}),
+#  s.VeryBinaryTestGen(neg_train={1, 2, 6}, very=1),
+#  s.VeryBinaryTestGen(neg_train={1, 2, 6}, very=-1),
+#
+#  s.VeryBinaryTestGen({4, 5, 7}, {1, 2, 6}),
+#  s.VeryBinaryTestGen({4, 5, 7}, {1, 2, 6}, very=1),
+#  s.VeryBinaryTestGen({4, 5, 7}, {1, 2, 6}, very=-1),
 ]
 # CV parameters
 lsp = [{
@@ -124,7 +135,8 @@ for train_users, test_users in datasets:
         )
 
         # We store an instance of model (for later) and its CV metrics
-        models[gen_name][model_name] = (tu.train(), tu.get_cv_metrics())
+        models[gen_name][model_name] = (tu.train(),
+          tu.get_cv_metrics() if 'CV' in test_users else None)
     t.print_line()
 
   test_files = [db.escape_bardo_id(user) for user in test_users]
