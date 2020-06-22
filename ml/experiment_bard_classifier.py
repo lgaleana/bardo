@@ -10,11 +10,11 @@ import numpy as np
 
 
 ### Experimentation configs
-TEST_SIZE = 0.25
+TEST_SIZE = 0.2
 K = 5
 # Train:test datasets
 ROOT = 'data/datasets'
-SUFFIX = 'test'
+SUFFIX = 's75'
 datasets = [
   (['lsgaleana@gmail.com'], [
     'lsgaleana@gmail.com',
@@ -29,26 +29,26 @@ datasets = [
 ]
 # Generators sample the data
 generators = [
-  s.TernaryTestGen(),
-  s.TernaryTestGen({4, 5, 7}),
-  s.TernaryTestGen(neg_train={1, 2, 6}),
-  s.TernaryTestGen({4, 5, 7}, {1, 2, 6}),
-#
-#  s.VeryBinaryTestGen(),
-#  s.VeryBinaryTestGen(very=1),
-#  s.VeryBinaryTestGen(very=-1),
-#
-#  s.VeryBinaryTestGen({4, 5, 7}),
-#  s.VeryBinaryTestGen({4, 5, 7}, very=1),
-#  s.VeryBinaryTestGen({4, 5, 7}, very=-1),
-#
-#  s.VeryBinaryTestGen(neg_train={1, 2, 6}),
-#  s.VeryBinaryTestGen(neg_train={1, 2, 6}, very=1),
-#  s.VeryBinaryTestGen(neg_train={1, 2, 6}, very=-1),
-#
-#  s.VeryBinaryTestGen({4, 5, 7}, {1, 2, 6}),
-#  s.VeryBinaryTestGen({4, 5, 7}, {1, 2, 6}, very=1),
-#  s.VeryBinaryTestGen({4, 5, 7}, {1, 2, 6}, very=-1),
+  s.BinaryTestGen(),
+  s.BinaryTestGen({4, 5, 7}),
+  s.BinaryTestGen(neg_train={1, 2, 6}),
+  s.BinaryTestGen({4, 5, 7}, {1, 2, 6}),
+
+  s.VeryBinaryTestGen(),
+  s.VeryBinaryTestGen(very=1),
+  s.VeryBinaryTestGen(very=-1),
+
+  s.VeryBinaryTestGen({4, 5, 7}),
+  s.VeryBinaryTestGen({4, 5, 7}, very=1),
+  s.VeryBinaryTestGen({4, 5, 7}, very=-1),
+
+  s.VeryBinaryTestGen(neg_train={1, 2, 6}),
+  s.VeryBinaryTestGen(neg_train={1, 2, 6}, very=1),
+  s.VeryBinaryTestGen(neg_train={1, 2, 6}, very=-1),
+
+  s.VeryBinaryTestGen({4, 5, 7}, {1, 2, 6}),
+  s.VeryBinaryTestGen({4, 5, 7}, {1, 2, 6}, very=1),
+  s.VeryBinaryTestGen({4, 5, 7}, {1, 2, 6}, very=-1),
 ]
 # CV parameters
 lsp = [{
@@ -75,7 +75,6 @@ exp_configs = [
     'name': 'Linear SVC',
     'model': LinearSVC(dual=False), 
     'modes': [
-      {'standardize': True, 'params': None},
     ],
   },
   {
@@ -89,7 +88,6 @@ exp_configs = [
     'name': 'KNN',
     'model': KNeighborsClassifier(),
     'modes': [
-      {'standardize': True, 'params': None},
     ],
   },
   {

@@ -9,9 +9,9 @@ from werkzeug.exceptions import InternalServerError
 
 CLIENT_ID = '8de267b03c464274a3546bfe84496696'
 EXP_CONFIG = {
-  'lsgaleana@gmail.com': ['gbdt_34_all', 'random'],
-  'sheaney@gmail.com': ['knn_jini', 'knn_all', 'random'],
-  'default': ['gbdt_34_all', 'knn_all', 'random'],
+  'lsgaleana@gmail.com': ['svc_sec75_all', 'svc_very_4_sec75_all', 'random'],
+  'sheaney@gmail.com': ['random'],
+  'default': ['random'],
 }
 PLAYLIST_LIMIT = 10
 TIME_LIMIT = 300

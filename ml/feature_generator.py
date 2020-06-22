@@ -10,17 +10,14 @@ def get_audio_features(token, tracks):
     useful_features.append([
       track['popularity'],
       features['duration_ms'],
-      features['time_signature'],
       features['acousticness'],
       features['danceability'],
       features['energy'],
       features['instrumentalness'],
       features['liveness'],
-      features['mode'],
       features['loudness'],
       features['speechiness'],
       features['valence'],
-      features['tempo'],
     ])
 
   return useful_features
@@ -28,122 +25,49 @@ def get_audio_features(token, tracks):
 def get_analysis_features(token, track):
   analysis = su.get_track_analysis(token, track)
 
-  useful_features = []
   # Track features
-  track = analysis['track']
-  useful_features = useful_features + [
-    track.get('num_samples', -1),
-    track.get('offset_seconds', -1),
-    track.get('end_of_fade_in', -1),
-    track.get('start_of_fade_out', -1),
-  ]
+  useful_features = [analysis['track'].get('num_samples', -1)]
   # Bars
-  bars = analysis['bars']
-  durations = list(map(
-    lambda bar: bar['duration'],
-    filter(lambda bar: 'confidence' in bar and bar['confidence'] != -1, bars),
-  ))
-  useful_features = useful_features + [
-    len(bars),
-    np.mean(durations),
-    np.std(durations),
-    np.var(durations),
-  ]
+  bars = list(map(
+    lambda bar: [f for f in bar.values()],
+    filter(lambda bar: bar['confidence'] != -1, analysis['bars'])))
+  useful_features.append(len(bars))
+  useful_features += describe(bars)
   # Beats
-  beats = analysis['beats']
-  durations = list(map(
-    lambda beat: beat['duration'],
-    filter(lambda beat: 'confidence' in beat and beat['confidence'] != -1, beats),
-  ))
-  useful_features = useful_features + [
-    len(beats),
-    np.mean(durations),
-    np.std(durations),
-    np.var(durations),
-  ]
-  # Sections 
-  sections = analysis['sections']
-  durations = []
-  loudness = []
-  tempos = []
-  modes = []
-  ts = []
-  for section in sections:
-    durations.append(section['duration'])
-    if 'loudness' in section:
-      loudness.append(section['loudness'])
-    if 'tempo' in section:
-      tempos.append(section['tempo'])
-    if 'mode' in section and section['mode'] != -1:
-      modes.append(section['mode'])
-    if 'time_signature' in section and section['time_signature'] != -1:
-      ts.append(section['time_signature'])
-  useful_features = useful_features + [
-    len(sections),
-    np.mean(durations),
-    np.std(durations),
-    np.var(durations),
-    np.mean(loudness),
-    np.std(loudness),
-    np.var(loudness),
-    np.mean(tempos),
-    np.std(tempos),
-    np.var(tempos),
-    np.mean(modes),
-    np.std(modes),
-    np.var(modes),
-    np.mean(ts),
-    np.std(ts),
-    np.var(ts),
-  ]
+  beats = list(map(
+    lambda beat: [f for f in beat.values()],
+    filter(lambda beat: beat['confidence'] != -1, analysis['beats'])))
+  useful_features.append(len(beats))
+  useful_features += describe(beats)
+  # Tatums
+  tatums = list(map(
+    lambda tatum: [f for f in tatum.values()],
+    filter(lambda tatum: tatum['confidence'] != -1, analysis['tatums'])))
+  useful_features.append(len(tatums))
+  useful_features += describe(tatums)
+  # Sections
+  sections = list(map(
+    lambda s: [f for n, f in s.items() if n != 'key' and n!= 'key_confidence'],
+    filter(lambda section: section['confidence'] != -1, analysis['sections'])))
+  useful_features.append(len(sections))
   # Segments
-  segments = analysis['segments']
-  durations = []
-  ls = []
-  lmt = []
-  lm = []
-  pitches = []
-  timbre = []
-  for segment in segments:
-    durations.append(segment['duration'])
-    if 'loudness_start' in segment:
-      ls.append(segment['loudness_start'])
-    if 'loudness_max_time' in segment:
-      lmt.append(segment['loudness_max_time'])
-    if 'loudness_max' in segment:
-      lm.append(segment['loudness_max'])
-    pitches.append(segment['pitches'])
-    timbre.append(segment['timbre'])
-  useful_features = useful_features + [
-    len(segments),
-    np.mean(durations),
-    np.std(durations),
-    np.var(durations),
-    np.mean(ls),
-    np.std(ls),
-    np.var(ls),
-    np.mean(lmt),
-    np.std(lmt),
-    np.var(lmt),
-    np.mean(lm),
-    np.std(lm),
-    np.var(lm),
-  ]
-  useful_features = useful_features + np.mean(pitches, axis=0).tolist() + np.mean(timbre, axis=0).tolist()
-# Tatums
-  tatums = analysis['tatums']
-  durations = list(map(
-    lambda tatum: tatum['duration'], 
-    filter(lambda tatum: 'confidence' in tatum and tatum['confidence'] != -1, tatums),
-  ))
-  useful_features = useful_features + [
-    len(tatums),
-    np.mean(durations),
-    np.std(durations),
-    np.var(durations),
-  ]
+  segments = []
+  for segment in analysis['segments']:
+    if segment['confidence'] != -1:
+      segment_chunk = []
+      for name, feature in segment.items():
+        if name == 'pitches' or name == 'timbre':
+          segment_chunk.extend(feature)
+        elif name != 'loudness_end':
+          segment_chunk.append(feature)
+      segments.append(segment_chunk)
+  useful_features.append(len(segments))
 
-  return useful_features
+  return {
+    'analysis': useful_features,
+    'sections': sections,
+    'segments': segments,
+  }
 
 def get_group_features(bardo_id, track, data):
   others_count = 0
@@ -155,7 +79,6 @@ def get_group_features(bardo_id, track, data):
           others_count += 1
           others_stars += other_track['stars']
           break
-
   return [
     others_count,
     others_stars,
@@ -176,6 +99,67 @@ def get_user_features(
     len(list(filter(lambda track: track['stars'] == 4, data))),
     len(list(filter(lambda track: track['stars'] == 5, data))),
   ]
+
+def describe(vec):
+  des =  [
+    np.mean(vec, axis=0),
+    np.std(vec, axis=0),
+    np.percentile(vec, 0, axis=0),
+    np.percentile(vec, 25, axis=0),
+    np.percentile(vec, 50, axis=0),
+    np.percentile(vec, 75, axis=0),
+    np.percentile(vec, 100, axis=0),
+  ]
+  return [f for d in des for f in d]
+
+def pad_components(feature_map, p=None, seg_n=None):
+  print('Padding components')
+  if p is not None and seg_n is None:
+    sec_lens = [
+      len(r['sections']) * 10 for rs in feature_map.values() for r in rs.values()]
+    max_ = int(np.percentile(sec_lens, p))
+  elif p is not None: 
+    seg_lens = [
+      len(r['segments']) for rs in feature_map.values() for r in rs.values()]
+    seg_step = int(np.percentile(seg_lens, p) / seg_n)
+    max_ = seg_n * seg_step
+
+  for rows in feature_map.values():
+    for row in rows.values():
+      if p is not None and seg_n is None:
+        row['sections'] = pad_section(row['sections'], max_)
+        row['segments'] = describe(row['segments'])
+      elif p is not None:
+        row['sections'] = describe(row['sections'])
+        row['segments'] = pad_segment(row['segments'], seg_step, max_)
+      else:
+        row['sections'] = describe(row['sections'])
+        row['segments'] = describe(row['segments'])
+
+def pad_segment(segments, step, max_):
+  SEG_LEN = 30
+  topad = []
+  size = len(segments)
+  if size <= max_:
+    for i in range(0, size, step):
+      topad.extend(np.mean(segments[i:i + step], axis=0))
+    pad = int((max_ / step * SEG_LEN - len(topad)) / 2)
+    return np.pad(topad, (pad, pad), mode='constant').tolist()
+  else:
+    offset = int((size - max_) / 2)
+    for i in range(offset, max_ + offset, step):
+      topad.extend(np.mean(segments[i:i + step], axis=0))
+    return topad
+
+def pad_section(sections, max_):
+  sf = [f for s in sections for f in s]
+  size = len(sf)
+  if size <= max_:
+    pad = int((max_ - size) / 2)
+    return np.pad(sf, (pad, pad), mode='constant').tolist()
+  else:
+    offset = int((size - max_) / 2)
+    return sf[offset:max_ + offset]
 
 def get_user_track_features(vectors, analysis):
   return [

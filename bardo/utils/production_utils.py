@@ -21,31 +21,25 @@ gbdt = GradientBoostingClassifier(random_state=0)
 K = 5
 ROOT = 'data/datasets'
 train_configs = [{
-  'name': 'gbdt_34_all',
-  'model': GradientBoostingClassifier(random_state=0),
-  'datasets': [
-    s.BinaryTestGen({4, 5, 7}, {1, 2, 6}).set(
-      f'{ROOT}/lsgaleana-gmail_com_test.txt'),
-    s.BinaryTestGen().set(f'{ROOT}/sheaney-gmail_com_test.txt')],
+  'name': 'svc_sec75_all',
+  'model': SVC(random_state=0),
+  'datasets': [s.BinaryTestGen().set(f'{ROOT}/lsgaleana-gmail_com_s75.txt'), 
+    s.BinaryTestGen().set(f'{ROOT}/sheaney-gmail_com_s75.txt'),
+    s.BinaryTestGen().set(f'{ROOT}/others_s75.txt')],
   'standardize': True,
 },
 {
-  'name': 'knn_jini',
-  'model': KNeighborsClassifier(),
-  'datasets': [s.BinaryTestGen().set(f'{ROOT}/sheaney-gmail_com_test.txt')],
-  'standardize': True,
-},
-{
-  'name': 'knn_all',
-  'model': KNeighborsClassifier(),
-  'datasets': [s.BinaryTestGen().set(f'{ROOT}/lsgaleana-gmail_com_test.txt'),
-    s.BinaryTestGen().set(f'{ROOT}/sheaney-gmail_com_test.txt')],
+  'name': 'svc_very_4_sec75_all',
+  'model': SVC(random_state=0),
+  'datasets': [s.VeryBinaryTestGen({4, 5, 7}).set(f'{ROOT}/lsgaleana-gmail_com_s75.txt'), 
+    s.VeryBinaryTestGen({4, 5, 7}).set(f'{ROOT}/sheaney-gmail_com_s75.txt'),
+    s.VeryBinaryTestGen({4, 5, 7}).set(f'{ROOT}/others_s75.txt')],
   'standardize': True,
 }]
 user_configs = {
-  'lsgaleana@gmail.com': ['gbdt_34_all'],
-  'sheaney@gmail.com': ['knn_jini', 'knn_all'],
-  'default': ['gbdt_34_all', 'knn_all'],
+  'lsgaleana@gmail.com': ['svc_sec75_all', 'svc_very_4_sec75_all'],
+  'sheaney@gmail.com': [],
+  'default': [],
 }
 
 ### Train production classifiers
@@ -58,12 +52,11 @@ def load_prod_classifiers():
       name=config['name'],
       model=config['model'],
       datasets=config['datasets'],
-      test_size=0.0,
+      test_size=0.25,
       standardize=config['standardize'],
       k=K,
     )
-    tu.train()
-    clfs[config['name']] = tu
+    clfs[config['name']] = tu.train()
 
   # Assign to users
   for bardo_id, clf_config in user_configs.items():
@@ -122,14 +115,17 @@ def gen_recs(token, genres, exp_config,  market, slimit, tlimit, bardo_id):
       if recommendation['is_playable'] and recommendation['name'] not in profile:
         nlabel += 1
         profile.append(recommendation['name'])
-        features = fg.get_audio_features(token, [recommendation])[0]
-        analysis = fg.get_analysis_features(token, recommendation)
+        audio = fg.get_audio_features(token, [recommendation])[0]
+        analysis_ = fg.get_analysis_features(token, recommendation)
+        analysis = analysis_['analysis']
+        section = fg.pad_section(analysis_['sections'], 150)
+        segment = fg.describe(analysis_['segments'])
         group = fg.get_group_features(bardo_id, recommendation, users_data)
         user = fg.get_user_features(bardo_id, users_data)
         # Get predictions from all classifiers
         for name, clf in clfs.items():
           if name in exp_config:
-            prediction = clf.predict_prod(features + analysis + group + user)
+            prediction = clf.predict_prod(audio + analysis + section + segment + group + user)
             print(f'  {name} prediction: {prediction}')
             if prediction == 1 and recommendation['name'] not in playlists[name]['names'] and len(playlists[name]['ids']) < slimit:
               playlists[name]['ids'].append(recommendation['id'])
