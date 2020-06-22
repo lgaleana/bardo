@@ -18,6 +18,7 @@ knn = KNeighborsClassifier()
 gbdt = GradientBoostingClassifier(random_state=0)
 # Configs
 # These classifiers were picked through experimentation
+HOLDOUT = 0.2
 K = 5
 ROOT = 'data/datasets'
 train_configs = [{
@@ -52,7 +53,7 @@ def load_prod_classifiers():
       name=config['name'],
       model=config['model'],
       datasets=config['datasets'],
-      test_size=0.25,
+      test_size=HOLDOUT,
       standardize=config['standardize'],
       k=K,
     )

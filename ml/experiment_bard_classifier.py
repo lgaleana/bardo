@@ -10,11 +10,11 @@ import numpy as np
 
 
 ### Experimentation configs
-TEST_SIZE = 0.2
+TEST_SIZE = 0.25
 K = 5
 # Train:test datasets
 ROOT = 'data/datasets'
-SUFFIX = 's75'
+SUFFIX = 'seg_100_10'
 datasets = [
   (['lsgaleana@gmail.com'], [
     'lsgaleana@gmail.com',
