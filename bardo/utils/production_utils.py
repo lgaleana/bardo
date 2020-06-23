@@ -9,6 +9,7 @@ import bardo.utils.db_utils as db
 from random import shuffle
 from time import time
 from copy import deepcopy
+import concurrent.futures as f
 
 ### Train configs
 # Classifiers initial configs
@@ -131,23 +132,34 @@ def gen_recs(token, genres, exp_config,  market, slimit, tlimit, bardo_id):
     # We get 100 recommendations
     recommendations = su.get_recommendations(token, seeds, rlimit, market)
     t.print_line()
-    for recommendation in recommendations:
-      go_on = False
-      # Check if track is playable of if it's been labeled
-      if recommendation['is_playable'] and recommendation['name'] not in profile:
+    # Concurrent recommendations generation
+    with f.ThreadPoolExecutor(max_workers=5) as executor:
+      fs = []
+      for recommendation in recommendations:
+        # Check if track is playable of if it's been labeled
+        if recommendation['is_playable'] and recommendation['name'] not in profile:
+          fs.append(executor.submit(
+            fg.get_audio_and_analysis_features, token, recommendation))
+        else:
+          print(f'{recommendation["name"]} already labeled')
+
+      for future in f.as_completed(fs):
+        go_on = False
         nlabel += 1
         profile.append(recommendation['name'])
-        audio = fg.get_audio_features(token, [recommendation])[0]
-        analysis_ = fg.get_analysis_features(token, recommendation)
+
+        audio, analysis_ = future.result()
         analysis = analysis_['analysis']
         section = fg.pad_section(analysis_['sections'], 150)
         segment = fg.describe(analysis_['segments'])
         group = fg.get_group_features(bardo_id, recommendation, users_data)
         user = fg.get_user_features(bardo_id, users_data)
+
         # Get predictions from all classifiers
         for name, clf in clfs.items():
           if name in exp_config:
             prediction = clf.predict_prod(audio + analysis + section + segment + group + user)
+            #Normal classifiers
             print(f'  {name} prediction: {prediction}')
             if prediction == 1 and recommendation['name'] not in playlists[name]['names'] and len(playlists[name]['ids']) < slimit:
               playlists[name]['ids'].append(recommendation['id'])
@@ -155,25 +167,25 @@ def gen_recs(token, genres, exp_config,  market, slimit, tlimit, bardo_id):
               if recommendation['id'] not in pos_tracks:
                 pos_tracks.append(recommendation['id'])
             print(f'  size: {len(playlists[name]["ids"])}')
-
+        # Random classifier
         if 'random' in playlists and recommendation['name'] not in playlists['random']['names'] and len(playlists['random']['ids']) < slimit:
           print(f'  random prediction: 1.0')
           playlists['random']['ids'].append(recommendation['id'])
           playlists['random']['names'].append(recommendation['name'])
           print(f'  size: {len(playlists["random"]["ids"])}')
-      else:
-        print(f'{recommendation["name"]} already labeled')
 
-      for plst in playlists.values():
-        if len(plst['ids']) < slimit:
-          go_on = True
+        # Should we stop the iteration?
+        for plst in playlists.values():
+          if len(plst['ids']) < slimit:
+            go_on = True
+        if not go_on:
           break
-      if not go_on:
-        break
-    use_random = not use_random
-    t.print_line()
-    print(f'{(time() - start_time) / 60} mins elapsed')
-    print(f'{nlabel} new track labeled')
+
+      # Toggle use of random as seed
+      use_random = not use_random
+      t.print_line()
+      print(f'{(time() - start_time) / 60} mins elapsed')
+      print(f'{nlabel} new track labeled')
 
   # Add final playlist
   final_playlist = {
