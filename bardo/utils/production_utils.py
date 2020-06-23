@@ -62,14 +62,13 @@ train_configs = [{
 user_configs = {
   'lsgaleana@gmail.com': ['svc_sec75_all', 'svc_bottom_4_sec75_all'],
   'sheaney@gmail.com': ['lsvc_very_4_sec75_all', 'gbdt_sec75_jini'],
-  'default': ['svc_sec75_all', 'lsvc_very_4_sec75_all'],
 }
 
 ### Train production classifiers
 classifiers = {}
 def load_prod_classifiers():
   # Classifiers
-  clfs = {}
+  tmp_clfs = {}
   for config in train_configs:
     tu = t.TrainUtil(
       name=config['name'],
@@ -79,57 +78,59 @@ def load_prod_classifiers():
       standardize=config['standardize'],
       k=K,
     )
-    clfs[config['name']] = tu.train()
+    tmp_clfs[config['name']] = tu.train()
 
   # Assign to users
-  for bardo_id, clf_config in user_configs.items():
-    classifiers[bardo_id] = {clf: clfs[clf] for clf in clf_config}
+  for bardo_id, clf_list in user_configs.items():
+    classifiers[bardo_id] = {name: tmp_clfs[name] for name in clf_list}
 
   print('Finished training')
 
 ### Get recommendatons from seed tracks or genres
-def gen_recs(token, genres, exp_config,  market, slimit, tlimit, bardo_id):
+def gen_recs(token, source, genres, history, market, slimit, tlimit, bardo_id):
   users_data = db.load_user_profiles()
 
-  # Use profile as seed
+  # History seed
   profile = users_data.get(bardo_id, [])
-  pos_tracks = list(map(
-    lambda track: track['id'],
-    filter(lambda track: track['stars'] >= 4, profile),
-  ))
-  shuffle(pos_tracks)
+  history_seed = []
+  for track in profile:
+    if track['stars'] == 4 and 'pos' in history:
+      history_seed.append(track['id'])
+    elif track['stars'] == 5 and 'very_pos' in history:
+      history_seed.append(track['id'])
+  shuffle(history_seed)
   profile = list(map(lambda track: track['name'], profile))
+  # Genre seed
+  seeds = {'genres': genres}
 
   # We want tracks from every classifier
-  clfs = classifiers.get(bardo_id, classifiers['default'])
+  clfs = classifiers.get(source, {})
   playlists = {}
   for name in clfs:
-    if name in exp_config:
-      playlists[name] = {
-        'ids': [],
-        'names': [],
-      }
-  if 'random' in exp_config:
+    playlists[name] = {
+      'ids': [],
+      'names': [],
+    }
+  if source == 'random':
     playlists['random'] = {
       'ids': [],
       'names': [],
     }
-  seeds = {'genres': genres}
 
   start_time = time()
   go_on = True
   use_random = False
   while go_on and time() - start_time < tlimit:
+    go_on = False
     # Add seed tracks
-    if not use_random and len(pos_tracks) > 0:
-      seeds['tracks'] = [pos_tracks.pop(0)]
-      rlimit = 10
+    if not use_random and len(history_seed) > 0:
+      seeds['tracks'] = [history_seed.pop(0)]
+      rlimit = 20
     else:
       seeds['tracks'] = []
       rlimit = 100
 
-    nlabel = 0
-    # We get 100 recommendations
+    # We get 100 recommendations, but we might not evaluate all
     recommendations = su.get_recommendations(token, seeds, rlimit, market)
     t.print_line()
     # Concurrent recommendations generation
@@ -138,15 +139,23 @@ def gen_recs(token, genres, exp_config,  market, slimit, tlimit, bardo_id):
       for recommendation in recommendations:
         # Check if track is playable of if it's been labeled
         if recommendation['is_playable'] and recommendation['name'] not in profile:
-          fs.append(executor.submit(
-            fg.get_audio_and_analysis_features, token, recommendation))
+          # For normal predictions
+          if source != 'random':
+            fs.append(executor.submit(
+              fg.get_audio_and_analysis_features, token, recommendation))
+          # Random classifier
+          elif recommendation['name'] not in playlists['random']['names'] and len(playlists['random']['ids']) < slimit:
+            print(f'  random prediction: 1.0')
+            playlists['random']['ids'].append(recommendation['id'])
+            playlists['random']['names'].append(recommendation['name'])
+            print(f'  size: {len(playlists["random"]["ids"])}')
+
+          profile.append(recommendation['name'])
         else:
           print(f'{recommendation["name"]} already labeled')
 
-      for future in f.as_completed(fs):
-        go_on = False
-        nlabel += 1
-        profile.append(recommendation['name'])
+      completed, _ = f.wait(fs, 10, f.ALL_COMPLETED)
+      for future in completed:
 
         audio, analysis_ = future.result()
         analysis = analysis_['analysis']
@@ -157,35 +166,25 @@ def gen_recs(token, genres, exp_config,  market, slimit, tlimit, bardo_id):
 
         # Get predictions from all classifiers
         for name, clf in clfs.items():
-          if name in exp_config:
-            prediction = clf.predict_prod(audio + analysis + section + segment + group + user)
-            #Normal classifiers
-            print(f'  {name} prediction: {prediction}')
-            if prediction == 1 and recommendation['name'] not in playlists[name]['names'] and len(playlists[name]['ids']) < slimit:
-              playlists[name]['ids'].append(recommendation['id'])
-              playlists[name]['names'].append(recommendation['name'])
-              if recommendation['id'] not in pos_tracks:
-                pos_tracks.append(recommendation['id'])
-            print(f'  size: {len(playlists[name]["ids"])}')
-        # Random classifier
-        if 'random' in playlists and recommendation['name'] not in playlists['random']['names'] and len(playlists['random']['ids']) < slimit:
-          print(f'  random prediction: 1.0')
-          playlists['random']['ids'].append(recommendation['id'])
-          playlists['random']['names'].append(recommendation['name'])
-          print(f'  size: {len(playlists["random"]["ids"])}')
-
-        # Should we stop the iteration?
-        for plst in playlists.values():
-          if len(plst['ids']) < slimit:
-            go_on = True
-        if not go_on:
-          break
+          prediction = clf.predict_prod(audio + analysis + section + segment + group + user)
+          print(f'  {name} prediction: {prediction}')
+          if prediction == 1 and recommendation['name'] not in playlists[name]['names'] and len(playlists[name]['ids']) < slimit:
+            playlists[name]['ids'].append(recommendation['id'])
+            playlists[name]['names'].append(recommendation['name'])
+            if recommendation['id'] not in history_seed:
+              history_seed.append(recommendation['id'])
+          print(f'  size: {len(playlists[name]["ids"])}')
 
       # Toggle use of random as seed
       use_random = not use_random
       t.print_line()
       print(f'{(time() - start_time) / 60} mins elapsed')
-      print(f'{nlabel} new track labeled')
+      print(f'{len(completed)} new tracks labeled')
+
+      # Should we stop the iteration?
+      for plst in playlists.values():
+        if len(plst['ids']) < slimit:
+          go_on = True
 
   # Add final playlist
   final_playlist = {

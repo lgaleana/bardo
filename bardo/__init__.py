@@ -8,10 +8,10 @@ import logging
 from werkzeug.exceptions import InternalServerError
 
 CLIENT_ID = '8de267b03c464274a3546bfe84496696'
-EXP_CONFIG = {
-  'lsgaleana@gmail.com': ['svc_sec75_all', 'svc_bottom_4_sec75_all', 'random'],
-  'sheaney@gmail.com': ['lsvc_very_4_sec75_all', 'gbdt_sec75_jini', 'random'],
-  'default': ['svc_sec75_all', 'lsvc_very_4_sec75_all', 'random'],
+VALID_SOURCES = {
+  'Galeana': 'lsgaleana@gmail.com',
+  'Heaney': 'sheaney@gmail.com',
+  'Spotify random': 'random'
 }
 PLAYLIST_LIMIT = 10
 TIME_LIMIT = 300
@@ -30,16 +30,11 @@ def main():
 @app.route('/playlist-selection')
 def playlist_selection():
   def response(token, bardo_id):
-    config = []
-    if bardo_id in EXP_CONFIG:
-      config = EXP_CONFIG[bardo_id]
-    else:
-      config = EXP_CONFIG['default']
     return render_template(
       'playlist-selection.html',
+      bardo_id=bardo_id,
       token=token,
-      prod=','.join(config[0:len(config) - 1]),
-      exp_clfs=','.join(config),
+      sources=VALID_SOURCES,
     )
   return validate_response(
     response,
@@ -50,25 +45,27 @@ def playlist_selection():
 
 @app.route('/generate-playlist')
 def generate_playlist():
-  genre = request.args.get('genre')
   source = request.args.get('source')
+  genres = request.args.getlist('genre')
+  history = request.args.getlist('history')
   market = request.args.get('market')
 
-  if not genre:
-    genre = 'deep-house'
   if not source:
-    source = 'bardo'
+    source = 'lsgaleana@gmail.com'
+  if not genres:
+    genres = ['deep-house']
   if not market:
     market = 'US'
 
-  def response(token, bardo_id, genre, source, market):
+  def response(token, bardo_id, source, genres, history, market):
     return render_template(
       'generate-playlist.html',
       bardo_id=bardo_id,
       data={
         'token': token,
-        'genre': genre,
         'source': source,
+        'genres': genres,
+        'history': history,
         'market': market,
       },
     )
@@ -77,19 +74,21 @@ def generate_playlist():
     response,
     request,
     'generate_playlist',
-    genre=genre,
     source=source,
+    genres=genres,
+    history=history,
     market=market,
   )
 
 @app.route('/make-playlist', methods=['POST'])
 def make_playlist():
   token = request.json.get('token')
-  genre = request.json.get('genre')
   source = request.json.get('source')
+  genres = request.json.get('genres')
+  history = request.json.get('history')
   market = request.json.get('market')
 
-  if not token and not genre and not source and not market:
+  if not token and not source and not genres and not market:
     return INVALID_REQUEST
 
   sid, bardo_id = su.get_user_data(token)
@@ -99,8 +98,9 @@ def make_playlist():
 
   clf_plsts, final_plst = pu.gen_recs(
     token,
-    genre.split(','),
-    source.split(','),
+    source,
+    genres,
+    history,
     market,
     PLAYLIST_LIMIT,
     TIME_LIMIT,

@@ -13,25 +13,34 @@
 </head>
 <body>
   <h1><a href="{{url_for('main')}}">Bardo</a> Recommendations</h1>
-  <p>Bardo will use your music preferences to create a personalized playlist in your spotify account.</p>
+  <p>The Bardo AI will use your preferences to create a playlist in your spotify account.</p>
   <form action="{{url_for('generate_playlist')}}" method="GET">
-    <p><b>Source</b></p>
+    <h3>Listen as</h3>
     <p>
-    <input type="radio" name="source" value="{{prod}}" required> <label>Bardo AI</label><br>
-    <input type="radio" name="source" value="random" required> <label>Spotify random</label><br>
-    <input type="radio" name="source" value="{{exp_clfs}}" required> <label>A/B</label><br>
-      <i>A/B will include a random mix of Bardo AI and random.</i>
+    {% for label, source in sources.items(): %}
+      <input type="radio" name="source" value="{{source}}" required {{'checked' if bardo_id == source}}> <label>{{label}}</label><br>
+    {% endfor %}
+      <br>
+      <i>Bardo will create a Playlist as if it was meant for them.</i>
     </p>
-    <p><b>Genres</b></p>
+    <h3>Recommendation seeds</h3>
     <p>
-      <input type="checkbox" name="genre" value="deep-house" checked required> <label>Deep house</label>
+      <div>
+      Genres:<br>
+      <input type="checkbox" name="genre" value="deep-house" checked required> <label>Deep house</label><br><br>
+      Similar to:<br>
+      <input type="checkbox" name="history" value="pos" checked> <label>My liked tracks</label><br>
+      <input type="checkbox" name="history" value="very_pos" checked> <label>My loved tracks</label><br>
+      <br>
+      <i>These will be used to enrich your recommendations.</i>
     </p>
-    <p><b>Country</b></p>
+    <h3>Country</h3>
     <p>
       <input type="radio" name="market" value="US" required> <label>US</label><br>
       <input type="radio" name="market" value="MX" required> <label>MX</label><br> 
       <input type="radio" name="market" value="BO" required> <label>BO</label><br>
-      <i>This parameter is important because some tracks might not be playable depending on the country.</i>
+      <br>
+      <i>Some tracks might not be playable depending on the country.</i>
     </p>
     <input type="hidden" name="token" value="{{token}}">
     <input type="submit" value="Generate">
