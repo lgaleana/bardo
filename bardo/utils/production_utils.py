@@ -18,7 +18,6 @@ knn = KNeighborsClassifier()
 gbdt = GradientBoostingClassifier(random_state=0)
 # Configs
 # These classifiers were picked through experimentation
-HOLDOUT = 0.2
 K = 5
 ROOT = 'data/datasets'
 train_configs = [{
@@ -28,19 +27,41 @@ train_configs = [{
     s.BinaryTestGen().set(f'{ROOT}/sheaney-gmail_com_s75.txt'),
     s.BinaryTestGen().set(f'{ROOT}/others_s75.txt')],
   'standardize': True,
+  'holdout': 0.2,
 },
 {
-  'name': 'svc_very_4_sec75_all',
+  'name': 'svc_bottom_4_sec75_all',
   'model': SVC(random_state=0),
-  'datasets': [s.VeryBinaryTestGen({4, 5, 7}).set(f'{ROOT}/lsgaleana-gmail_com_s75.txt'), 
+  'datasets': [
+    s.VeryBinaryTestGen({4, 5, 7}, very=-1).set(
+      f'{ROOT}/lsgaleana-gmail_com_s75.txt'), 
+    s.VeryBinaryTestGen({4, 5, 7}, very=-1).set(
+      f'{ROOT}/sheaney-gmail_com_s75.txt'),
+    s.VeryBinaryTestGen({4, 5, 7}, very=-1).set(f'{ROOT}/others_s75.txt')],
+  'standardize': True,
+  'holdout': 0.2,
+},
+{
+  'name': 'lsvc_very_4_sec75_all',
+  'model': LinearSVC(dual=False),
+  'datasets': [
+    s.VeryBinaryTestGen({4, 5, 7}).set(f'{ROOT}/lsgaleana-gmail_com_s75.txt'), 
     s.VeryBinaryTestGen({4, 5, 7}).set(f'{ROOT}/sheaney-gmail_com_s75.txt'),
     s.VeryBinaryTestGen({4, 5, 7}).set(f'{ROOT}/others_s75.txt')],
   'standardize': True,
+  'holdout': 0.25,
+},
+{
+  'name': 'gbdt_sec75_jini',
+  'model': GradientBoostingClassifier(random_state=0),
+  'datasets': [s.BinaryTestGen().set(f'{ROOT}/sheaney-gmail_com_s75.txt')],
+  'standardize': True,
+  'holdout': 0.0,
 }]
 user_configs = {
-  'lsgaleana@gmail.com': ['svc_sec75_all', 'svc_very_4_sec75_all'],
-  'sheaney@gmail.com': [],
-  'default': [],
+  'lsgaleana@gmail.com': ['svc_sec75_all', 'svc_bottom_4_sec75_all'],
+  'sheaney@gmail.com': ['lsvc_very_4_sec75_all', 'gbdt_sec75_jini'],
+  'default': ['svc_sec75_all', 'lsvc_very_4_sec75_all'],
 }
 
 ### Train production classifiers
@@ -53,7 +74,7 @@ def load_prod_classifiers():
       name=config['name'],
       model=config['model'],
       datasets=config['datasets'],
-      test_size=HOLDOUT,
+      test_size=config['holdout'],
       standardize=config['standardize'],
       k=K,
     )
