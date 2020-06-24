@@ -8,12 +8,13 @@
 <body>
   <h1>How <a href="{{url_for('main')}}">Bardo</a> works</h1>
   <p>Bardo's <b>mission</b> is to help groups of friends find new music that they all enjoy.</p>
-  <p>Bardo has 2 main components: the Spotify API and the Bardo AI:</p>
-  <ul>
-    <li>Bardo uses the Spotify API to create music playlists, <u>based on a combination of music similar to the group's preferences and random music from given genres</u>.</li><br>
-    <li><u>The Bardo AI learns from the music preferences that members of a group share with Bardo</u>, and <u>hand-picks</u> the actual music to recommend, from the Spotify playlists. As more music is shared with Bardo, Bardo makes better recommendations.</li>
-  </ul>
-  <p>Below is a visual description of how Bardo works:</p>
+  <p>The main idea behind Bardo has 2 stages:</p>
+  <ol>
+    <li><u>Bardo makes recommendations</u>, based on the music preferences that it knows about you.</li>
+    <li><u>You rate those recommendations</u>, so that Bardo can continue learning. It's an iterative process.</li>
+  </ol>
+  <p>A second idea has to do with groups of friends. If you and your friends have similar music preferences, it makes sense to cross-pollinate them. In other words, the music preferences of your friends might feed into your recommendations and viceversa.</p>
+  <p><b>Technically</b>, Bardo has 2 main components: the Spotify API and the Bardo AI. Below is a diagram that explains their interaction.</p>
   <p><img src="{{url_for('static', filename='bardo.png')}}"></p>
 </body>
 </html>
