@@ -18,7 +18,7 @@
     <h3>Listen as</h3>
     <p>
     {% for label, source in sources.items(): %}
-      <input type="radio" name="source" value="{{source}}" required {{'checked' if bardo_id == source}}> <label>{{label}}</label><br>
+      <input type="radio" name="source" value="{{source}}" required {{'checked' if bardo_id == source}}> <label>{{label}} {{'(No AI)' if source == 'random'}}</label><br>
     {% endfor %}
       <br>
       <i>Bardo will create a Playlist as if it was meant for them.</i>
@@ -28,7 +28,7 @@
       <div>
       Genres:<br>
       <input type="checkbox" name="genre" value="deep-house" checked required> <label>Deep house</label><br><br>
-      Similar to:<br>
+      Include similar to:<br>
       <input type="checkbox" name="history" value="pos" checked> <label>My liked tracks</label><br>
       <input type="checkbox" name="history" value="very_pos" checked> <label>My loved tracks</label><br>
       <br>

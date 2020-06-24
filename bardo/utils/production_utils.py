@@ -125,7 +125,7 @@ def gen_recs(token, source, genres, history, market, slimit, tlimit, bardo_id):
     # Add seed tracks
     if not use_random and len(history_seed) > 0:
       seeds['tracks'] = [history_seed.pop(0)]
-      rlimit = 20
+      rlimit = 10
     else:
       seeds['tracks'] = []
       rlimit = 100
