@@ -11,7 +11,7 @@ CLIENT_ID = '8de267b03c464274a3546bfe84496696'
 VALID_SOURCES = {
   'Galeana': 'lsgaleana@gmail.com',
   'Heaney': 'sheaney@gmail.com',
-  'Spotify random': 'random'
+  'Spotify': 'random'
 }
 PLAYLIST_LIMIT = 10
 TIME_LIMIT = 300
