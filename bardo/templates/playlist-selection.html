@@ -17,15 +17,15 @@
 </head>
 <body>
   <h1><a href="{{url_for('main')}}">Bardo</a> Recommendations</h1>
-  <p>The Bardo AI will use your preferences to create a playlist in your spotify account.</p>
+  <p>The Bardo AI will use these settings to create a playlist in your spotify account.</p>
   <form action="{{url_for('generate_playlist')}}" method="GET">
     <h3>Listen as</h3>
     <p>
     {% for label, source in sources.items(): %}
-      <input type="radio" name="source" value="{{source}}" required {{'checked' if bardo_id == source}}> <label>{{label}} {{'(No AI)' if source == 'random'}}</label><br>
+      <input type="radio" name="source" value="{{source}}" required {{'checked' if bardo_id == source}}> <label>{{label}} {{'(No Bardo AI)' if source == 'random'}}</label><br>
     {% endfor %}
       <br>
-      <i>Bardo will create a Playlist as if it was meant for them.</i>
+      <i>Bardo will create a Playlist as if it was meant for them.</i> <a href="{{url_for('faq')}}#recommendations">Why is my name not in here?</a>
     </p>
     <h3>Recommendation seeds</h3>
     <p>

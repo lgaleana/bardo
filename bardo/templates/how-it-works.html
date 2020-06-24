@@ -4,6 +4,11 @@
   <meta charset="utf-8">
   <title>Bardo: AI music curator</title>
   <meta name="description" content="Using AI to discover new music">
+  <style>
+    body {
+      padding: 0 10px 30px 10px;
+    }
+  </style>
 </head>
 <body>
   <h1>How <a href="{{url_for('main')}}">Bardo</a> works</h1>
@@ -14,7 +19,7 @@
     <li><u>You rate those recommendations</u>, so that Bardo continues learning. It's an iterative process.</li>
   </ol>
   <p>A second idea has to do with groups of friends. If you and your friends have similar music preferences, it makes sense to cross-pollinate them. In other words, the music preferences of your friends might feed into your recommendations and viceversa.</p>
-  <p><b>Technically</b>, Bardo has 2 main components: the Spotify API and the Bardo AI. Below is a diagram of how they interact.</p>
+  <p id="technical"><b>Technically</b>, Bardo has 2 main components: the Spotify API and the Bardo AI. Below is a diagram of how they interact.</p>
   <p><img src="{{url_for('static', filename='bardo.png')}}"></p>
 </body>
 </html>

@@ -163,10 +163,6 @@ def save_playlists(bardo_id):
   else:
     return '<meta name="viewport" content="width=device-width">No tracks saved.'
 
-@app.route('/how-it-works')
-def how_it_works():
-  return render_template('how-it-works.html')
-
 @app.route('/rate-recommendations')
 def rate_recommendations():
   def response(token, bardo_id):
@@ -223,6 +219,14 @@ def spotify_auth():
     token=token,
     redirect_url=url_for(post_auth),
   )
+
+@app.route('/faq')
+def faq():
+  return render_template('faq.html')
+
+@app.route('/how-it-works')
+def how_it_works():
+  return render_template('how-it-works.html')
 
 @app.route('/metrics')
 def metrics():
