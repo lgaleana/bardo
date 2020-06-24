@@ -138,7 +138,9 @@ def gen_recs(
       rlimit = 10
     else:
       seeds['tracks'] = []
-      rlimit = 100 if track_seed is None else 10
+      rlimit = 100
+      if track_seed is not None and len(history_seed) > 0 and len(history_seed) <= 2:
+        rlimit = 10
 
     # We get 100 recommendations, but we might not evaluate all
     recommendations = su.get_recommendations(token, seeds, rlimit, market)
