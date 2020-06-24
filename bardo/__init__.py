@@ -48,6 +48,7 @@ def generate_playlist():
   source = request.args.get('source')
   genres = request.args.getlist('genre')
   history = request.args.getlist('history')
+  track = request.args.get('track')
   market = request.args.get('market')
 
   if not source:
@@ -57,7 +58,7 @@ def generate_playlist():
   if not market:
     market = 'US'
 
-  def response(token, bardo_id, source, genres, history, market):
+  def response(token, bardo_id, source, genres, history, track, market):
     return render_template(
       'generate-playlist.html',
       bardo_id=bardo_id,
@@ -66,6 +67,7 @@ def generate_playlist():
         'source': source,
         'genres': genres,
         'history': history,
+        'track': track,
         'market': market,
       },
     )
@@ -77,6 +79,7 @@ def generate_playlist():
     source=source,
     genres=genres,
     history=history,
+    track=track,
     market=market,
   )
 
@@ -86,6 +89,7 @@ def make_playlist():
   source = request.json.get('source')
   genres = request.json.get('genres')
   history = request.json.get('history')
+  track = request.json.get('track')
   market = request.json.get('market')
 
   if not token and not source and not genres and not market:
@@ -101,6 +105,7 @@ def make_playlist():
     source,
     genres,
     history,
+    track,
     market,
     PLAYLIST_LIMIT,
     TIME_LIMIT,

@@ -87,9 +87,12 @@ def load_prod_classifiers():
   print('Finished training')
 
 ### Get recommendatons from seed tracks or genres
-def gen_recs(token, source, genres, history, market, slimit, tlimit, bardo_id):
+def gen_recs(
+  token, source, genres, history, track_url, market, slimit, tlimit, bardo_id):
   users_data = db.load_user_profiles()
 
+  # Genre seed
+  seeds = {'genres': genres}
   # History seed
   profile = users_data.get(bardo_id, [])
   history_seed = []
@@ -100,8 +103,15 @@ def gen_recs(token, source, genres, history, market, slimit, tlimit, bardo_id):
       history_seed.append(track['id'])
   shuffle(history_seed)
   profile = list(map(lambda track: track['name'], profile))
-  # Genre seed
-  seeds = {'genres': genres}
+  # Track seed
+  url_base = 'https://open.spotify.com/track/'
+  track_seed = None
+  try:
+    track_seed = track_url.split(url_base)[1].split('?')[0]
+    history_seed.insert(0, track_seed)
+    history_seed.insert(0, track_seed)
+  except:
+    pass
 
   # We want tracks from every classifier
   clfs = classifiers.get(source, {})
@@ -128,7 +138,7 @@ def gen_recs(token, source, genres, history, market, slimit, tlimit, bardo_id):
       rlimit = 10
     else:
       seeds['tracks'] = []
-      rlimit = 100
+      rlimit = 100 if track_seed is None else 10
 
     # We get 100 recommendations, but we might not evaluate all
     recommendations = su.get_recommendations(token, seeds, rlimit, market)
