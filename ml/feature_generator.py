@@ -2,7 +2,7 @@ import bardo.utils.spotify_utils as su
 import numpy as np
 
 def get_audio_and_analysis_features(token, track):
-  return (get_audio_features(token, [track])[0],
+  return (track, get_audio_features(token, [track])[0],
     get_analysis_features(token, track))
 
 def get_audio_features(token, tracks):

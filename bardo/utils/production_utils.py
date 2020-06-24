@@ -156,23 +156,22 @@ def gen_recs(token, source, genres, history, market, slimit, tlimit, bardo_id):
 
       completed, _ = f.wait(fs, 10, f.ALL_COMPLETED)
       for future in completed:
-
-        audio, analysis_ = future.result()
+        rec, audio, analysis_ = future.result()
         analysis = analysis_['analysis']
         section = fg.pad_section(analysis_['sections'], 150)
         segment = fg.describe(analysis_['segments'])
-        group = fg.get_group_features(bardo_id, recommendation, users_data)
+        group = fg.get_group_features(bardo_id, rec, users_data)
         user = fg.get_user_features(bardo_id, users_data)
 
         # Get predictions from all classifiers
         for name, clf in clfs.items():
           prediction = clf.predict_prod(audio + analysis + section + segment + group + user)
           print(f'  {name} prediction: {prediction}')
-          if prediction == 1 and recommendation['name'] not in playlists[name]['names'] and len(playlists[name]['ids']) < slimit:
-            playlists[name]['ids'].append(recommendation['id'])
-            playlists[name]['names'].append(recommendation['name'])
-            if recommendation['id'] not in history_seed:
-              history_seed.append(recommendation['id'])
+          if prediction == 1 and rec['name'] not in playlists[name]['names'] and len(playlists[name]['ids']) < slimit:
+            playlists[name]['ids'].append(rec['id'])
+            playlists[name]['names'].append(rec['name'])
+            if rec['id'] not in history_seed:
+              history_seed.append(rec['id'])
           print(f'  size: {len(playlists[name]["ids"])}')
 
       # Toggle use of random as seed
