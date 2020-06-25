@@ -2,6 +2,7 @@ import bardo.utils.spotify_utils as su
 import os
 from datetime import datetime
 import json
+from collections import OrderedDict
 
 ROOT = 'data'
 
@@ -85,13 +86,13 @@ def load_tracks_to_rate(bardo_id):
   rated_dir = f'{ROOT}/{idn}/feedback'
 
   if os.path.isdir(plst_dir):
-    plst_tracks = {}
+    plst_tracks = []
     rated_tracks = {}
 
-    for filename in os.listdir(plst_dir): 
+    for filename in sorted(os.listdir(plst_dir)): 
       if filename.endswith('.txt'):
         for track in load_tracks(os.path.join(plst_dir, filename)):
-          plst_tracks[track['id']] = track['name']
+          plst_tracks.append((track['id'], track['name']))
 
     if os.path.isdir(rated_dir):
       for filename in os.listdir(rated_dir): 
@@ -99,10 +100,10 @@ def load_tracks_to_rate(bardo_id):
           for track in load_tracks(os.path.join(rated_dir, filename)):
             rated_tracks[track['id']] = track['name']
 
-    needs_rating = {}
-    for track, name in plst_tracks.items():
-      if track not in rated_tracks and track not in needs_rating:
-        needs_rating[track] = name
+    needs_rating = OrderedDict()
+    for track in plst_tracks:
+      if track[0] not in rated_tracks:
+        needs_rating[track[0]] = track[1]
     return needs_rating
   else:
     return {}

@@ -44,18 +44,15 @@ def playlist_selection():
 
 @app.route('/generate-playlist')
 def generate_playlist():
-  source = request.args.get('source')
+  source = request.args.get('source', 'lsgaleana@gmail.com')
   genres = request.args.getlist('genre')
   history = request.args.getlist('history')
   track = request.args.get('track')
-  market = request.args.get('market')
+  market = request.args.get('market', 'US')
+  checked = request.args.get('checked', False)
 
-  if not source:
-    source = 'lsgaleana@gmail.com'
   if not genres:
     genres = ['deep-house']
-  if not market:
-    market = 'US'
 
   def response(token, bardo_id, source, genres, history, track, market):
     return render_template(
@@ -75,6 +72,7 @@ def generate_playlist():
     response,
     request,
     'generate_playlist',
+    check_recs=(not checked),
     source=source,
     genres=genres,
     history=history,
@@ -96,7 +94,7 @@ def make_playlist():
 
   sid, bardo_id = su.get_user_data(token)
   needs_rating = db.load_tracks_to_rate(bardo_id)
-  if len(needs_rating) > 0:
+  if len(needs_rating) >= 30:
     return 'Please first rate previous recommendations.'
 
   clf_plsts, final_plst = pu.gen_recs(
@@ -167,10 +165,11 @@ def rate_recommendations():
   def response(token, bardo_id):
     needs_rating = db.load_tracks_to_rate(bardo_id)
     save_url = url_for('save_ratings', bardo_id=bardo_id)
-    save_url += '?' + get_request_params(request.args)
+    save_url += '?' + get_request_params(request.args) + '&checked=true'
     return render_template(
       'rate-recommendations.html',
-      needs_rating=needs_rating,
+      needs_rating=list(needs_rating.items())[:10],
+      size=len(needs_rating),
       save_url=f'{save_url}',
     )
 
@@ -254,11 +253,12 @@ def validate_response(
     return redirect(f'https://accounts.spotify.com/authorize?client_id={CLIENT_ID}&response_type=code&redirect_uri={url_for("spotify_auth", _external=True)}&scope=playlist-modify-public playlist-modify-private user-read-private user-read-email')
 
   _, bardo_id = su.get_user_data(token)
-  needs_rating = db.load_tracks_to_rate(bardo_id)
-  if check_recs and len(needs_rating) > 0:
-    rate_url = url_for('rate_recommendations')
-    params = get_request_params(request.args)
-    return redirect(f'{rate_url}?bardo-id={bardo_id}&{params}&redirect-uri={redirect_uri}')
+  if check_recs:
+    needs_rating = db.load_tracks_to_rate(bardo_id)
+    if len(needs_rating) > 0:
+      rate_url = url_for('rate_recommendations')
+      params = get_request_params(request.args)
+      return redirect(f'{rate_url}?bardo-id={bardo_id}&{params}&redirect-uri={redirect_uri}')
 
   return response(token=token, bardo_id=bardo_id, **kwargs)
 

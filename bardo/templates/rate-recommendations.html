@@ -32,35 +32,36 @@
           if (allChecked) {
             submit.value = "Submit";
           } else {
-            submit.value = "Save";
+            submit.value = "Save for later";
           }
         };
       });
     };
   </script>
   <h1><a href="{{url_for('main')}}">Bardo</a> Feedback</h1>
-  <p>Help Bardo understand if it's doing a good job. From your previous recommendations...</p>
-  {% if needs_rating|length > 0: %}
+  <p>Help Bardo understand if it's doing a good job.</p>
+  <p>You have accrued <u>{{size}} unrated tracks</u>, out of 30. <i><a href="{{url_for('faq')}}#feedback">Why am I asked to rate tracks?</a></i></p>
+  {% if size > 0: %}
   <h3>How much did you like these tracks?</h3>
-  <i><u>You can save and resume at any time.</u> Forgotten tracks won't be saved.</i>
+  <p><i><u>You can save and resume at any time.</u> </i></p>
     <form id="form" action="{{save_url}}" method="POST">
       <ul>
-      {% for id, name in needs_rating.items(): %}
+      {% for id, name in needs_rating: %}
       <li>
         <p><b>{{name}}</b></p>
         <p class="feedback">
-          <input type="radio" name="feedback-{{id}}" value="1">  <label>Hated</label><br>
-          <input type="radio" name="feedback-{{id}}" value="2">  <label>Didn't like</label><br>
-          <input type="radio" name="feedback-{{id}}" value="3">  <label>Neutral</label><br>
-          <input type="radio" name="feedback-{{id}}" value="4">  <label>Liked</label><br>
-          <input type="radio" name="feedback-{{id}}" value="5">  <label>Loved</label><br>
+          <input type="radio" name="feedback-{{id}}" value="1" {{'required' if size >= 30}}>  <label>Hated</label><br>
+          <input type="radio" name="feedback-{{id}}" value="2" {{'required' if size >= 30}}>  <label>Didn't like</label><br>
+          <input type="radio" name="feedback-{{id}}" value="3" {{'required' if size >= 30}}>  <label>Neutral</label><br>
+          <input type="radio" name="feedback-{{id}}" value="4" {{'required' if size >= 30}}>  <label>Liked</label><br>
+          <input type="radio" name="feedback-{{id}}" value="5" {{'required' if size >= 30}}>  <label>Loved</label><br>
           <br><input type="radio" name="feedback-{{id}}" value="0"> <label>Forget</label>
         </p>
       </li>
       <p>
       {% endfor %}
       </ul>
-      <p><input id="submit" type="submit" value="Save"></p>
+      <p><input id="submit" type="submit" value="Save for later"></p>
     </form>
   {% else: %}
     <h3>No tracks to rate</h3>
