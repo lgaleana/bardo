@@ -24,8 +24,9 @@
     {% for label, source in sources.items(): %}
       <input type="radio" name="source" value="{{source}}" required {{'checked' if bardo_id == source}}> <label>{{label}} {{'(No Bardo AI)' if source == 'random'}}</label><br>
     {% endfor %}
+      <input type="radio" name="source" value="random" required> <label>Disable Bardo AI</label><br>
     {% if bardo_id not in sources.values() %}
-    <br><u>Bardo doesn't yet have information about you</u>, but you can choose to listen as one of your friends above. <a href="{{url_for('faq')}}#recommendations">Why is my name not in here?</a>
+      <br><i><u>Bardo doesn't yet have information about you</u>, but you can choose to listen as one of your friends above</i>. <a href="{{url_for('faq')}}#recommendations">Why is my name not in here?</a>
     {% endif %}
     </p>
     <h3>Recommendation seeds</h3>

@@ -182,20 +182,24 @@ def gen_recs(
           if prediction == 1 and rec['name'] not in playlists[name]['names'] and len(playlists[name]['ids']) < slimit:
             playlists[name]['ids'].append(rec['id'])
             playlists[name]['names'].append(rec['name'])
-            if rec['id'] not in history_seed:
+            if (track_seed is None or not use_random) and rec['id'] not in history_seed:
               history_seed.append(rec['id'])
           print(f'  size: {len(playlists[name]["ids"])}')
 
-      # Toggle use of random as seed
-      use_random = not use_random
-      t.print_line()
-      print(f'{(time() - start_time) / 60} mins elapsed')
-      print(f'{len(completed)} new tracks labeled')
+    # Toggle use of random as seed
+    use_random = not use_random
+    t.print_line()
+    print(f'{(time() - start_time) / 60} mins elapsed')
+    print(f'{len(completed)} new tracks labeled')
 
-      # Should we stop the iteration?
-      for plst in playlists.values():
-        if len(plst['ids']) < slimit:
-          go_on = True
+    # Should we stop the iteration?
+    for plst in playlists.values():
+      if len(plst['ids']) < slimit:
+        go_on = True
+
+    # Refill history seed if track seed is set
+    if track_seed is not None and len(history_seed) == 0:
+      history_seed.append(track_seed)
 
   # Add final playlist
   final_playlist = {
