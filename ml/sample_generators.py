@@ -50,7 +50,7 @@ class TernaryTestGen(SampleGenerator):
     else:
       self.X_train, self.y_train = self.X, self.y
 
-  # Labels are transformed to 0 or 1, or excluded
+  # Labels are transformed to 0, 1, 2 or excluded
   def _transform_ternary(self, test_size):
     labels = np.unique(self.y_train)
     pos_test = {4, 5}

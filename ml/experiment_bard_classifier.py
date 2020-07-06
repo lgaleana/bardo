@@ -14,7 +14,7 @@ TEST_SIZE = 0.25
 K = 5
 # Train:test datasets
 ROOT = 'data/datasets'
-SUFFIX = 'seg_100_10'
+SUFFIX = 'savg_norm2'
 datasets = [
   (['lsgaleana@gmail.com'], [
     'lsgaleana@gmail.com',
@@ -49,25 +49,22 @@ generators = [
   s.VeryBinaryTestGen({4, 5, 7}, {1, 2, 6}),
   s.VeryBinaryTestGen({4, 5, 7}, {1, 2, 6}, very=1),
   s.VeryBinaryTestGen({4, 5, 7}, {1, 2, 6}, very=-1),
+#
+#  s.TernaryTestGen(),
+#  s.TernaryTestGen(neu_train={3, 6}),
+#  s.TernaryTestGen(neu_train={3, 7}),
+#  s.TernaryTestGen(neu_train={3, 6, 7}),
+#
+#  s.TernaryTestGen({4, 5, 7}),
+#  s.TernaryTestGen(neg_train={1, 2, 6}),
+#  s.TernaryTestGen({4, 5, 7}, {1, 2, 6}),
+#
+#  s.TernaryTestGen({4, 5, 7}, neu_train={3, 6}),
+#  s.TernaryTestGen(neg_train={1, 2, 6}, neu_train={3, 7}),
 ]
 # CV parameters
-lsp = [{
-  'C': [0.1, 1, 10, 100, 1000],
-  'class_weight': [{1: w} for w in list(range(1, 11))],
-}]
 sp = [{
-  'C': [0.1, 1, 10, 100, 1000],
-  'gamma': ['scale', 'auto', 0.01, 0.1, 1, 10],
-  'class_weight': [{1: w} for w in list(range(1, 11))],
-}]
-kp = [{
-  'n_neighbors': list(range(1, 11)),
-  'p': list(range(1, 6)),
-  'weights': ['uniform', 'distance'],
-}]
-gp = [{
-  'n_estimators': [16, 32, 64, 100, 150, 200],
-  'learning_rate': [0.0001, 0.001, 0.01, 0.025, 0.05,  0.1, 0.25, 0.5],
+  'model__gamma': ['scale', 'auto', 0.002, 0.0025, 0.003, 0.0035, 0.004],
 }]
 # Models
 exp_configs = [
@@ -114,11 +111,11 @@ for train_users, test_users in datasets:
   # Models contains a map from generator -> (model_name, (model, cv))
   models = {}
   for generator in generators:
-    gen_name = generator.get_name()
-    print(gen_name)
+    generator_ = deepcopy(generator)
+    print(generator_.get_name())
     t.print_line()
   
-    models[gen_name] = {}
+    models[generator_] = {}
     for config in exp_configs:
       for mode in config['modes']:
         model_name = f'{config["name"]}:{"+".join(train_users)}'
@@ -133,7 +130,7 @@ for train_users, test_users in datasets:
         )
 
         # We store an instance of model (for later) and its CV metrics
-        models[gen_name][model_name] = (tu.train(),
+        models[generator_][model_name] = (tu.train(),
           tu.get_cv_metrics() if 'CV' in test_users else None)
     t.print_line()
 
@@ -146,16 +143,16 @@ for train_users, test_users in datasets:
     if test_user not in metrics:
       metrics[test_user] = {}
 
-    for gen_name, tus in models.items():
-      if gen_name not in metrics[test_user]:
-        metrics[test_user][gen_name] = {}
+    for generator, tus in models.items():
+      if generator.get_name() not in metrics[test_user]:
+        metrics[test_user][generator.get_name()] = {}
 
       for model_name, tu in tus.items():
         if test_user == 'CV':
-          metrics[test_user][gen_name][model_name] = tu[1]
+          metrics[test_user][generator.get_name()][model_name] = tu[1]
         else:
           # We need the model instances to generate dataset-specific metrics
-          metrics[test_user][gen_name][model_name] = \
+          metrics[test_user][generator.get_name()][model_name] = \
             tu[0].get_test_metrics(deepcopy(generator).set(test_dataset))
 
 print('Writing metrics')
@@ -169,4 +166,6 @@ with open(f'data/reports/{now}.txt', 'w+') as log_file:
       log_file.write(f'{generator}')
       for model_name, m in tm.items():
         log_file.write(f',{model_name},{m["train_acc"]},{m["test_acc"]},{m["test_pr_1"]},{m["test_rec_1"]},{m["test_pr_0"]},{m["test_rec_0"]}\n')
+
+  log_file.write(f'\n{TEST_SIZE} {SUFFIX}')
 print('Finished training')

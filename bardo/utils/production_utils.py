@@ -21,47 +21,41 @@ gbdt = GradientBoostingClassifier(random_state=0)
 # These classifiers were picked through experimentation
 K = 5
 ROOT = 'data/datasets'
-train_configs = [{
-  'name': 'svc_sec75_all',
-  'model': SVC(random_state=0),
-  'datasets': [s.BinaryTestGen().set(f'{ROOT}/lsgaleana-gmail_com_s75.txt'), 
-    s.BinaryTestGen().set(f'{ROOT}/sheaney-gmail_com_s75.txt'),
-    s.BinaryTestGen().set(f'{ROOT}/others_s75.txt')],
-  'standardize': True,
-  'holdout': 0.2,
-},
+train_configs = [
 {
-  'name': 'svc_bottom_4_sec75_all',
+  'name': 'svc_very_34_secavg0706_all',
   'model': SVC(random_state=0),
   'datasets': [
-    s.VeryBinaryTestGen({4, 5, 7}, very=-1).set(
-      f'{ROOT}/lsgaleana-gmail_com_s75.txt'), 
-    s.VeryBinaryTestGen({4, 5, 7}, very=-1).set(
-      f'{ROOT}/sheaney-gmail_com_s75.txt'),
-    s.VeryBinaryTestGen({4, 5, 7}, very=-1).set(f'{ROOT}/others_s75.txt')],
+    s.VeryBinaryTestGen({4, 5, 7}, {1, 2, 6}).set(
+      f'{ROOT}/lsgaleana-gmail_com_savg_norm2.txt'), 
+    s.VeryBinaryTestGen({4, 5, 7}, {1, 2, 6}).set(
+      f'{ROOT}/sheaney-gmail_com_savg_norm2.txt'),
+    s.VeryBinaryTestGen({4, 5, 7}, {1, 2, 6}).set(
+      f'{ROOT}/others_savg_norm2.txt')],
   'standardize': True,
-  'holdout': 0.2,
+  'holdout': 0,
 },
 {
-  'name': 'lsvc_very_4_sec75_all',
-  'model': LinearSVC(dual=False),
+  'name': 'knn_very_secavg0706_all',
+  'model': KNeighborsClassifier(),
   'datasets': [
-    s.VeryBinaryTestGen({4, 5, 7}).set(f'{ROOT}/lsgaleana-gmail_com_s75.txt'), 
-    s.VeryBinaryTestGen({4, 5, 7}).set(f'{ROOT}/sheaney-gmail_com_s75.txt'),
-    s.VeryBinaryTestGen({4, 5, 7}).set(f'{ROOT}/others_s75.txt')],
+    s.VeryBinaryTestGen().set(f'{ROOT}/lsgaleana-gmail_com_savg_norm2.txt'), 
+    s.VeryBinaryTestGen().set(f'{ROOT}/sheaney-gmail_com_savg_norm2.txt'),
+    s.VeryBinaryTestGen().set(f'{ROOT}/others_savg_norm2.txt')],
+  'standardize': True,
+  'holdout': 0,
+},
+{
+  'name': 'knn_very_secavg0706_jini',
+  'model': KNeighborsClassifier(),
+  'datasets': [
+    s.VeryBinaryTestGen().set(f'{ROOT}/sheaney-gmail_com_savg_norm2.txt')],
   'standardize': True,
   'holdout': 0.25,
-},
-{
-  'name': 'gbdt_sec75_jini',
-  'model': GradientBoostingClassifier(random_state=0),
-  'datasets': [s.BinaryTestGen().set(f'{ROOT}/sheaney-gmail_com_s75.txt')],
-  'standardize': True,
-  'holdout': 0.0,
 }]
 user_configs = {
-  'lsgaleana@gmail.com': ['svc_sec75_all', 'svc_bottom_4_sec75_all'],
-  'sheaney@gmail.com': ['lsvc_very_4_sec75_all', 'gbdt_sec75_jini'],
+  'lsgaleana@gmail.com': ['svc_very_34_secavg0706_all'],
+  'sheaney@gmail.com': ['knn_very_secavg0706_all', 'knn_very_secavg0706_jini'],
 }
 
 ### Train production classifiers
@@ -170,7 +164,7 @@ def gen_recs(
       for future in completed:
         rec, audio, analysis_ = future.result()
         analysis = analysis_['analysis']
-        section = fg.pad_section(analysis_['sections'], 150)
+        section = fg.describe(analysis_['sections'])
         segment = fg.describe(analysis_['segments'])
         group = fg.get_group_features(bardo_id, rec, users_data)
         user = fg.get_user_features(bardo_id, users_data)

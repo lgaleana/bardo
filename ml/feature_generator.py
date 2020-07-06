@@ -30,30 +30,82 @@ def get_analysis_features(token, track):
   analysis = su.get_track_analysis(token, track)
 
   # Track features
-  useful_features = [analysis['track'].get('num_samples', -1)]
-  # Bars
-  bars = list(map(
-    lambda bar: [f for f in bar.values()],
-    filter(lambda bar: bar['confidence'] != -1, analysis['bars'])))
-  useful_features.append(len(bars))
-  useful_features += describe(bars)
-  # Beats
-  beats = list(map(
-    lambda beat: [f for f in beat.values()],
-    filter(lambda beat: beat['confidence'] != -1, analysis['beats'])))
-  useful_features.append(len(beats))
-  useful_features += describe(beats)
-  # Tatums
-  tatums = list(map(
-    lambda tatum: [f for f in tatum.values()],
-    filter(lambda tatum: tatum['confidence'] != -1, analysis['tatums'])))
-  useful_features.append(len(tatums))
-  useful_features += describe(tatums)
-  # Sections
-  sections = list(map(
-    lambda s: [f for n, f in s.items() if n != 'key' and n!= 'key_confidence'],
-    filter(lambda section: section['confidence'] != -1, analysis['sections'])))
-  useful_features.append(len(sections))
+  useful_features = [
+    analysis['track'].get('num_samples', 0.0),
+    len(analysis['sections']),
+  ]
+
+  # Iterators
+  bars = iter(analysis['bars'])
+  beats = iter(analysis['beats'])
+  tatums = iter(analysis['tatums'])
+  segments = iter(analysis['segments'])
+  bar = next(bars)
+  beat = next(beats)
+  tatum = next(tatums)
+  segment = next(segments)
+  # Normalize all pieces of data to the sections
+  sections = []
+  for section in analysis['sections']:
+    end = section['start'] + section['duration']
+    section_chunk = []
+    for name, feature in section.items():
+      if name != 'key' and '_confidence' not in name:
+        if section['confidence'] != -1:
+          section_chunk.append(feature)
+        else:
+          section_chunk.append(0.0)
+    # Bars
+    bar_chunks = []
+    try:
+      while bar['start'] < end:
+        if bar['confidence'] != -1:
+          bar_chunks.append([bar['duration'], bar['confidence']])
+          bar = next(bars)
+    except StopIteration:
+      pass
+    section_chunk.append(len(bar_chunks))
+    section_chunk.extend(np.mean(bar_chunks, axis=0))
+    # Beats
+    beat_chunks = []
+    try:
+      while beat['start'] < end:
+        if beat['confidence'] != -1:
+          beat_chunks.append([beat['duration'], beat['confidence']])
+          beat = next(beats)
+    except StopIteration:
+      pass
+    section_chunk.append(len(beat_chunks))
+    section_chunk.extend(np.mean(beat_chunks, axis=0))
+    # Tatums
+    tatum_chunks = []
+    try:
+      while tatum['start'] < end:
+        if tatum['confidence'] != -1:
+          tatum_chunks.append([tatum['duration'], tatum['confidence']])
+          tatum = next(tatums)
+    except StopIteration:
+      pass
+    section_chunk.append(len(tatum_chunks))
+    section_chunk.extend(np.mean(tatum_chunks, axis=0))
+    # Segments
+    segment_chunks = []
+    try:
+      while segment['start'] < end:
+        if segment['confidence'] != -1:
+          seg = []
+          for segname, segfeature in segment.items():
+            if segname == 'duration' or segname == 'confidence' or segname == 'loudness_max_time' or segname == 'loudness_max':
+              seg.append(segfeature)
+          segment_chunks.append(seg)
+          segment = next(segments)
+    except StopIteration:
+      pass
+    section_chunk.append(len(segment_chunks))
+    section_chunk.extend(np.mean(segment_chunks, axis=0))
+
+    sections.append(section_chunk)
+
   # Segments
   segments = []
   for segment in analysis['segments']:
@@ -62,8 +114,6 @@ def get_analysis_features(token, track):
       for name, feature in segment.items():
         if name == 'pitches' or name == 'timbre':
           segment_chunk.extend(feature)
-        elif name != 'loudness_end':
-          segment_chunk.append(feature)
       segments.append(segment_chunk)
   useful_features.append(len(segments))
 
@@ -118,9 +168,10 @@ def describe(vec):
 
 def pad_components(feature_map, p=None, seg_n=None):
   print('Padding components')
+  SEC_LEN = 21
   if p is not None and seg_n is None:
     sec_lens = [
-      len(r['sections']) * 10 for rs in feature_map.values() for r in rs.values()]
+      len(r['sections']) * SEC_LEN for rs in feature_map.values() for r in rs.values()]
     max_ = int(np.percentile(sec_lens, p))
   elif p is not None: 
     seg_lens = [
@@ -140,8 +191,22 @@ def pad_components(feature_map, p=None, seg_n=None):
         row['sections'] = describe(row['sections'])
         row['segments'] = describe(row['segments'])
 
+def pad_section(sections, max_):
+  sf = [f for s in sections for f in s]
+  size = len(sf)
+  if size <= max_:
+    pad = int((max_ - size) / 2)
+    return np.pad(
+      sf,
+      (pad, pad if (max_ - size) % 2 == 0 else pad + 1),
+      mode='constant',
+    ).tolist()
+  else:
+    offset = int((size - max_) / 2)
+    return sf[offset:max_ + offset]
+
 def pad_segment(segments, step, max_):
-  SEG_LEN = 30
+  SEG_LEN = 24
   topad = []
   size = len(segments)
   if size <= max_:
@@ -154,16 +219,6 @@ def pad_segment(segments, step, max_):
     for i in range(offset, max_ + offset, step):
       topad.extend(np.mean(segments[i:i + step], axis=0))
     return topad
-
-def pad_section(sections, max_):
-  sf = [f for s in sections for f in s]
-  size = len(sf)
-  if size <= max_:
-    pad = int((max_ - size) / 2)
-    return np.pad(sf, (pad, pad), mode='constant').tolist()
-  else:
-    offset = int((size - max_) / 2)
-    return sf[offset:max_ + offset]
 
 def get_user_track_features(vectors, analysis):
   return [
