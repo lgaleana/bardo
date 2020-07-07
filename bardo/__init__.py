@@ -155,7 +155,7 @@ def save_playlists(bardo_id):
   )
   if len(feedback) > 0:
     now = datetime.now().strftime("%Y-%m-%d")
-    db.save_feedback(bardo_id, feedback, 'profile', f'{stars}_{now}')
+    db.save_feedback(bardo_id, feedback, 'profile', f'{now}_{stars}')
     return '<meta name="viewport" content="width=device-width">Tracks saved.'
   else:
     return '<meta name="viewport" content="width=device-width">No tracks saved.'

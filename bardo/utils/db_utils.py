@@ -182,7 +182,7 @@ def save_feedback(bardo_id, feedback, directory, name):
   for track in feedback:
     f.write(f'{track["id"]}\t{track["name"]}\t{track["stars"]}')
     if 'extra' in track:
-      f.write(f'\t{track["extra"]}\n')
+      f.write(f'\t{track["extra"]}')
     f.write(f'\n')
   f.close()
 
