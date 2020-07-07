@@ -180,7 +180,10 @@ def save_feedback(bardo_id, feedback, directory, name):
 
   f = open(f'{feedback_dir}/{name}.txt', 'a+')
   for track in feedback:
-    f.write(f'{track["id"]}\t{track["name"]}\t{track["stars"]}\t{track["extra"]}\n')
+    f.write(f'{track["id"]}\t{track["name"]}\t{track["stars"]}')
+    if 'extra' in track:
+      f.write(f'\t{track["extra"]}\n')
+    f.write(f'\n')
   f.close()
 
 def load_ids():
